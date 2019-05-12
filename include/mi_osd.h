@@ -6,16 +6,29 @@
 #include <RBDyn/FD.h>
 #include <RBDyn/Jacobian.h>
 
+#include <dart/dynamics/dynamics.hpp>
+
 #include <assert.h>
 #include <map>
 
 struct osdDataCache
 {
-
+  // osdJacobian, osdJ_dot, dcJacobian, effectiveLambda, x_dot, tau have the same order.
   Eigen::MatrixXd osdJacobian;
+  Eigen::MatrixXd osdJacobianDot;
+
   Eigen::MatrixXd invMassMatrix;
   Eigen::MatrixXd lambdaMatrix;
+
+  Eigen::VectorXd rhoOne;
+  Eigen::VectorXd rhoTwo;
+
+  Eigen::VectorXd osdAcc;
+  Eigen::VectorXd osdVel;
+  Eigen::VectorXd osdTau;
+
   Eigen::MatrixXd lambdaMatrixInv;
+
 
   // Hash table: bodyNode <-> index in the local container
   std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
@@ -30,7 +43,9 @@ struct osdDataCache
 class mi_osd
 {
 public:
-  mi_osd(const mc_rbdyn::Robot & robot, bool linearJacobian);
+  mi_osd(const dart::dynamics::SkeletonPtr & robotPtr,
+		  const mc_rbdyn::Robot & robot, 
+		  bool linearJacobian);
 
   ~mi_osd() {}
 
@@ -96,8 +111,8 @@ public:
   {
     // mc_rtc components
     std::cout << "Updating OSD FD..." << std::endl;
-    // FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
-    FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
+    FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
+    //FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
     std::cout << "FD computed M ..." << std::endl;
     std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
@@ -111,7 +126,7 @@ public:
     return eeNum_;
   }
 
-  const mc_rbdyn::Robot & getRobot() const
+    const mc_rbdyn::Robot & getRobot() const
   {
     return robot_;
   }
@@ -137,6 +152,14 @@ private:
   int jacobianDim_;
   bool nonSingular_;
 
+  const dart::dynamics::SkeletonPtr getDartRobot() const{
+    return robotPtr_; 
+  }
+  std::size_t getDartBodyIndex_(const std::string input) const{
+    return getDartRobot()->getIndexOf(getDartRobot()->getBodyNode(input));
+  }
+
+  dart::dynamics::SkeletonPtr robotPtr_;
   const mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
   /// Direct inverse

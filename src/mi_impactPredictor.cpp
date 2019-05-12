@@ -1,6 +1,7 @@
 #include "mi_impactPredictor.h"
 
-mi_impactPredictor::mi_impactPredictor(const mc_rbdyn::Robot & robot,
+mi_impactPredictor::mi_impactPredictor(const dart::dynamics::SkeletonPtr & robotPtr,
+				       const mc_rbdyn::Robot & robot,
                                        const std::string & impactBodyName,
                                        bool linearJacobian,
                                        // const dart::dynamics::BodyNodePtr impactBodyPtr,
@@ -11,7 +12,7 @@ mi_impactPredictor::mi_impactPredictor(const mc_rbdyn::Robot & robot,
 
   std::cout << "The impact predictor constuctor is started." << std::endl;
   setImpactBody(impactBodyName);
-  osdPtr_ = std::make_shared<mi_osd>(getRobot(), useLinearJacobian_());
+  osdPtr_ = std::make_shared<mi_osd>(robotPtr, getRobot(), useLinearJacobian_());
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
   cache_.eeVelJump.setZero();
