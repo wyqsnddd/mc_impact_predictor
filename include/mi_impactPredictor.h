@@ -108,4 +108,5 @@ protected:
   }
 
   impactDataCache cache_;
+  void tempTest_();
 };

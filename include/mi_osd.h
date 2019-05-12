@@ -58,6 +58,7 @@ public:
       //int ii = it->second.second;
     }
     */
+    /*
     if(cache_.jacobians.find(eeName) != cache_.jacobians.end())
     {
       std::cout << "Key found";
@@ -66,7 +67,7 @@ public:
     {
       std::cout << "Key not found";
     }
-
+    */
     auto ee = cache_.jacobians.find(eeName);
 
     std::cout << "Osd found ee" << ee->first << std::endl;

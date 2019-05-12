@@ -201,4 +201,21 @@ void mi_osd::updateCache_()
     std::cout << "The dynamically consistent Jacobian " << ii << " has row: " << cache_.dcJacobianInvs[ii].rows()
               << ", col: " << cache_.dcJacobianInvs[ii].cols() << ", rank: " << lu_decomp_dcJ.rank() << std::endl;
   }
+
+
+ // (0) This is a temporary test: 
+
+  std::cout<<"Inverse of the OSD inertia matrix is: "<<std::endl<<cache_.lambdaMatrixInv<<std::endl;
+  std::cout<<"The OSD inertia matrix is: "<<std::endl<<cache_.lambdaMatrix<<std::endl;
+  std::cout<<"Multipulication of Lambda*Lambda_inv is: "<<std::endl<<cache_.lambdaMatrix*cache_.lambdaMatrixInv<<std::endl;
+  // (1) dc Jacobian inverse multiplies J should be close to identity? 
+  
+  for(auto it = cache_.jacobians.begin(); it != cache_.jacobians.end(); ++it){
+  
+    int index = it->second.second;
+    // J*dc_J_inv:
+    std::cout<<"Test "<<it->first<<" Jacobian multiplies DC Jacobian inverse: "<<std::endl<<cache_.osdJacobian.block(index * jacobianDim_, 0, jacobianDim_, getDof())
+	    *cache_.dcJacobianInvs[it->second.second]
+	    <<std::endl;
+  }
 }
