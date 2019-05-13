@@ -1,28 +1,31 @@
 #include "mi_osd.h"
 
-mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
-		const mc_rbdyn::Robot & robot, 
-		bool linearJacobian) : robot_(robot)//robotPtr_(robotPtr), 
+mi_osd::mi_osd( const dart::dynamics::SkeletonPtr & robotPtr,
+		//const mc_rbdyn::Robot & robot, 
+		bool linearJacobian) : //robot_(robot)
+	robotPtr_(robotPtr), 
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
   linearJacobian_ = linearJacobian;
   // Initilize the forward dynamics:
-  FDPtr_ = std::make_shared<rbd::ForwardDynamics>(getRobot().mb());
+  //FDPtr_ = std::make_shared<rbd::ForwardDynamics>(getRobot().mb());
 
-  std::cout << "The FD constructor is built." << std::endl;
+  //std::cout << "The FD constructor is built." << std::endl;
   // Create a local copy to avoid touching the mc_rtc controller robot. 
-  rbd::MultiBodyConfig tempMbc = getRobot().mbc();
-  FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
+  //rbd::MultiBodyConfig tempMbc = getRobot().mbc();
+  //FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
   //FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-  std::cout << "The masss matrix is built." << std::endl;
+  //std::cout << "The masss matrix is built." << std::endl;
   // Initialize the Jacobians
-  int mRows = static_cast<int>(getFD()->H().rows());
-  int mCols = static_cast<int>(getFD()->H().cols());
-
+  int mRows = static_cast<int>(getRobot()->getMassMatrix().rows());
+  int mCols = static_cast<int>(getRobot()->getMassMatrix().cols());
+  assert(mRows == mCols);
+ 
+  /*
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix.resize(mRows, mCols);
   cache_.invMassMatrix = lu_decomp_M.inverse();
-
+  */
   assert(mRows == mCols);
   robotDof_ = mRows;
 

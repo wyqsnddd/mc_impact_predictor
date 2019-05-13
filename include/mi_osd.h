@@ -1,12 +1,12 @@
 #pragma once
-
+/*
 #include <mc_rbdyn/Robot.h>
 #include <mc_rbdyn/RobotModule.h>
 
 #include <RBDyn/FD.h>
 #include <RBDyn/Jacobian.h>
-
-//#include <dart/dynamics/dynamics.hpp>
+*/
+#include <dart/dynamics/dynamics.hpp>
 
 #include <assert.h>
 #include <map>
@@ -17,7 +17,7 @@ struct osdDataCache
   Eigen::MatrixXd osdJacobian;
   Eigen::MatrixXd osdJacobianDot;
 
-  Eigen::MatrixXd invMassMatrix;
+  //Eigen::MatrixXd invMassMatrix;
   Eigen::MatrixXd lambdaMatrix;
 
   Eigen::VectorXd rhoOne;
@@ -31,8 +31,10 @@ struct osdDataCache
 
 
   // Hash table: bodyNode <-> index in the local container
-  std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
+  //std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
 
+  std::map<std::string, std::pair<std::shared_ptr<dart::dynamics::BodyNodePtr>, int>> endEffectors;
+  //std::map<dart::dynamics::BodyNodePtr, int> endEffectors;
   // This is a vector of the dynamically consistent Jacobian pseudo inverse of all the end-effectors.
   std::vector<Eigen::MatrixXd> dcJacobianInvs;
 
@@ -43,8 +45,8 @@ struct osdDataCache
 class mi_osd
 {
 public:
-  mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
-		  const mc_rbdyn::Robot & robot, 
+  mi_osd( const dart::dynamics::SkeletonPtr & robotPtr,
+	//	  const mc_rbdyn::Robot & robot, 
 		  bool linearJacobian);
 
   ~mi_osd() {}
@@ -110,14 +112,14 @@ public:
   void update()
   {
     // mc_rtc components
-    std::cout << "Updating OSD FD..." << std::endl;
+    //std::cout << "Updating OSD FD..." << std::endl;
     //FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
     
-    rbd::MultiBodyConfig tempMbc = getRobot().mbc();
-    FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
+    // rbd::MultiBodyConfig tempMbc = getRobot().mbc();
+    //FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
     //FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-    std::cout << "FD computed M ..." << std::endl;
-    std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
+    //std::cout << "FD computed M ..." << std::endl;
+    //std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
   }
   int getDof() const
@@ -129,15 +131,16 @@ public:
     return eeNum_;
   }
 
+/*
     const mc_rbdyn::Robot & getRobot() const
   {
     return robot_;
   }
-
   const std::shared_ptr<rbd::ForwardDynamics> getFD() const
   {
     return FDPtr_;
   }
+  */
   bool nonSingular()
   {
     return nonSingular_;
@@ -154,17 +157,17 @@ private:
   osdDataCache cache_;
   int jacobianDim_;
   bool nonSingular_;
-/*
+
   const dart::dynamics::SkeletonPtr getDartRobot() const{
     return robotPtr_; 
   }
   std::size_t getDartBodyIndex_(const std::string input) const{
     return getDartRobot()->getIndexOf(getDartRobot()->getBodyNode(input));
   }
-*/
-  //dart::dynamics::SkeletonPtr robotPtr_;
-  const mc_rbdyn::Robot & robot_;
-  std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
+
+  dart::dynamics::SkeletonPtr robotPtr_;
+  //const mc_rbdyn::Robot & robot_;
+  //std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
   /// Direct inverse
   //void intuitiveUpdateOsdDataCache_();
 
