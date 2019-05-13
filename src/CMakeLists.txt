@@ -6,8 +6,8 @@ set(mc_impact_predictor_src
 #add_executable(mc_impact_predictor ${mc_impact_predictor_src})
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
 pkg_config_use_dependency(mc_impact_predictor mc_rtc)
-target_link_libraries(mc_impact_predictor ${DART_LIBRARIES})
-target_link_libraries(mc_impact_predictor${Boost_LIBRARIES})
+#target_link_libraries(mc_impact_predictor ${DART_LIBRARIES})
+target_link_libraries(mc_impact_predictor ${Boost_LIBRARIES})
 set_target_properties(mc_impact_predictor PROPERTIES COMPILE_FLAGS "-std=c++0x")
 
 install(

@@ -1,6 +1,6 @@
 #include "mi_impactPredictor.h"
 
-mi_impactPredictor::mi_impactPredictor(const dart::dynamics::SkeletonPtr & robotPtr,
+mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & robotPtr,
 				       const mc_rbdyn::Robot & robot,
                                        const std::string & impactBodyName,
                                        bool linearJacobian,
@@ -12,7 +12,8 @@ mi_impactPredictor::mi_impactPredictor(const dart::dynamics::SkeletonPtr & robot
 
   std::cout << "The impact predictor constuctor is started." << std::endl;
   setImpactBody(impactBodyName);
-  osdPtr_ = std::make_shared<mi_osd>(robotPtr, getRobot(), useLinearJacobian_());
+  //osdPtr_ = std::make_shared<mi_osd>(robotPtr, getRobot(), useLinearJacobian_());
+  osdPtr_ = std::make_shared<mi_osd>( getRobot(), useLinearJacobian_());
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
   cache_.eeVelJump.setZero();
@@ -109,7 +110,8 @@ void mi_impactPredictor::tempTest_(){
 	
     // Read the acceleration of the impact body: 
     auto tempImpactBodyAcceleration = 
-	    getRobot().mbc().bodyAccB
+	    getRobot().mbc().bodyPosW[getRobot().mb().bodyIndexByName(it->first)]
+	    *getRobot().mbc().bodyAccB
 	    [
 	    getRobot().mb().bodyIndexByName(it->first)
 	    ];

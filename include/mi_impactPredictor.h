@@ -21,7 +21,7 @@ struct impactDataCache
 class mi_impactPredictor
 {
 public:
-  mi_impactPredictor(const dart::dynamics::SkeletonPtr & robotPtr,
+  mi_impactPredictor(// const dart::dynamics::SkeletonPtr & robotPtr,
 		     const mc_rbdyn::Robot & robot,
                      const std::string & impactBodyName,
                      bool linearJacobian,

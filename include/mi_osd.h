@@ -6,7 +6,7 @@
 #include <RBDyn/FD.h>
 #include <RBDyn/Jacobian.h>
 
-#include <dart/dynamics/dynamics.hpp>
+//#include <dart/dynamics/dynamics.hpp>
 
 #include <assert.h>
 #include <map>
@@ -24,7 +24,7 @@ struct osdDataCache
   Eigen::VectorXd rhoTwo;
 
   Eigen::VectorXd osdAcc;
-  Eigen::VectorXd osdVel;
+  //Eigen::VectorXd osdVel;
   Eigen::VectorXd osdTau;
 
   Eigen::MatrixXd lambdaMatrixInv;
@@ -43,7 +43,7 @@ struct osdDataCache
 class mi_osd
 {
 public:
-  mi_osd(const dart::dynamics::SkeletonPtr & robotPtr,
+  mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
 		  const mc_rbdyn::Robot & robot, 
 		  bool linearJacobian);
 
@@ -111,7 +111,10 @@ public:
   {
     // mc_rtc components
     std::cout << "Updating OSD FD..." << std::endl;
-    FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
+    //FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
+    
+    rbd::MultiBodyConfig tempMbc = getRobot().mbc();
+    FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
     //FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
     std::cout << "FD computed M ..." << std::endl;
     std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
@@ -151,19 +154,19 @@ private:
   osdDataCache cache_;
   int jacobianDim_;
   bool nonSingular_;
-
+/*
   const dart::dynamics::SkeletonPtr getDartRobot() const{
     return robotPtr_; 
   }
   std::size_t getDartBodyIndex_(const std::string input) const{
     return getDartRobot()->getIndexOf(getDartRobot()->getBodyNode(input));
   }
-
-  dart::dynamics::SkeletonPtr robotPtr_;
+*/
+  //dart::dynamics::SkeletonPtr robotPtr_;
   const mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
   /// Direct inverse
-  void intuitiveUpdateOsdDataCache_();
+  //void intuitiveUpdateOsdDataCache_();
 
   /// Based on the symmetry, we calculate the inverse component wise.
   void updateCache_();
