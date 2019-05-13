@@ -157,7 +157,7 @@ public:
 private:
   int robotDof_;
   bool linearJacobian_;
-  bool useLinearJacobian_()
+  const bool useLinearJacobian_()
   {
     return linearJacobian_;
   }

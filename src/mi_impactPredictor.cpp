@@ -91,6 +91,8 @@ void mi_impactPredictor::run()
 	    * getOsd_()->getEffectiveLambdaMatrix(it->first)
 	    * getOsd_()->getDcJacobianInv(getImpactBody_()) 
 	    * cache_.eeVelJump;
+    
+
 
     std::cout << "The predicted GRF impulsive force of " << it->first << " is: " << std::endl
               << it->second.second.transpose() << ", velocity jump is: " << it->second.first.transpose() << std::endl;
@@ -103,30 +105,30 @@ void mi_impactPredictor::run()
 void mi_impactPredictor::tempTest_(){
 
 // Test the end-effector induced ground reaction forces. 
+	auto tempImpactBodyAcceleration = 
+	    getRobot().mbc().bodyPosW[getRobot().mb().bodyIndexByName(getImpactBody_())]
+	    *getRobot().mbc().bodyAccB
+	    [
+	    getRobot().mb().bodyIndexByName(getImpactBody_())
+	    ];
 
 // Note that we need to deduct the gravity force. 
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
   {
 	
     // Read the acceleration of the impact body: 
-    auto tempImpactBodyAcceleration = 
-	    getRobot().mbc().bodyPosW[getRobot().mb().bodyIndexByName(it->first)]
-	    *getRobot().mbc().bodyAccB
-	    [
-	    getRobot().mb().bodyIndexByName(it->first)
-	    ];
-    // End-effector reaction force:
+        // End-effector reaction force:
     auto tempGRF = (1 / getImpactDuration_()) 
 	    *getOsd_()->getEffectiveLambdaMatrix(it->first)
 	    * getOsd_()->getDcJacobianInv(getImpactBody_())
 	    * tempImpactBodyAcceleration.linear();
     std::cout<<"The impact body acceleration is: "<<tempImpactBodyAcceleration.linear()<<std::endl;
     std::cout << "The predicted GRF force due to impact-body movement of: "
-	    << it->first << " is: " << std::endl
+	    << getImpactBody_()<< " is: " << std::endl
               << tempGRF << std::endl;
   }
  
-
+  // robot.forceSensor("RightFootForceSensor");
 }
 
 
