@@ -4,6 +4,9 @@
 #include <mc_rbdyn/RobotModule.h>
 
 #include <RBDyn/FD.h>
+#include <RBDyn/FA.h>
+#include <RBDyn/FK.h>
+#include <RBDyn/FV.h>
 #include <RBDyn/Jacobian.h>
 
 //#include <dart/dynamics/dynamics.hpp>
@@ -24,7 +27,7 @@ struct osdDataCache
   Eigen::VectorXd rhoTwo;
 
   Eigen::VectorXd osdAcc;
-  //Eigen::VectorXd osdVel;
+  Eigen::VectorXd osdVel;
   Eigen::VectorXd osdTau;
 
   Eigen::MatrixXd lambdaMatrixInv;
@@ -44,7 +47,7 @@ class mi_osd
 {
 public:
   mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
-		  const mc_rbdyn::Robot & robot, 
+		  mc_rbdyn::Robot & robot, 
 		  bool linearJacobian);
 
   ~mi_osd() {}
@@ -113,8 +116,12 @@ public:
     std::cout << "Updating OSD FD..." << std::endl;
     //FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
     
-    rbd::MultiBodyConfig tempMbc = getRobot().mbc();
-    FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
+    //rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
+
+    rbd::forwardKinematics(getRobot().mb(), getRobot().mbc() );
+    rbd::forwardVelocity(getRobot().mb(), getRobot().mbc() );
+    rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+    FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc() );
     //FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
     std::cout << "FD computed M ..." << std::endl;
     std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
@@ -128,12 +135,16 @@ public:
   {
     return eeNum_;
   }
-
-    const mc_rbdyn::Robot & getRobot() const
+  /*
+  const mc_rbdyn::Robot & getRobot() 
   {
     return robot_;
   }
-
+  */
+  mc_rbdyn::Robot & getRobot() 
+  {
+    return robot_;
+  }
   const std::shared_ptr<rbd::ForwardDynamics> getFD() const
   {
     return FDPtr_;
@@ -163,7 +174,7 @@ private:
   }
 */
   //dart::dynamics::SkeletonPtr robotPtr_;
-  const mc_rbdyn::Robot & robot_;
+  mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
   /// Direct inverse
   //void intuitiveUpdateOsdDataCache_();

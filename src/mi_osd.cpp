@@ -1,7 +1,7 @@
 #include "mi_osd.h"
 
 mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
-		const mc_rbdyn::Robot & robot, 
+		mc_rbdyn::Robot & robot, 
 		bool linearJacobian) : robot_(robot)//robotPtr_(robotPtr), 
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
@@ -11,8 +11,11 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
 
   std::cout << "The FD constructor is built." << std::endl;
   // Create a local copy to avoid touching the mc_rtc controller robot. 
-  rbd::MultiBodyConfig tempMbc = getRobot().mbc();
-  FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
+  //rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
+  rbd::forwardKinematics(getRobot().mb(), getRobot().mbc() );
+  rbd::forwardVelocity(getRobot().mb(),getRobot().mbc() );
+  rbd::forwardAcceleration(getRobot().mb(),getRobot().mbc() );
+  FDPtr_->forwardDynamics(getRobot().mb(),getRobot().mbc() );
   //FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
   std::cout << "The masss matrix is built." << std::endl;
   // Initialize the Jacobians
@@ -99,7 +102,7 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
   cache_.osdJacobian.resize(getEeNum() * jacobianDim_, getDof());
   cache_.osdJacobianDot.resize(getEeNum() * jacobianDim_, getDof());
   cache_.osdAcc.resize(getEeNum() * jacobianDim_);
-  //cache_.osdVel.resize(getEeNum() * jacobianDim_);
+  cache_.osdVel.resize(getEeNum() * jacobianDim_);
   cache_.osdTau.resize(getEeNum() * jacobianDim_);
   /*
     contactEndEffectors.insert(std::make_pair(getRobot()->getBodyNode("l_ankle"), true));
@@ -133,8 +136,6 @@ void mi_osd::updateCache_()
   // Read from the robot:
   std::cout << "Updating OSD cache..." << std::endl;
 
-  //FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
-  // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
   // Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix = lu_decomp_M.inverse();
@@ -175,13 +176,13 @@ void mi_osd::updateCache_()
 	    [
 	    getRobot().mb().bodyIndexByName(it->first)
 	    ].vector()).linear();
-/*
+
       cache_.osdVel.segment(ii * jacobianDim_, jacobianDim_) = 
 	    getRobot().mbc().bodyVelW
 	    [
 	    getRobot().mb().bodyIndexByName(it->first)
 	    ].linear();
-*/
+
     }
     else
     {
@@ -199,13 +200,13 @@ void mi_osd::updateCache_()
 	    getDartRobot()->getBodyNode(it->first)->getCOMSpatialAcceleration();
 
 */
-      /*
+      
       cache_.osdVel.segment(ii * jacobianDim_, jacobianDim_) = 
 			      getRobot().mbc().bodyVelW
 			      [
 			      getRobot().mb().bodyIndexByName(it->first)
 			      ].vector();
-*/
+
 
     }
 
@@ -328,6 +329,9 @@ void mi_osd::updateCache_()
 
   std::cout<<"The OSD Acc is: "<<std::endl<<
    cache_.osdAcc<<std::endl;
+  std::cout<<"The OSD Vel is: "<<std::endl<<
+   cache_.osdVel<<std::endl;
+
 
 
   std::cout<<"The OSD dynamics equation force is: "<<std::endl<<

@@ -22,7 +22,7 @@ class mi_impactPredictor
 {
 public:
   mi_impactPredictor(// const dart::dynamics::SkeletonPtr & robotPtr,
-		     const mc_rbdyn::Robot & robot,
+		     mc_rbdyn::Robot & robot,
                      const std::string & impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
@@ -62,7 +62,10 @@ public:
   {
     return robot_;
   }
-
+  mc_rbdyn::Robot & getRobot() 
+  {
+    return robot_;
+  }
   void setImpactBody(std::string impactBodyName)
   {
     impactBodyName_ = impactBodyName;
@@ -73,7 +76,7 @@ public:
 protected:
   std::shared_ptr<mi_osd> osdPtr_;
 
-  const mc_rbdyn::Robot & robot_;
+  mc_rbdyn::Robot & robot_;
   bool useLinearJacobian_() const
   {
     return linearJacobian_;

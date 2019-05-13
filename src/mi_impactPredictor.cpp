@@ -1,7 +1,7 @@
 #include "mi_impactPredictor.h"
 
 mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & robotPtr,
-				       const mc_rbdyn::Robot & robot,
+				       mc_rbdyn::Robot & robot,
                                        const std::string & impactBodyName,
                                        bool linearJacobian,
                                        // const dart::dynamics::BodyNodePtr impactBodyPtr,
