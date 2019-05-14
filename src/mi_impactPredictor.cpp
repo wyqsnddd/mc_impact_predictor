@@ -1,19 +1,19 @@
 #include "mi_impactPredictor.h"
 
-mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & robotPtr,
-				       const mc_rbdyn::Robot & robot,
+mi_impactPredictor::mi_impactPredictor(const dart::dynamics::SkeletonPtr & robotPtr,
+				       // const mc_rbdyn::Robot & robot,
                                        const std::string & impactBodyName,
                                        bool linearJacobian,
                                        // const dart::dynamics::BodyNodePtr impactBodyPtr,
                                        double impactDuration,
                                        double coeRes)
-: robot_(robot), linearJacobian_(linearJacobian), impactDuration_(impactDuration), coeRes_(coeRes)
+: robotPtr_(robotPtr), linearJacobian_(linearJacobian), impactDuration_(impactDuration), coeRes_(coeRes)
 {
 
   std::cout << "The impact predictor constuctor is started." << std::endl;
   setImpactBody(impactBodyName);
   //osdPtr_ = std::make_shared<mi_osd>(robotPtr, getRobot(), useLinearJacobian_());
-  osdPtr_ = std::make_shared<mi_osd>( getRobot(), useLinearJacobian_());
+  osdPtr_ = std::make_shared<mi_osd>( getDartRobot(), useLinearJacobian_());
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
   cache_.eeVelJump.setZero();
@@ -46,15 +46,16 @@ void mi_impactPredictor::run()
   // Update the data in the cache
   // * Update the end-effector velocityJump
   std::cout << "OSD updated. " << std::endl;
-  Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
-  Eigen::VectorXd alphaD = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
-  std::cout << "q_d is: " << alpha.transpose() << std::endl;
-  std::cout << "The velocity of " << getImpactBody_() << " is: " << getRobot().bodyVelW(getImpactBody_()) << std::endl;
+  //Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
+  //Eigen::VectorXd alphaD = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
+  std::cout << "q_d is: " << getDartRobot()->getVelocities()<< std::endl;
+  std::cout << "The velocity of " << getImpactBody_() << " is: " << getDartRobot()->getBodyNode(getImpactBody_())->getSpatialVelocity() << std::endl;
   // std::cout<<"q_dd is: "<<alphaD.transpose()<<std::endl;
   // std::cout<<" The Jacobian is: "<<getOsd_()->getJacobian(getImpactBody_())<<std::endl;
 
   cache_.eeVelJump =
-      -(getCoeRes_() + 1) * getOsd_()->getJacobian(getImpactBody_()) * (alpha + alphaD * getImpactDuration_());
+      -(getCoeRes_() + 1) * getOsd_()->getJacobian(getImpactBody_()) * 
+      (getDartRobot()->getVelocities() + getDartRobot()->getAccelerations()* getImpactDuration_());
 
   // std::cout<<"The impact body is: "<<getImpactBody_()<<std::endl;
   // * Update the joint velocity jump
@@ -107,9 +108,10 @@ void mi_impactPredictor::tempTest_(){
 // Note that we need to deduct the gravity force. 
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
   {
-	
+/*	
     // Read the acceleration of the impact body: 
     auto tempImpactBodyAcceleration = 
+	    getDartRobot()->getBodyNode(it->first)
 	    getRobot().mbc().bodyPosW[getRobot().mb().bodyIndexByName(it->first)]
 	    *getRobot().mbc().bodyAccB
 	    [
@@ -124,6 +126,7 @@ void mi_impactPredictor::tempTest_(){
     std::cout << "The predicted GRF force due to impact-body movement of: "
 	    << it->first << " is: " << std::endl
               << tempGRF << std::endl;
+	      */
   }
  
 

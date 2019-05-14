@@ -1,6 +1,6 @@
 set(mc_impact_predictor_src
   mi_osd.cpp
-  #mi_impactPredictor.cpp
+  mi_impactPredictor.cpp
 )
 
 #add_executable(mc_impact_predictor ${mc_impact_predictor_src})

@@ -1,12 +1,12 @@
 #pragma once
 
-#include <mc_rbdyn/RobotLoader.h>
-#include <mc_rbdyn/Robots.h>
+// #include <mc_rbdyn/RobotLoader.h>
+// #include <mc_rbdyn/Robots.h>
 
-//#include "mc_dart_controller.h"
+// #include "mc_dart_controller.h"
 #include "mi_osd.h"
-// #include <dart/constraint/constraint.hpp>
-// #include <dart/dynamics/dynamics.hpp>
+#include <dart/constraint/constraint.hpp>
+#include <dart/dynamics/dynamics.hpp>
 
 struct impactDataCache
 {
@@ -21,8 +21,8 @@ struct impactDataCache
 class mi_impactPredictor
 {
 public:
-  mi_impactPredictor(// const dart::dynamics::SkeletonPtr & robotPtr,
-		     const mc_rbdyn::Robot & robot,
+  mi_impactPredictor(const dart::dynamics::SkeletonPtr & robotPtr,
+		     //const mc_rbdyn::Robot & robot,
                      const std::string & impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
@@ -57,10 +57,10 @@ public:
     auto ee = cache_.grfContainer.find(eeName);
     return ee->second.second;
   }
-
-  const mc_rbdyn::Robot & getRobot() const
+  
+  const dart::dynamics::SkeletonPtr getDartRobot() const
   {
-    return robot_;
+    return robotPtr_;
   }
 
   void setImpactBody(std::string impactBodyName)
@@ -73,12 +73,13 @@ public:
 protected:
   std::shared_ptr<mi_osd> osdPtr_;
 
-  const mc_rbdyn::Robot & robot_;
+  dart::dynamics::SkeletonPtr robotPtr_;
+  // const mc_rbdyn::Robot & robot_;
+  bool linearJacobian_;
   bool useLinearJacobian_() const
   {
     return linearJacobian_;
   }
-  bool linearJacobian_;
 
   // impact end-effector
   // dart::dynamics::BodyNodePtr impactBodyPtr_;
