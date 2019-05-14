@@ -327,6 +327,7 @@ void mi_osd::updateCache_()
     // Update the OSD components:
     cache_.rhoTwo.segment(ii * getJacobianDim_(), getJacobianDim_()) =
         cache_.dcJacobianInvs[ii].transpose() * getDartRobot()->getCoriolisAndGravityForces();
+    std::cout<<"The left ankle force is: "<< getDartRobot()->getBodyNode(getDartBodyIndex_("l_ankle"))->getBodyForce() <<std::endl;
 
     if(useLinearJacobian_())
     {
@@ -334,9 +335,9 @@ void mi_osd::updateCache_()
           cache_.dcJacobianInvs[ii].transpose()
           * (getDartRobot()->getForces()
              + getJacobian("l_ankle").transpose()
-                   * getDartRobot()->getBodyNode(getDartBodyIndex_("l_ankle"))->getBodyForce().head<3>()
+                   * getDartRobot()->getBodyNode(getDartBodyIndex_("l_ankle"))->getBodyForce().tail<3>()
              + getJacobian("r_ankle").transpose()
-                   * getDartRobot()->getBodyNode(getDartBodyIndex_("r_ankle"))->getBodyForce().head<3>());
+                   * getDartRobot()->getBodyNode(getDartBodyIndex_("r_ankle"))->getBodyForce().tail<3>());
     }
     else
     {
