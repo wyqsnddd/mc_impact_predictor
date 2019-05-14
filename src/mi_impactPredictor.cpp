@@ -96,7 +96,7 @@ void mi_impactPredictor::run()
     std::cout << "The predicted GRF impulsive force of " << it->first << " is: " << std::endl
               << it->second.second.transpose() << ", velocity jump is: " << it->second.first.transpose() << std::endl;
   }
-  tempTest_();
+  //tempTest_();
 }
 
 
@@ -129,7 +129,6 @@ void mi_impactPredictor::tempTest_(){
 	      */
   }
  
-
 }
 
 

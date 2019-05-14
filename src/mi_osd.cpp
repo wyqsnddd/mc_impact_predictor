@@ -125,6 +125,26 @@ mi_osd::mi_osd( const dart::dynamics::SkeletonPtr & robotPtr,
   std::cout << "Updated OSD." << std::endl;
 }
 
+
+void mi_osd::createFullJacobian(const Eigen::MatrixXd & inputJac, 
+		  Eigen::MatrixXd & fullJac, 
+		  dart::dynamics::BodyNodePtr & bnPtr
+		  ){
+
+fullJac.setZero();
+auto dependentDofs = bnPtr->getDependentGenCoordIndices();
+for (std::size_t ii = 0; ii < static_cast<size_t>(dependentDofs.size()); ii++){
+
+	std::size_t index = dependentDofs[ii];
+	assert(bnPtr->dependsOn(index));
+	fullJac.block(0, index, getJacobianDim_(), 1) = 
+		inputJac.block(0, ii, getJacobianDim_(), 1);
+}
+}
+
+
+
+
 void mi_osd::updateCache_()
 {
   // Read from the robot:
@@ -142,6 +162,7 @@ void mi_osd::updateCache_()
   {
     int ii = it->second.second;
     std::cout << it->first << " has a local index: " << it->second.second << std::endl;
+    std::cout << it->first << " has number of dependent joints: " <<it->second.first->getNumDependentGenCoords() << std::endl;
     // cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->first->getJacobian();
     //
     // auto tempJacobian = it->second.first->jacobian(getRobot().mb(), getRobot().mbc());
@@ -169,13 +190,42 @@ void mi_osd::updateCache_()
 	      getDartRobot()->getBodyNode(it->first)->getCOMLinearAcceleration();
 	      */
 
-      cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->second.first->getLinearJacobian(dart::dynamics::Frame::World());
+	    //std::cout<<"test 1"<<std::endl;
+	    /*
+	   auto jac_one = it->second.first->getWorldJacobian(Eigen::Vector3d::Zero()) ;
+	   auto jac_two = it->second.first->getJacobian(Eigen::Vector3d::Zero()) ;
+	   auto jac_three = it->second.first->getLinearJacobian(Eigen::Vector3d::Zero()) ;
 
-      cache_.osdJacobianDot.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->second.first->getLinearJacobianDeriv(dart::dynamics::Frame::World());
+	    std::cout<<"The world jac has rows: "<<jac_one.rows()<<", and cols: "<<jac_one.cols()<<", it should have cols: "<<getDof()<<std::endl;
+	    std::cout<<"The jacobian jac has rows: "<<jac_two.rows()<<", and cols: "<<jac_two.cols()<<", it should have cols: "<<getDof()<<std::endl;
+	    std::cout<<"The linear jac has rows: "<<jac_three.rows()<<", and cols: "<<jac_three.cols()<<", it should have cols: "<<getDof()<<std::endl;
 
+	    //auto tempJac = it->second.first->(Eigen::Vector3d::Zero()).block(getJacobianDim_(), 0, getJacobianDim_(), getDof());
+*/
+	    auto tempJac = it->second.first->getLinearJacobian(Eigen::Vector3d::Zero()) ;
+
+	    Eigen::MatrixXd linearJacOne;
+	    linearJacOne.resize(getJacobianDim_(), getDof());
+	    createFullJacobian(tempJac, linearJacOne,it->second.first );
+		    //getLinearJacobian(dart::dynamics::Frame::World());
+//	    std::cout<<"The linear jac has rows: "<<linearJac.rows()<<", and cols: "<<linearJac.cols()<<", it should have cols: "<<getDof()<<std::endl;
+      cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = linearJacOne;
+
+
+      	    auto tempJacDot = it->second.first->getLinearJacobianDeriv(dart::dynamics::Frame::World()) ;
+
+	    Eigen::MatrixXd linearJacDot;
+	    linearJacDot.resize(getJacobianDim_(), getDof());
+	    createFullJacobian(tempJacDot, linearJacDot,it->second.first );
+
+//	    std::cout<<"test 2"<<std::endl;
+      cache_.osdJacobianDot.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) =linearJacDot; 
+
+//	    std::cout<<"test 3"<<std::endl;
       cache_.osdAcc.segment(ii * jacobianDim_, jacobianDim_) = 
 getDartRobot()->getBodyNode(it->first)->getLinearAcceleration();
 	    
+//	    std::cout<<"test 4"<<std::endl;
       cache_.osdVel.segment(ii * jacobianDim_, jacobianDim_) = getDartRobot()->getBodyNode(it->first)->getLinearVelocity();
 
     }
@@ -185,8 +235,8 @@ getDartRobot()->getBodyNode(it->first)->getLinearAcceleration();
       it->second.first->fullJacobian(getRobot().mb(), tempJacobian, tempFullJacobian);
       it->second.first->fullJacobian(getRobot().mb(), tempJacobianDot, tempFullJacobianDot);
       */
-
-      cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->second.first->getJacobian(dart::dynamics::Frame::World());
+/*
+      cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->second.first->getWorldJacobian(Eigen::Vector3d::Zero());
 
       cache_.osdJacobianDot.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->second.first->getJacobianSpatialDeriv(dart::dynamics::Frame::World());
 
@@ -194,6 +244,7 @@ getDartRobot()->getBodyNode(it->first)->getLinearAcceleration();
 	      getDartRobot()->getBodyNode(it->first)->getSpatialAcceleration();
 
       cache_.osdVel.segment(ii * jacobianDim_, jacobianDim_) = getDartRobot()->getBodyNode(it->first)->getSpatialVelocity();
+      */
 /*
       cache_.osdAcc.segment(ii * jacobianDim_, jacobianDim_) = 
 	    getDartRobot()->getBodyNode(it->first)->getCOMSpatialAcceleration();

@@ -179,4 +179,8 @@ private:
 
   /// Based on the symmetry, we calculate the inverse component wise.
   void updateCache_();
+  void createFullJacobian(const Eigen::MatrixXd & inputJac, 
+		  Eigen::MatrixXd & fullJac, 
+		  dart::dynamics::BodyNodePtr & bnPtr
+		  );
 };
