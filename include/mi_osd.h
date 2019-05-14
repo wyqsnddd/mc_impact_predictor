@@ -7,6 +7,7 @@
 #include <RBDyn/Jacobian.h>
 */
 #include <dart/dynamics/dynamics.hpp>
+#include <dart/dynamics/BodyNode.hpp>
 
 #include <assert.h>
 #include <map>
@@ -24,7 +25,7 @@ struct osdDataCache
   Eigen::VectorXd rhoTwo;
 
   Eigen::VectorXd osdAcc;
-  //Eigen::VectorXd osdVel;
+  Eigen::VectorXd osdVel;
   Eigen::VectorXd osdTau;
 
   Eigen::MatrixXd lambdaMatrixInv;
@@ -33,7 +34,7 @@ struct osdDataCache
   // Hash table: bodyNode <-> index in the local container
   //std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
 
-  std::map<std::string, std::pair<std::shared_ptr<dart::dynamics::BodyNodePtr>, int>> endEffectors;
+  std::map<std::string, std::pair<dart::dynamics::BodyNodePtr, int>> endEffectors;
   //std::map<dart::dynamics::BodyNodePtr, int> endEffectors;
   // This is a vector of the dynamically consistent Jacobian pseudo inverse of all the end-effectors.
   std::vector<Eigen::MatrixXd> dcJacobianInvs;
@@ -59,10 +60,7 @@ public:
   {
     return cache_.lambdaMatrixInv;
   }
-  Eigen::MatrixXd getLambdaMatrix(int rowInt, int columnInt) const
-  {
-    return cache_.lambdaMatrix.block(rowInt * getDof(), columnInt * getDof(), 6, 6);
-  }
+
   const Eigen::MatrixXd getJacobian(const std::string & eeName) const
   {
     std::cout << "Osd looks for Jacobian of " << eeName << std::endl;
@@ -85,7 +83,7 @@ public:
       std::cout << "Key not found";
     }
     */
-    auto ee = cache_.jacobians.find(eeName);
+    auto ee = cache_.endEffectors.find(eeName);
 
     std::cout << "Osd found ee" << ee->first << std::endl;
 
@@ -95,18 +93,18 @@ public:
   }
   const Eigen::MatrixXd getEffectiveLambdaMatrix(const std::string & eeName) const
   {
-    auto ee = cache_.jacobians.find(eeName);
+    auto ee = cache_.endEffectors.find(eeName);
     return cache_.effectiveLambdaMatrices[ee->second.second];
   }
 
   const Eigen::MatrixXd getDcJacobianInv(const std::string eeName) const
   {
-    auto ee = cache_.jacobians.find(eeName);
+    auto ee = cache_.endEffectors.find(eeName);
     return cache_.dcJacobianInvs[ee->second.second];
   }
   const Eigen::MatrixXd getInvMassMatrix() const
   {
-    return cache_.invMassMatrix;
+    return getDartRobot()->getInvMassMatrix(); 
   }
   // This needs to be called in every iteration only once
   void update()
@@ -147,14 +145,22 @@ public:
   }
 
 private:
+  Eigen::MatrixXd getLambdaMatrix_(int rowInt, int columnInt) 
+  {
+    return cache_.lambdaMatrix.block(rowInt * getJacobianDim_(), columnInt * getJacobianDim_(), getJacobianDim_(), getJacobianDim_());
+  }
+
   int robotDof_;
   bool linearJacobian_;
-  bool useLinearJacobian_()
+  const bool useLinearJacobian_()
   {
     return linearJacobian_;
   }
   int eeNum_;
   osdDataCache cache_;
+  const int getJacobianDim_(){
+    return jacobianDim_; 
+  }
   int jacobianDim_;
   bool nonSingular_;
 
