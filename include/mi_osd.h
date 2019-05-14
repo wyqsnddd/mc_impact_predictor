@@ -6,10 +6,9 @@
 #include <RBDyn/FD.h>
 #include <RBDyn/Jacobian.h>
 */
-#include <dart/dynamics/dynamics.hpp>
-#include <dart/dynamics/BodyNode.hpp>
-
 #include <assert.h>
+#include <dart/dynamics/BodyNode.hpp>
+#include <dart/dynamics/dynamics.hpp>
 #include <map>
 
 struct osdDataCache
@@ -18,7 +17,7 @@ struct osdDataCache
   Eigen::MatrixXd osdJacobian;
   Eigen::MatrixXd osdJacobianDot;
 
-  //Eigen::MatrixXd invMassMatrix;
+  // Eigen::MatrixXd invMassMatrix;
   Eigen::MatrixXd lambdaMatrix;
 
   Eigen::VectorXd rhoOne;
@@ -30,12 +29,11 @@ struct osdDataCache
 
   Eigen::MatrixXd lambdaMatrixInv;
 
-
   // Hash table: bodyNode <-> index in the local container
-  //std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
+  // std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
 
   std::map<std::string, std::pair<dart::dynamics::BodyNodePtr, int>> endEffectors;
-  //std::map<dart::dynamics::BodyNodePtr, int> endEffectors;
+  // std::map<dart::dynamics::BodyNodePtr, int> endEffectors;
   // This is a vector of the dynamically consistent Jacobian pseudo inverse of all the end-effectors.
   std::vector<Eigen::MatrixXd> dcJacobianInvs;
 
@@ -46,9 +44,9 @@ struct osdDataCache
 class mi_osd
 {
 public:
-  mi_osd( const dart::dynamics::SkeletonPtr & robotPtr,
-	//	  const mc_rbdyn::Robot & robot, 
-		  bool linearJacobian);
+  mi_osd(const dart::dynamics::SkeletonPtr & robotPtr,
+         //	  const mc_rbdyn::Robot & robot,
+         bool linearJacobian);
 
   ~mi_osd() {}
 
@@ -104,20 +102,20 @@ public:
   }
   const Eigen::MatrixXd getInvMassMatrix() const
   {
-    return getDartRobot()->getInvMassMatrix(); 
+    return getDartRobot()->getInvMassMatrix();
   }
   // This needs to be called in every iteration only once
   void update()
   {
     // mc_rtc components
-    //std::cout << "Updating OSD FD..." << std::endl;
-    //FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
-    
+    // std::cout << "Updating OSD FD..." << std::endl;
+    // FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
+
     // rbd::MultiBodyConfig tempMbc = getRobot().mbc();
-    //FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
-    //FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-    //std::cout << "FD computed M ..." << std::endl;
-    //std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
+    // FDPtr_->forwardDynamics(getRobot().mb(), tempMbc);
+    // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
+    // std::cout << "FD computed M ..." << std::endl;
+    // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
   }
   int getDof() const
@@ -129,25 +127,26 @@ public:
     return eeNum_;
   }
 
-/*
-    const mc_rbdyn::Robot & getRobot() const
-  {
-    return robot_;
-  }
-  const std::shared_ptr<rbd::ForwardDynamics> getFD() const
-  {
-    return FDPtr_;
-  }
-  */
+  /*
+      const mc_rbdyn::Robot & getRobot() const
+    {
+      return robot_;
+    }
+    const std::shared_ptr<rbd::ForwardDynamics> getFD() const
+    {
+      return FDPtr_;
+    }
+    */
   bool nonSingular()
   {
     return nonSingular_;
   }
 
 private:
-  Eigen::MatrixXd getLambdaMatrix_(int rowInt, int columnInt) 
+  Eigen::MatrixXd getLambdaMatrix_(int rowInt, int columnInt)
   {
-    return cache_.lambdaMatrix.block(rowInt * getJacobianDim_(), columnInt * getJacobianDim_(), getJacobianDim_(), getJacobianDim_());
+    return cache_.lambdaMatrix.block(rowInt * getJacobianDim_(), columnInt * getJacobianDim_(), getJacobianDim_(),
+                                     getJacobianDim_());
   }
 
   int robotDof_;
@@ -158,29 +157,31 @@ private:
   }
   int eeNum_;
   osdDataCache cache_;
-  const int getJacobianDim_(){
-    return jacobianDim_; 
+  const int getJacobianDim_()
+  {
+    return jacobianDim_;
   }
   int jacobianDim_;
   bool nonSingular_;
 
-  const dart::dynamics::SkeletonPtr getDartRobot() const{
-    return robotPtr_; 
+  const dart::dynamics::SkeletonPtr getDartRobot() const
+  {
+    return robotPtr_;
   }
-  std::size_t getDartBodyIndex_(const std::string input) const{
+  std::size_t getDartBodyIndex_(const std::string input) const
+  {
     return getDartRobot()->getIndexOf(getDartRobot()->getBodyNode(input));
   }
 
   dart::dynamics::SkeletonPtr robotPtr_;
-  //const mc_rbdyn::Robot & robot_;
-  //std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
+  // const mc_rbdyn::Robot & robot_;
+  // std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
   /// Direct inverse
-  //void intuitiveUpdateOsdDataCache_();
+  // void intuitiveUpdateOsdDataCache_();
 
   /// Based on the symmetry, we calculate the inverse component wise.
   void updateCache_();
-  void createFullJacobian(const Eigen::MatrixXd & inputJac, 
-		  Eigen::MatrixXd & fullJac, 
-		  dart::dynamics::BodyNodePtr & bnPtr
-		  );
+  void createFullJacobian(const Eigen::MatrixXd & inputJac,
+                          Eigen::MatrixXd & fullJac,
+                          const dart::dynamics::BodyNodePtr & bnPtr);
 };
