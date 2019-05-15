@@ -40,37 +40,35 @@ public:
 
   void run();
 
-  Eigen::VectorXd getEeVelocityJump() const
+  const Eigen::VectorXd& getEeVelocityJump() const
   {
     return cache_.eeVelJump;
   }
 
-  Eigen::VectorXd getEeVelocityJump(const std::string & eeName) const
+  const Eigen::VectorXd& getEeVelocityJump(const std::string & eeName) const
   {
-    auto ee = cache_.grfContainer.find(eeName);
-    //return ee->second.first;
+    const auto& ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaV;
   }
 
-  Eigen::VectorXd getJointVelocityJump() const
+  const Eigen::VectorXd& getJointVelocityJump() const
   {
     return cache_.qVelJump;
   }
-  Eigen::VectorXd getImpulsiveForce() const
+  const Eigen::VectorXd& getImpulsiveForce() const
   {
     return cache_.eeImpulse;
   }
 
-  Eigen::VectorXd getImpulsiveForce(const std::string & eeName) const
+  const Eigen::VectorXd& getImpulsiveForce(const std::string & eeName) const
   {
-    auto ee = cache_.grfContainer.find(eeName);
-    //return ee->second.second;
+    const auto& ee = cache_.grfContainer.find(eeName);
     return ee->second.impulseForce;
   }
 
-  Eigen::VectorXd getEeAccForce(const std::string & eeName) const
+  const Eigen::VectorXd& getEeAccForce(const std::string & eeName) const
   {
-    auto ee = cache_.grfContainer.find(eeName);
+    const auto& ee = cache_.grfContainer.find(eeName);
     return ee->second.accForce;
   }
 
