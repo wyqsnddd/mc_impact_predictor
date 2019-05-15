@@ -33,27 +33,20 @@ mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & rob
   // std::string r_foot_name("r_ankle");
   if(useLinearJacobian_())
   {
-    cache_.grfContainer["l_ankle"] =
-        std::make_pair<Eigen::VectorXd, Eigen::VectorXd>(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
-    cache_.grfContainer["r_ankle"] =
-        std::make_pair<Eigen::VectorXd, Eigen::VectorXd>(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
-    cache_.grfContainer["l_wrist"] =
-        std::make_pair<Eigen::VectorXd, Eigen::VectorXd>(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
-    cache_.grfContainer["r_wrist"] =
-        std::make_pair<Eigen::VectorXd, Eigen::VectorXd>(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
+    cache_.grfContainer["l_ankle"] = { Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["r_ankle"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["l_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["r_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+
 
  
   }
   else
   {
-    cache_.grfContainer["l_ankle"] =
-        std::make_pair<Eigen::Vector6d, Eigen::Vector6d>(Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero());
-    cache_.grfContainer["r_ankle"] =
-        std::make_pair<Eigen::Vector6d, Eigen::Vector6d>(Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero());
-    cache_.grfContainer["l_wrist"] =
-        std::make_pair<Eigen::Vector6d, Eigen::Vector6d>(Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero());
-    cache_.grfContainer["r_wrist"] =
-        std::make_pair<Eigen::Vector6d, Eigen::Vector6d>(Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero());
+    cache_.grfContainer["l_ankle"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["r_ankle"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["l_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["r_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
 
   }
 }
@@ -79,6 +72,7 @@ void mi_impactPredictor::run()
   // std::cout<<"The impact body is: "<<getImpactBody_()<<std::endl;
   // * Update the joint velocity jump
   cache_.qVelJump = getOsd_()->getDcJacobianInv(getImpactBody_()) * cache_.eeVelJump;
+  //cache_.qVelJump = getOsd_()->getNewDcJacobianInv(getImpactBody_()) * cache_.eeVelJump;
   std::cout << "The predicted impact body velocity jump is: " << std::endl << cache_.eeVelJump.transpose() << std::endl;
   // * Update the impulsive force
   
@@ -111,10 +105,10 @@ void mi_impactPredictor::run()
   {
 
     // End-effector velocity jump:
-    it->second.first = getOsd_()->getJacobian(it->first) 
+    it->second.deltaV = getOsd_()->getJacobian(it->first) 
 	    * cache_.qVelJump;
     // End-effector reaction force:
-    it->second.second = (1 / getImpactDuration_()) 
+    it->second.impulseForce= (1 / getImpactDuration_()) 
 	    * getOsd_()->getEffectiveLambdaMatrix(it->first)
 	    // cache_.eeVelJump;
 	    * getOsd_()->getDcJacobianInv(getImpactBody_()) 
@@ -131,8 +125,8 @@ void mi_impactPredictor::run()
 
 
     std::cout << "The predicted GRF impulsive force of " << it->first << " is: "  
-              << it->second.second.transpose() << std::endl<<
-	      " velocity jump is: " << it->second.first.transpose() << std::endl
+              << it->second.impulseForce.transpose() << std::endl<<
+	      " velocity jump is: " << it->second.deltaV.transpose() << std::endl
     << "The predicted GRF impulsive force two is " << tempGRF_two.transpose() << std::endl
     << "The predicted GRF impulsive force three is " << tempGRF_three.transpose() << std::endl;
   }
@@ -159,7 +153,7 @@ void mi_impactPredictor::tempTest_(){
 	    getRobot().mb().bodyIndexByName(getImpactBody_())
 	    ];
     std::cout<<"The impact body acceleration is: "<<tempImpactBodyAcceleration.linear().transpose()<<std::endl;
-	std::cout<<"------------------Impact body Acc ------------------------------------"<<std::endl;
+    std::cout<<"------------------Impact body Acc ------------------------------------"<<std::endl;
 // Note that we need to deduct the gravity force. 
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
   {
@@ -182,9 +176,9 @@ void mi_impactPredictor::tempTest_(){
 	    <<std::endl;
     Eigen:: Vector3d tempGRF = 
 	    //getOsd_()->getLambdaMatrix(getImpactBody_(), it->first)
-	    //getOsd_()->getLambdaMatrix(it->first, getImpactBody_() )
+	    getOsd_()->getLambdaMatrix(it->first, getImpactBody_() )
 	    //getOsd_()->getCrossLambdaMatrix( it->first, getImpactBody_())
-	    getOsd_()->getCrossLambdaMatrix( getImpactBody_(), it->first)
+	    //getOsd_()->getCrossLambdaMatrix( getImpactBody_(), it->first)
 	    * tempImpactBodyAcceleration.linear();
     
 	 /* 
@@ -206,6 +200,7 @@ void mi_impactPredictor::tempTest_(){
 		  lu_decomp_lambda_component.inverse()
 		* tempImpactBodyAcceleration.linear();
 */
+    it->second.accForce = tempGRF;
 
     std::cout << "The predicted GRF force of body "<<it->first<<" due to impact-body Acc of: "
 	    << getImpactBody_()<< " is: " << std::endl

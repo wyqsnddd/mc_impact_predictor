@@ -8,6 +8,12 @@
 // #include <dart/constraint/constraint.hpp>
 // #include <dart/dynamics/dynamics.hpp>
 
+
+struct impulseValues{
+	Eigen::VectorXd deltaV;
+	Eigen::VectorXd impulseForce;
+	Eigen::VectorXd accForce;
+};
 struct impactDataCache
 {
   //
@@ -15,8 +21,9 @@ struct impactDataCache
   Eigen::VectorXd qVelJump;
   Eigen::VectorXd tauJump;
   Eigen::VectorXd eeImpulse;
-  /// <end-effector Name, <delta-V, delta-F>>
-  std::map<std::string, std::pair<Eigen::VectorXd, Eigen::VectorXd>> grfContainer;
+  /// <end-effector Name, <delta-V, delta-F, F-due-to-ee-acc>>
+  std::map<std::string, impulseValues > grfContainer;
+  //std::map<std::string, std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> > grfContainer;
 };
 
 class mi_impactPredictor
@@ -41,7 +48,8 @@ public:
   Eigen::VectorXd getEeVelocityJump(const std::string & eeName) const
   {
     auto ee = cache_.grfContainer.find(eeName);
-    return ee->second.first;
+    //return ee->second.first;
+    return ee->second.deltaV;
   }
 
   Eigen::VectorXd getJointVelocityJump() const
@@ -56,7 +64,14 @@ public:
   Eigen::VectorXd getImpulsiveForce(const std::string & eeName) const
   {
     auto ee = cache_.grfContainer.find(eeName);
-    return ee->second.second;
+    //return ee->second.second;
+    return ee->second.impulseForce;
+  }
+
+  Eigen::VectorXd getEeAccForce(const std::string & eeName) const
+  {
+    auto ee = cache_.grfContainer.find(eeName);
+    return ee->second.accForce;
   }
 
   const mc_rbdyn::Robot & getRobot() const

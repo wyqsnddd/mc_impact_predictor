@@ -39,6 +39,7 @@ struct osdDataCache
 
   // This is a vector of the dynamically consistent Jacobian pseudo inverse of all the end-effectors.
   std::vector<Eigen::MatrixXd> dcJacobianInvs;
+ // Eigen::MatrixXd dcJacobianInv;
 
   // This is a vector of the "effective operational mass matrix for each endeffector"
   std::vector<Eigen::MatrixXd> effectiveLambdaMatrices;
@@ -105,7 +106,13 @@ public:
   {
     return cache_.effectiveLambdaMatrices[nameToIndex_(eeName)];
   }
-  
+  /*
+  const Eigen::MatrixXd getNewDcJacobianInv(const std::string eeName) const
+  {
+    int index = nameToIndex_(eeName);
+    return cache_.dcJacobianInv.block(0, index*getJacobianDim(), getDof(), getJacobianDim());
+  }
+*/
   const Eigen::MatrixXd getDcJacobianInv(const std::string eeName) const
   {
     return cache_.dcJacobianInvs[nameToIndex_(eeName)];

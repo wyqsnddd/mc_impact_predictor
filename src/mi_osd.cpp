@@ -123,6 +123,9 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
   cache_.rhoOne.resize(getEeNum() * getJacobianDim());
   cache_.rhoTwo.resize(getEeNum() * getJacobianDim());
 
+  //cache_.dcJacobianInv.resize(getDof(), getEeNum()*getJacobianDim());
+  //cache_.dcJacobianInv.setZero();
+
   cache_.dcJacobianInvs.resize(getEeNum());
   cache_.effectiveLambdaMatrices.resize(getEeNum());
   /// Get the robot end-effectors
@@ -263,6 +266,11 @@ void mi_osd::updateCache_()
 
   std::cout<<"The joint torque is: "<< std::endl<<tempJointTorque<<std::endl;
   std::cout<<"The number of ee is: "<<getEeNum()<<std::endl;
+
+
+  // calculate the dc jacobian inverse as a whole. 
+  //cache_.dcJacobianInv = getInvMassMatrix()*cache_.osdJacobian.transpose()*cache_.lambdaMatrix;
+
   // Update the dynamically consistent Jacobian inverse:
   for(int ii = 0; ii < getEeNum(); ii++)
   {
