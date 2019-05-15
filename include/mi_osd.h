@@ -22,6 +22,7 @@ struct osdDataCache
 
   Eigen::MatrixXd invMassMatrix;
   Eigen::MatrixXd lambdaMatrix;
+  Eigen::MatrixXd crossLambdaMatrix;
 
   Eigen::VectorXd rhoOne;
   Eigen::VectorXd rhoTwo;
@@ -60,23 +61,26 @@ public:
   {
     return cache_.lambdaMatrixInv;
   }
-  Eigen::MatrixXd getLambdaMatrix(int rowInt, int columnInt) const
+  const Eigen::MatrixXd getLambdaMatrix(int rowInt, int columnInt) const
   {
     return cache_.lambdaMatrix.block(rowInt * getDof(), columnInt * getDof(), 6, 6);
   }
+  const int nameToIndex_(const std::string & eeName) const{
+    auto tempEe= cache_.jacobians.find(eeName);
+    return tempEe->second.second;
+  }
+  const Eigen::MatrixXd getLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
+  {
+    return cache_.lambdaMatrix.block(nameToIndex_(eeOne)* getJacobianDim(), nameToIndex_(eeTwo)* getJacobianDim(), getJacobianDim(), getJacobianDim());
+  }
+  const Eigen::MatrixXd getCrossLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
+  {
+    return cache_.crossLambdaMatrix.block(nameToIndex_(eeOne)* getJacobianDim(), nameToIndex_(eeTwo)* getJacobianDim(), getJacobianDim(), getJacobianDim());
+  }
   const Eigen::MatrixXd getJacobian(const std::string & eeName) const
   {
+      /*
     std::cout << "Osd looks for Jacobian of " << eeName << std::endl;
-    /*
-    for(auto it = cache_.jacobians.begin(); it != cache_.jacobians.end(); ++it)
-    {
-
-      std::cout << it->first << " has a local index: " << it->second.second << std::endl<<
-    cache_.osdJacobian.block(it->second.second* jacobianDim_, 0, jacobianDim_, getDof())<<std::endl;
-      //int ii = it->second.second;
-    }
-    */
-    /*
     if(cache_.jacobians.find(eeName) != cache_.jacobians.end())
     {
       std::cout << "Key found";
@@ -85,25 +89,23 @@ public:
     {
       std::cout << "Key not found";
     }
-    */
     auto ee = cache_.jacobians.find(eeName);
 
     std::cout << "Osd found ee" << ee->first << std::endl;
 
     int index = ee->second.second;
     std::cout << "Endeffector: " << ee->first << " has index: " << index << std::endl;
-    return cache_.osdJacobian.block(index * jacobianDim_, 0, jacobianDim_, getDof());
+    */
+    return cache_.osdJacobian.block(nameToIndex_(eeName)* getJacobianDim(), 0, getJacobianDim(), getDof());
   }
   const Eigen::MatrixXd getEffectiveLambdaMatrix(const std::string & eeName) const
   {
-    auto ee = cache_.jacobians.find(eeName);
-    return cache_.effectiveLambdaMatrices[ee->second.second];
+    return cache_.effectiveLambdaMatrices[nameToIndex_(eeName)];
   }
-
+  
   const Eigen::MatrixXd getDcJacobianInv(const std::string eeName) const
   {
-    auto ee = cache_.jacobians.find(eeName);
-    return cache_.dcJacobianInvs[ee->second.second];
+    return cache_.dcJacobianInvs[nameToIndex_(eeName)];
   }
   const Eigen::MatrixXd getInvMassMatrix() const
   {
@@ -153,7 +155,9 @@ public:
   {
     return nonSingular_;
   }
-
+  const int getJacobianDim() const{
+    return jacobianDim_; 
+  }
 private:
   int robotDof_;
   bool linearJacobian_;

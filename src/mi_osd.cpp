@@ -21,13 +21,18 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
   // Initialize the Jacobians
   int mRows = static_cast<int>(getFD()->H().rows());
   int mCols = static_cast<int>(getFD()->H().cols());
-
-  Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
-  cache_.invMassMatrix.resize(mRows, mCols);
-  cache_.invMassMatrix = lu_decomp_M.inverse();
-
-  assert(mRows == mCols);
+  assert(mCols == mRows);
   robotDof_ = mRows;
+  Eigen::MatrixXd tempMassMatrix = getFD()->H();
+  std::cout << "The masss matrix is built." << std::endl;
+  std::cout << "The masss matrix is: " <<tempMassMatrix<< std::endl;
+  Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_mM(tempMassMatrix);
+  cache_.invMassMatrix.resize(mRows, mCols);
+  std::cout << "The masss matrix is built." << std::endl;
+  cache_.invMassMatrix = lu_decomp_mM.inverse();
+
+  std::cout << "The inv masss matrix is calculated." << std::endl;
+  //assert(mRows == mCols);
 
   if(useLinearJacobian_())
   {
@@ -112,6 +117,7 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
   */
   /// Initialize the cache:
   cache_.lambdaMatrix.resize(getEeNum() * jacobianDim_, getEeNum() * jacobianDim_);
+  cache_.crossLambdaMatrix.resize(getEeNum() * jacobianDim_, getEeNum() * jacobianDim_);
   cache_.lambdaMatrixInv.resize(getEeNum() * jacobianDim_, getEeNum() * jacobianDim_);
 
   cache_.rhoOne.resize(getEeNum() * jacobianDim_);
@@ -150,8 +156,8 @@ void mi_osd::updateCache_()
     std::cout << it->first << " has a local index: " << it->second.second << std::endl;
     // cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->first->getJacobian();
     //
-    auto tempJacobian = it->second.first->jacobian(getRobot().mb(), getRobot().mbc());
-    auto tempJacobianDot = it->second.first->jacobianDot(getRobot().mb(), getRobot().mbc());
+    Eigen::MatrixXd tempJacobian = it->second.first->jacobian(getRobot().mb(), getRobot().mbc());
+    Eigen::MatrixXd tempJacobianDot = it->second.first->jacobianDot(getRobot().mb(), getRobot().mbc());
     // std::cout<<"tempJacobian size is: "<<tempJacobian.rows()<<", "<<tempJacobian.cols()<<std::endl;
     std::cout << "Jacobian matrix calculated..." << std::endl;
     Eigen::MatrixXd tempFullJacobian, tempFullJacobianDot;
@@ -244,23 +250,7 @@ void mi_osd::updateCache_()
   std::cout << "The OSD inverse mass matrix has row: " << cache_.lambdaMatrixInv.rows() << ", col: " << cache_.lambdaMatrixInv.cols()
             << ", rank: " << lu_decomp_lambdaInv.rank() << std::endl;
 
-  // Compute the Lambda matrix component-wise
- /* 
-  for(int ii = 0; ii < getEeNum(); ii++)
-  {
-    for(int jj = 0; jj < getEeNum(); jj++)
-    {
-	    
-       Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_component(
-		cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) * getInvMassMatrix()
-           * cache_.osdJacobian.block(jj * jacobianDim_, 0, jacobianDim_, getDof()).transpose()
-		  );
-       // std::cout<<"calculating row: "<<ii<<", col: "<<jj<<std::endl;
-       cache_.lambdaMatrix.block(ii * jacobianDim_, jj * jacobianDim_, jacobianDim_, jacobianDim_) = lu_decomp_lambda_component.inverse();
-    }
-  }
- */ 
-  Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_inv(cache_.lambdaMatrixInv);
+    Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_inv(cache_.lambdaMatrixInv);
   cache_.lambdaMatrix = lu_decomp_lambda_inv.inverse();
   cache_.lambdaMatrix = cache_.lambdaMatrixInv.inverse(); 
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda(cache_.lambdaMatrix);
@@ -303,14 +293,40 @@ void mi_osd::updateCache_()
 				     + getJacobian("l_ankle").transpose()*getRobot().forceSensor("LeftFootForceSensor").wrench().vector()
 				     + getJacobian("r_ankle").transpose()*getRobot().forceSensor("RightFootForceSensor").wrench().vector()
 		      );
-
      
      }
+
       std::cout << "The dynamically consistent Jacobian " << ii << " has row: " << cache_.dcJacobianInvs[ii].rows()
 	   << ", col: " << cache_.dcJacobianInvs[ii].cols() << ", rank: " << lu_decomp_dcJ.rank() << std::endl;
 
   }
  // Update the rest of the OSD components 
+
+
+// Compute the Cross Lambda matrix component-wise
+  
+  for(int ii = 0; ii < getEeNum(); ii++)
+  {
+    for(int jj = 0; jj < getEeNum(); jj++)
+    {
+	    
+       Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_component(
+		cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) 
+		//cache_.osd[ii]
+		* getInvMassMatrix()
+		* cache_.osdJacobian.block(jj * jacobianDim_, 0, jacobianDim_, getDof()).transpose()
+		//*cache_.dcJacobianInvs[jj]
+		  );
+       // std::cout<<"calculating row: "<<ii<<", col: "<<jj<<std::endl;
+       cache_.crossLambdaMatrix.block(ii * jacobianDim_, jj * jacobianDim_, jacobianDim_, jacobianDim_) = lu_decomp_lambda_component.inverse();
+    }
+  }
+  
+
+
+
+
+
 
   //std::cout<<"Rho One is to be calculated.";
 
