@@ -13,6 +13,7 @@ struct impactDataCache
   //
   Eigen::VectorXd eeVelJump;
   Eigen::VectorXd qVelJump;
+  Eigen::VectorXd tauJump;
   Eigen::VectorXd eeImpulse;
   /// <end-effector Name, <delta-V, delta-F>>
   std::map<std::string, std::pair<Eigen::VectorXd, Eigen::VectorXd>> grfContainer;

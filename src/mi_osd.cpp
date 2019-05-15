@@ -42,7 +42,7 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
   {
     jacobianDim_ = 6;
   }
-  // jacobianDim_ = 6;
+  // getJacobianDim() = 6;
   nonSingular_ = true;
 
   std::cout << "The stack of Jacobians are about to be built." << std::endl;
@@ -104,11 +104,11 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
 
   eeNum_ = static_cast<int>(cache_.jacobians.size());
 
-  cache_.osdJacobian.resize(getEeNum() * jacobianDim_, getDof());
-  cache_.osdJacobianDot.resize(getEeNum() * jacobianDim_, getDof());
-  cache_.osdAcc.resize(getEeNum() * jacobianDim_);
-  cache_.osdVel.resize(getEeNum() * jacobianDim_);
-  cache_.osdTau.resize(getEeNum() * jacobianDim_);
+  cache_.osdJacobian.resize(getEeNum() * getJacobianDim(), getDof());
+  cache_.osdJacobianDot.resize(getEeNum() * getJacobianDim(), getDof());
+  cache_.osdAcc.resize(getEeNum() * getJacobianDim());
+  cache_.osdVel.resize(getEeNum() * getJacobianDim());
+  cache_.osdTau.resize(getEeNum() * getJacobianDim());
   /*
     contactEndEffectors.insert(std::make_pair(getRobot()->getBodyNode("l_ankle"), true));
     contactEndEffectors.insert(std::make_pair(getRobot()->getBodyNode("r_ankle"), true));
@@ -116,20 +116,20 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
     contactEndEffectors.insert(std::make_pair(getRobot()->getBodyNode("r_wrist"), false));
   */
   /// Initialize the cache:
-  cache_.lambdaMatrix.resize(getEeNum() * jacobianDim_, getEeNum() * jacobianDim_);
-  cache_.crossLambdaMatrix.resize(getEeNum() * jacobianDim_, getEeNum() * jacobianDim_);
-  cache_.lambdaMatrixInv.resize(getEeNum() * jacobianDim_, getEeNum() * jacobianDim_);
+  cache_.lambdaMatrix.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
+  cache_.crossLambdaMatrix.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
+  cache_.lambdaMatrixInv.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
 
-  cache_.rhoOne.resize(getEeNum() * jacobianDim_);
-  cache_.rhoTwo.resize(getEeNum() * jacobianDim_);
+  cache_.rhoOne.resize(getEeNum() * getJacobianDim());
+  cache_.rhoTwo.resize(getEeNum() * getJacobianDim());
 
   cache_.dcJacobianInvs.resize(getEeNum());
   cache_.effectiveLambdaMatrices.resize(getEeNum());
   /// Get the robot end-effectors
   for(int ii = 0; ii < getEeNum(); ii++)
   {
-    cache_.dcJacobianInvs[ii].resize(getDof(), jacobianDim_);
-    cache_.effectiveLambdaMatrices[ii].resize(jacobianDim_, getDof());
+    cache_.dcJacobianInvs[ii].resize(getDof(), getJacobianDim());
+    cache_.effectiveLambdaMatrices[ii].resize(getJacobianDim(), getDof());
   }
 
   std::cout << "Updating OSD..." << std::endl;
@@ -145,24 +145,25 @@ void mi_osd::updateCache_()
   // Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix = lu_decomp_M.inverse();
+  /*
   std::cout << "Inverse mass matrix calculated, there are row: " << 
 	  getInvMassMatrix().rows()
             << ", col: " << getInvMassMatrix().cols() << std::endl;
-
+*/
   //std::cout << "mass*mass_inv is: " << getFD()->H()*getInvMassMatrix()<<std::endl;
   for(auto it = cache_.jacobians.begin(); it != cache_.jacobians.end(); ++it)
   {
     int ii = it->second.second;
     std::cout << it->first << " has a local index: " << it->second.second << std::endl;
-    // cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = it->first->getJacobian();
+    // cache_.osdJacobian.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = it->first->getJacobian();
     //
     Eigen::MatrixXd tempJacobian = it->second.first->jacobian(getRobot().mb(), getRobot().mbc());
     Eigen::MatrixXd tempJacobianDot = it->second.first->jacobianDot(getRobot().mb(), getRobot().mbc());
     // std::cout<<"tempJacobian size is: "<<tempJacobian.rows()<<", "<<tempJacobian.cols()<<std::endl;
     std::cout << "Jacobian matrix calculated..." << std::endl;
     Eigen::MatrixXd tempFullJacobian, tempFullJacobianDot;
-    tempFullJacobian.resize(jacobianDim_, getDof());
-    tempFullJacobianDot.resize(jacobianDim_, getDof());
+    tempFullJacobian.resize(getJacobianDim(), getDof());
+    tempFullJacobianDot.resize(getJacobianDim(), getDof());
 
     // std::cout<<"temp Full Jacobian size is: "<<tempFullJacobian.rows()<<", "<<tempFullJacobian.cols()<<std::endl;
     if(useLinearJacobian_())
@@ -174,18 +175,18 @@ void mi_osd::updateCache_()
 		      tempJacobian.block(3, 0, 3, tempJacobianDot.cols()),
                                      tempFullJacobianDot);
       /*
-      cache_.osdAcc.segment(ii * jacobianDim_, jacobianDim_) = 
+      cache_.osdAcc.segment(ii * getJacobianDim(), getJacobianDim()) = 
 	      getDartRobot()->getBodyNode(it->first)->getCOMLinearAcceleration();
 	      */
 
-      cache_.osdAcc.segment(ii * jacobianDim_, jacobianDim_) = 
+      cache_.osdAcc.segment(ii * getJacobianDim(), getJacobianDim()) = 
 	    (getRobot().mbc().bodyPosW[getRobot().mb().bodyIndexByName(it->first)]
 	    *getRobot().mbc().bodyAccB
 	    [
 	    getRobot().mb().bodyIndexByName(it->first)
 	    ].vector()).linear();
 
-      cache_.osdVel.segment(ii * jacobianDim_, jacobianDim_) = 
+      cache_.osdVel.segment(ii * getJacobianDim(), getJacobianDim()) = 
 	    getRobot().mbc().bodyVelW
 	    [
 	    getRobot().mb().bodyIndexByName(it->first)
@@ -196,20 +197,15 @@ void mi_osd::updateCache_()
     {
       it->second.first->fullJacobian(getRobot().mb(), tempJacobian, tempFullJacobian);
       it->second.first->fullJacobian(getRobot().mb(), tempJacobianDot, tempFullJacobianDot);
-      cache_.osdAcc.segment(ii * jacobianDim_, jacobianDim_) = 
+      cache_.osdAcc.segment(ii * getJacobianDim(), getJacobianDim()) = 
 	    (getRobot().mbc().bodyPosW[getRobot().mb().bodyIndexByName(it->first)]
 	    *getRobot().mbc().bodyAccB
 	    [
 	    getRobot().mb().bodyIndexByName(it->first)
 	    ].vector()).vector();
 
-/*
-      cache_.osdAcc.segment(ii * jacobianDim_, jacobianDim_) = 
-	    getDartRobot()->getBodyNode(it->first)->getCOMSpatialAcceleration();
-
-*/
       
-      cache_.osdVel.segment(ii * jacobianDim_, jacobianDim_) = 
+      cache_.osdVel.segment(ii * getJacobianDim(), getJacobianDim()) = 
 			      getRobot().mbc().bodyVelW
 			      [
 			      getRobot().mb().bodyIndexByName(it->first)
@@ -221,10 +217,10 @@ void mi_osd::updateCache_()
     std::cout << "Full Jacobian matrix calculated..." << std::endl;
 
     std::cout << "" << std::endl;
-    cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = tempFullJacobian;
-    cache_.osdJacobianDot.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) = tempFullJacobianDot;
+    cache_.osdJacobian.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobian;
+    cache_.osdJacobianDot.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobianDot;
    /* 
-    cache_.osdTau.block(ii * jacobianDim_, 0, jacobianDim_, 1) = 
+    cache_.osdTau.block(ii * getJacobianDim(), 0, getJacobianDim(), 1) = 
 	    getDartRobot()->getForce(
 			    getDartBodyIndex_(it->first)
 			    );
@@ -232,7 +228,7 @@ void mi_osd::updateCache_()
 
         
     Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_J_temp(
-        cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()));
+        cache_.osdJacobian.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()));
     std::cout << it->first << " Jacobian has rank: " << lu_decomp_J_temp.rank() << std::endl;
 
   }
@@ -252,7 +248,10 @@ void mi_osd::updateCache_()
 
     Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_inv(cache_.lambdaMatrixInv);
   cache_.lambdaMatrix = lu_decomp_lambda_inv.inverse();
-  cache_.lambdaMatrix = cache_.lambdaMatrixInv.inverse(); 
+
+
+
+  //cache_.lambdaMatrix = cache_.lambdaMatrixInv.inverse(); 
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda(cache_.lambdaMatrix);
   std::cout << "The OSD mass matrix has row: " << cache_.lambdaMatrix.rows() << ", col: " << cache_.lambdaMatrix.cols()
             << ", rank: " << lu_decomp_lambda.rank() << std::endl;
@@ -269,25 +268,25 @@ void mi_osd::updateCache_()
   {
     //std::cout<<"ii: "<<ii<<std::endl;
     cache_.effectiveLambdaMatrices[ii] =
-        cache_.lambdaMatrix.block(ii * jacobianDim_, 0, jacobianDim_, getEeNum() * jacobianDim_) * cache_.osdJacobian;
+        cache_.lambdaMatrix.block(ii * getJacobianDim(), 0, getJacobianDim(), getEeNum() * getJacobianDim()) * cache_.osdJacobian;
 
     cache_.dcJacobianInvs[ii] = (cache_.effectiveLambdaMatrices[ii] * getInvMassMatrix()).transpose();
 
     Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_dcJ(cache_.dcJacobianInvs[ii]);
         // Update the OSD components: 
-   cache_.rhoTwo.segment(ii * jacobianDim_, jacobianDim_) = 
+   cache_.rhoTwo.segment(ii * getJacobianDim(), getJacobianDim()) = 
 	   cache_.dcJacobianInvs[ii].transpose()
 	   *getFD()->C();
 
      if(useLinearJacobian_()){
-	     cache_.osdTau.segment(ii * jacobianDim_, jacobianDim_) = 
+	     cache_.osdTau.segment(ii * getJacobianDim(), getJacobianDim()) = 
 		     cache_.dcJacobianInvs[ii].transpose()
 		     *(tempJointTorque
 				     + getJacobian("l_ankle").transpose()*getRobot().forceSensor("LeftFootForceSensor").force()
 				     + getJacobian("r_ankle").transpose()*getRobot().forceSensor("RightFootForceSensor").force()
 		      );
      }else{
-     	     cache_.osdTau.segment(ii * jacobianDim_, jacobianDim_) = 
+     	     cache_.osdTau.segment(ii * getJacobianDim(), getJacobianDim()) = 
 		     cache_.dcJacobianInvs[ii].transpose()
 		     *(tempJointTorque
 				     + getJacobian("l_ankle").transpose()*getRobot().forceSensor("LeftFootForceSensor").wrench().vector()
@@ -311,14 +310,14 @@ void mi_osd::updateCache_()
     {
 	    
        Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_component(
-		cache_.osdJacobian.block(ii * jacobianDim_, 0, jacobianDim_, getDof()) 
+		cache_.osdJacobian.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) 
 		//cache_.osd[ii]
 		* getInvMassMatrix()
-		* cache_.osdJacobian.block(jj * jacobianDim_, 0, jacobianDim_, getDof()).transpose()
+		* cache_.osdJacobian.block(jj * getJacobianDim(), 0, getJacobianDim(), getDof()).transpose()
 		//*cache_.dcJacobianInvs[jj]
 		  );
        // std::cout<<"calculating row: "<<ii<<", col: "<<jj<<std::endl;
-       cache_.crossLambdaMatrix.block(ii * jacobianDim_, jj * jacobianDim_, jacobianDim_, jacobianDim_) = lu_decomp_lambda_component.inverse();
+       cache_.crossLambdaMatrix.block(ii * getJacobianDim(), jj * getJacobianDim(), getJacobianDim(), getJacobianDim()) = lu_decomp_lambda_component.inverse();
     }
   }
   
@@ -354,22 +353,23 @@ void mi_osd::updateCache_()
   std::cout<<"Inverse of the OSD inertia matrix is: "<<std::endl<<cache_.lambdaMatrixInv<<std::endl;
   std::cout<<"The OSD inertia matrix is: "<<std::endl<<cache_.lambdaMatrix<<std::endl;
   std::cout<<"Multipulication of Lambda*Lambda_inv is: "<<std::endl<<cache_.lambdaMatrix*cache_.lambdaMatrixInv<<std::endl;
+  //std::cout<<"The predicted acceleration is: "<<
   // (1) dc Jacobian inverse multiplies J should be close to identity? 
   
   for(auto it = cache_.jacobians.begin(); it != cache_.jacobians.end(); ++it){
   
     int index = it->second.second;
     // J*dc_J_inv:
-    std::cout<<"Test "<<it->first<<" Jacobian multiplies DC Jacobian inverse: "<<std::endl<<cache_.osdJacobian.block(index * jacobianDim_, 0, jacobianDim_, getDof())
+    std::cout<<"Test "<<it->first<<" Jacobian multiplies DC Jacobian inverse: "<<std::endl<<cache_.osdJacobian.block(index * getJacobianDim(), 0, getJacobianDim(), getDof())
 	    *cache_.dcJacobianInvs[it->second.second]
 	    <<std::endl;
     // Check the diagonal blocks of Lambda matrix: 
    std::cout<<"The OSD dynamics of "<<it->first<<" index-"<<index<<" is: "<<std::endl<<
-  cache_.lambdaMatrix.block(index*jacobianDim_, index*jacobianDim_, jacobianDim_, jacobianDim_)
-  *cache_.osdAcc.segment(index*jacobianDim_, jacobianDim_)
-  + cache_.rhoOne.segment(index*jacobianDim_, jacobianDim_)
-  + cache_.rhoTwo.segment(index*jacobianDim_, jacobianDim_)
-  - cache_.osdTau.segment(index*jacobianDim_, jacobianDim_)
+  cache_.lambdaMatrix.block(index*getJacobianDim(), index*getJacobianDim(), getJacobianDim(), getJacobianDim())
+  *cache_.osdAcc.segment(index*getJacobianDim(), getJacobianDim())
+  + cache_.rhoOne.segment(index*getJacobianDim(), getJacobianDim())
+  + cache_.rhoTwo.segment(index*getJacobianDim(), getJacobianDim())
+  - cache_.osdTau.segment(index*getJacobianDim(), getJacobianDim())
 <<std::endl;
 
  

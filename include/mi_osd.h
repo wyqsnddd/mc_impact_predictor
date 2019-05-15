@@ -67,7 +67,10 @@ public:
   }
   const int nameToIndex_(const std::string & eeName) const{
     auto tempEe= cache_.jacobians.find(eeName);
-    return tempEe->second.second;
+    if (tempEe!= cache_.jacobians.end())
+      return tempEe->second.second;
+    else
+      throw std::runtime_error("OSD::nameToIndex_: Link name does not exist.");
   }
   const Eigen::MatrixXd getLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
   {
@@ -157,6 +160,9 @@ public:
   }
   const int getJacobianDim() const{
     return jacobianDim_; 
+  }
+  const Eigen::VectorXd & getOsdAcc() const{
+	  return cache_.osdAcc; 
   }
 private:
   int robotDof_;

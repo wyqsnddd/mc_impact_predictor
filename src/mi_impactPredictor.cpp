@@ -16,10 +16,19 @@ mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & rob
   osdPtr_ = std::make_shared<mi_osd>( getRobot(), useLinearJacobian_());
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
-  cache_.eeVelJump.setZero();
-  cache_.qVelJump.setZero();
+
+  cache_.eeImpulse.resize(getOsd_()->getJacobianDim());
   cache_.eeImpulse.setZero();
-  // Initialize the GRF container: <delta-Vel, delta-Impulse>
+  cache_.eeVelJump.resize(getOsd_()->getJacobianDim());
+  cache_.eeVelJump.setZero();
+
+
+  cache_.qVelJump.resize(getOsd_()->getDof());
+  cache_.qVelJump.setZero();
+  cache_.tauJump.resize(getOsd_()->getDof());
+  cache_.tauJump.setZero();
+
+ // Initialize the GRF container: <delta-Vel, delta-Impulse>
   // std::string l_foot_name("l_ankle");
   // std::string r_foot_name("r_ankle");
   if(useLinearJacobian_())
@@ -33,7 +42,7 @@ mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & rob
     cache_.grfContainer["r_wrist"] =
         std::make_pair<Eigen::VectorXd, Eigen::VectorXd>(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero());
 
-
+ 
   }
   else
   {
@@ -72,24 +81,31 @@ void mi_impactPredictor::run()
   cache_.qVelJump = getOsd_()->getDcJacobianInv(getImpactBody_()) * cache_.eeVelJump;
   std::cout << "The predicted impact body velocity jump is: " << std::endl << cache_.eeVelJump.transpose() << std::endl;
   // * Update the impulsive force
+  
   /*
   cache_.eeImpulse = (1 / getImpactDuration_())
     *getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
     * getOsd_()->getInvMassMatrix().transpose()
-    * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_()).transpose();
-   */
+    * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_()).transpose()
+    * cache_.eeVelJump;
+    */
+ /*  
   cache_.eeImpulse = (1 / getImpactDuration_()) 
 	  * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
 	  * getOsd_()->getDcJacobianInv(getImpactBody_()) 
 	  * cache_.eeVelJump;
-
+*/
+ cache_.eeImpulse = (1 / getImpactDuration_()) 
+	  * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
+	  * cache_.qVelJump;
+ cache_.tauJump = getOsd_()->getJacobian(getImpactBody_()).transpose()*cache_.eeImpulse;
   // * Update the impulsive force of end-effectors with established contact
 
-	std::cout<<"------------------Impact body impulsive forces ------------------------------------"<<std::endl;
   // std::cout<<"The predicted joint velocity jump is: "<<std::endl<<cache_.qVelJump.transpose()<<std::endl;
   std::cout << "The predicted end-effector impulsive force is: " << std::endl
             << cache_.eeImpulse.transpose() << std::endl;
 
+	std::cout<<"------------------Impact body impulsive forces ------------------------------------"<<std::endl;
   // Update the ground reaction forces:
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
   {
@@ -108,12 +124,17 @@ void mi_impactPredictor::run()
 	    * getOsd_()->getEffectiveLambdaMatrix(it->first)
 	    * cache_.qVelJump;
 
+    Eigen::Vector3d tempGRF_three =
+	     getOsd_()->getDcJacobianInv(it->first).transpose()
+	    * cache_.tauJump;
+
 
 
     std::cout << "The predicted GRF impulsive force of " << it->first << " is: "  
               << it->second.second.transpose() << std::endl<<
 	      " velocity jump is: " << it->second.first.transpose() << std::endl
-    << "The predicted GRF impulsive force two is " << tempGRF_two.transpose() << std::endl;
+    << "The predicted GRF impulsive force two is " << tempGRF_two.transpose() << std::endl
+    << "The predicted GRF impulsive force three is " << tempGRF_three.transpose() << std::endl;
   }
   tempTest_();
 }
@@ -156,6 +177,9 @@ void mi_impactPredictor::tempTest_(){
 	    * tempImpactBodyAcceleration.linear();
 	    */
 	  
+  std::cout<<"The pseudo mass matrix between "<< it->first<<" and "<<getImpactBody_()<<" is: "<<std::endl<<
+	    getOsd_()->getCrossLambdaMatrix( getImpactBody_(), it->first)
+	    <<std::endl;
     Eigen:: Vector3d tempGRF = 
 	    //getOsd_()->getLambdaMatrix(getImpactBody_(), it->first)
 	    //getOsd_()->getLambdaMatrix(it->first, getImpactBody_() )
@@ -188,7 +212,26 @@ void mi_impactPredictor::tempTest_(){
               << tempGRF.transpose() << std::endl;
   }
  
+std::cout<<"------------------Impact body Inverse Acc ------------------------------------"<<std::endl;
   // robot.forceSensor("RightFootForceSensor");
+Eigen::VectorXd exForce;
+exForce.resize(getOsd_()->getJacobianDim()*getOsd_()->getEeNum());
+exForce.setZero();
+
+int lAnkleIndex = getOsd_()->nameToIndex_("l_ankle");
+exForce.segment(lAnkleIndex*getOsd_()->getJacobianDim(), getOsd_()->getJacobianDim()) = getRobot().forceSensor("LeftFootForceSensor").force();
+
+
+int rAnkleIndex = getOsd_()->nameToIndex_("r_ankle");
+exForce.segment(rAnkleIndex*getOsd_()->getJacobianDim(), getOsd_()->getJacobianDim()) = getRobot().forceSensor("RightFootForceSensor").force();
+
+std::cout<<"The real ex force is: "<< std::endl<<exForce.transpose()<<std::endl;
+std::cout<<"The predicted ex force is: "<< std::endl<<(getOsd_()->getLambdaMatrix()*getOsd_()->getOsdAcc()).transpose()<<std::endl;
+
+Eigen::VectorXd predictedAcc =  getOsd_()->getLambdaMatrixInv()*exForce; 
+
+std::cout<<"The predicted Acc is: "<< std::endl<<predictedAcc.transpose()<<std::endl;
+std::cout<<"The actual Acc is: "<< std::endl<<getOsd_()->getOsdAcc().transpose()<<std::endl;
 }
 
 
