@@ -3,16 +3,13 @@
 #include <mc_rbdyn/RobotLoader.h>
 #include <mc_rbdyn/Robots.h>
 
-//#include "mc_dart_controller.h"
 #include "mi_osd.h"
-// #include <dart/constraint/constraint.hpp>
-// #include <dart/dynamics/dynamics.hpp>
 
-
-struct impulseValues{
-	Eigen::VectorXd deltaV;
-	Eigen::VectorXd impulseForce;
-	Eigen::VectorXd accForce;
+struct impulseValues
+{
+  Eigen::VectorXd deltaV;
+  Eigen::VectorXd impulseForce;
+  Eigen::VectorXd accForce;
 };
 struct impactDataCache
 {
@@ -22,15 +19,14 @@ struct impactDataCache
   Eigen::VectorXd tauJump;
   Eigen::VectorXd eeImpulse;
   /// <end-effector Name, <delta-V, delta-F, F-due-to-ee-acc>>
-  std::map<std::string, impulseValues > grfContainer;
-  //std::map<std::string, std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> > grfContainer;
+  std::map<std::string, impulseValues> grfContainer;
+  // std::map<std::string, std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> > grfContainer;
 };
 
 class mi_impactPredictor
 {
 public:
-  mi_impactPredictor(// const dart::dynamics::SkeletonPtr & robotPtr,
-		     mc_rbdyn::Robot & robot,
+  mi_impactPredictor(mc_rbdyn::Robot & robot,
                      const std::string & impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
@@ -39,57 +35,66 @@ public:
   ~mi_impactPredictor() {}
   void initializeDataStructure();
   void run();
-  bool addEndeffector(const std::string & eeName){
+  bool addEndeffector(const std::string & eeName)
+  {
 
-   unsigned eeNum = static_cast<unsigned>(cache_.grfContainer.size());
+    unsigned eeNum = static_cast<unsigned>(cache_.grfContainer.size());
 
-    if(useLinearJacobian_()) {
-    cache_.grfContainer[eeName] = { Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    }else{
-    cache_.grfContainer[eeName] = { Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
- }
-    
-    if(!getOsd_()->addEndeffector(eeName)){
+    if(useLinearJacobian_())
+    {
+      cache_.grfContainer[eeName] = {Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    }
+    else
+    {
+      cache_.grfContainer[eeName] = {Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
+    }
+
+    if(!getOsd_()->addEndeffector(eeName))
+    {
       throw std::runtime_error("OSd failed to add endeffector!");
     }
 
     unsigned eeNumNew = static_cast<unsigned>(cache_.grfContainer.size());
-    if((eeNum == eeNumNew - 1)&&(eeNumNew == static_cast<unsigned>(getOsd_()->getEeNum()))){
+    if((eeNum == eeNumNew - 1) && (eeNumNew == static_cast<unsigned>(getOsd_()->getEeNum())))
+    {
       return true;
-    }else{
-      std::cout<<"The ee container start with "<<eeNum<<", now it has "<<eeNumNew<<" endeffectors. The osd has "<<getOsd_()->getEeNum()<<" end-effectors. "<<std::endl;
-      return false; 
     }
-
- const Eigen::VectorXd& getEeVelocityJump() const
+    else
+    {
+      std::cout << "The ee container start with " << eeNum << ", now it has " << eeNumNew
+                << " endeffectors. The osd has " << getOsd_()->getEeNum() << " end-effectors. " << std::endl;
+      return false;
+    }
+  }
+  const Eigen::VectorXd & getEeVelocityJump() const
   {
     return cache_.eeVelJump;
   }
 
-  const Eigen::VectorXd& getEeVelocityJump(const std::string & eeName) const
+  const Eigen::VectorXd & getEeVelocityJump(const std::string & eeName) const
   {
-    const auto& ee = cache_.grfContainer.find(eeName);
+    const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaV;
   }
 
-  const Eigen::VectorXd& getJointVelocityJump() const
+  const Eigen::VectorXd & getJointVelocityJump() const
   {
     return cache_.qVelJump;
   }
-  const Eigen::VectorXd& getImpulsiveForce() const
+  const Eigen::VectorXd & getImpulsiveForce() const
   {
     return cache_.eeImpulse;
   }
 
-  const Eigen::VectorXd& getImpulsiveForce(const std::string & eeName) const
+  const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName) const
   {
-    const auto& ee = cache_.grfContainer.find(eeName);
+    const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.impulseForce;
   }
 
-  const Eigen::VectorXd& getEeAccForce(const std::string & eeName) const
+  const Eigen::VectorXd & getEeAccForce(const std::string & eeName) const
   {
-    const auto& ee = cache_.grfContainer.find(eeName);
+    const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.accForce;
   }
 
@@ -97,7 +102,7 @@ public:
   {
     return robot_;
   }
-  mc_rbdyn::Robot & getRobot() 
+  mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
