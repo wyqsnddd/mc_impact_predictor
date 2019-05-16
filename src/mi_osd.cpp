@@ -122,6 +122,8 @@ std::string body_string("body");
   // update();
 
   // std::cout << "Updated OSD." << std::endl;
+  cache_.jacobians = std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>>();
+  eeNum_ = 0;
   std::cout << "OSD is created." << std::endl;
 }
 

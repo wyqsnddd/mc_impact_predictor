@@ -18,6 +18,10 @@ struct impactDataCache
   Eigen::VectorXd qVelJump;
   Eigen::VectorXd tauJump;
   Eigen::VectorXd eeImpulse;
+  Eigen::VectorXd newLeeImpulse;
+  Eigen::VectorXd newReeImpulse;
+  Eigen::VectorXd new_eeLeeImpulse;
+  Eigen::VectorXd new_eeReeImpulse;
   /// <end-effector Name, <delta-V, delta-F, F-due-to-ee-acc>>
   std::map<std::string, impulseValues> grfContainer;
   // std::map<std::string, std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> > grfContainer;
@@ -70,7 +74,10 @@ public:
   {
     return cache_.eeVelJump;
   }
-
+  const Eigen::VectorXd & getTauJump() const
+  {
+    return cache_.tauJump;
+  }
   const Eigen::VectorXd & getEeVelocityJump(const std::string & eeName) const
   {
     const auto & ee = cache_.grfContainer.find(eeName);
@@ -85,7 +92,22 @@ public:
   {
     return cache_.eeImpulse;
   }
-
+  const Eigen::VectorXd & getNewLeeImpulsiveForce() const
+  {
+    return cache_.newLeeImpulse;
+  }
+  const Eigen::VectorXd & getNewReeImpulsiveForce() const
+  {
+    return cache_.newReeImpulse;
+  }
+  const Eigen::VectorXd & getNewEeLeeImpulsiveForce() const
+  {
+    return cache_.new_eeLeeImpulse;
+  }
+  const Eigen::VectorXd & getNewEeReeImpulsiveForce() const
+  {
+    return cache_.new_eeReeImpulse;
+  }
   const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName) const
   {
     const auto & ee = cache_.grfContainer.find(eeName);
@@ -152,4 +174,8 @@ protected:
 
   impactDataCache cache_;
   void tempTest_();
+  void tempTestBody_();
+  void tempTestEe_();
+  void tempTestAcc_();
+  void tempTestAccEe_();
 };
