@@ -37,9 +37,31 @@ public:
                      double coeRes = 0.8);
 
   ~mi_impactPredictor() {}
-
+  void initializeDataStructure();
   void run();
+  bool addEndeffector(const std::string & eeName){
 
+   unsigned eeNum = static_cast<unsigned>(cache_.grfContainer.size());
+
+    if(useLinearJacobian_()) {
+    cache_.grfContainer[eeName] = { Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    }else{
+    cache_.grfContainer[eeName] = { Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
+ }
+    
+    if(!getOsd_()->addEndeffector(eeName)){
+      throw std::runtime_error("OSd failed to add endeffector!");
+    }
+
+    unsigned eeNumNew = static_cast<unsigned>(cache_.grfContainer.size());
+    if((eeNum == eeNumNew - 1)&&(eeNumNew == static_cast<unsigned>(getOsd_()->getEeNum()))){
+      return true;
+    }else{
+      std::cout<<"The ee container start with "<<eeNum<<", now it has "<<eeNumNew<<" endeffectors. The osd has "<<getOsd_()->getEeNum()<<" end-effectors. "<<std::endl;
+      return false; 
+    }
+
+  }
   Eigen::VectorXd getEeVelocityJump() const
   {
     return cache_.eeVelJump;
@@ -88,7 +110,6 @@ public:
   }
   // We need to specify the endeffectors that are in contact, e.g. two feet
   // std::vector<dart::dynamics::BodyNode *> contactEndEffectors;
-
 protected:
   std::shared_ptr<mi_osd> osdPtr_;
 

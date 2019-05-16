@@ -45,7 +45,7 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
   // getJacobianDim() = 6;
   nonSingular_ = true;
 
-  std::cout << "The stack of Jacobians are about to be built." << std::endl;
+  //std::cout << "The stack of Jacobians are about to be built." << std::endl;
   // I can use a configuration file to specify the end-effectors later.
   /*
   cache_.jacobians.insert(
@@ -87,6 +87,7 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
         )
       );
 */
+  /*
   std::string l_ankle_string("l_ankle");
 
   cache_.jacobians[l_ankle_string] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), "l_ankle"), 0);
@@ -94,21 +95,18 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
   std::string r_ankle_string("r_ankle");
   cache_.jacobians[r_ankle_string] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), "r_ankle"), 1);
 
+std::string body_string("body");
+  cache_.jacobians[body_string] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), "body"), 2);
+
+
   std::string l_wrist_string("l_wrist");
-  cache_.jacobians[l_wrist_string] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), "l_wrist"), 2);
+  cache_.jacobians[l_wrist_string] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), "l_wrist"), 3);
 
   std::string r_wrist_string("r_wrist");
-  cache_.jacobians[r_wrist_string] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), "r_wrist"), 3);
+  cache_.jacobians[r_wrist_string] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), "r_wrist"), 4);
+*/
+  //std::cout << "The stack of Jacobians are built." << std::endl;
 
-  std::cout << "The stack of Jacobians are built." << std::endl;
-
-  eeNum_ = static_cast<int>(cache_.jacobians.size());
-
-  cache_.osdJacobian.resize(getEeNum() * getJacobianDim(), getDof());
-  cache_.osdJacobianDot.resize(getEeNum() * getJacobianDim(), getDof());
-  cache_.osdAcc.resize(getEeNum() * getJacobianDim());
-  cache_.osdVel.resize(getEeNum() * getJacobianDim());
-  cache_.osdTau.resize(getEeNum() * getJacobianDim());
   /*
     contactEndEffectors.insert(std::make_pair(getRobot()->getBodyNode("l_ankle"), true));
     contactEndEffectors.insert(std::make_pair(getRobot()->getBodyNode("r_ankle"), true));
@@ -116,17 +114,32 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
     contactEndEffectors.insert(std::make_pair(getRobot()->getBodyNode("r_wrist"), false));
   */
   /// Initialize the cache:
-  cache_.lambdaMatrix.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
+   //cache_.dcJacobianInv.resize(getDof(), getEeNum()*getJacobianDim());
+  //cache_.dcJacobianInv.setZero();
+
+   //std::cout << "Updating OSD..." << std::endl;
+  //update();
+
+  //std::cout << "Updated OSD." << std::endl;
+  std::cout << "OSD is created." << std::endl;
+}
+
+void mi_osd::initializeDataStructure(){
+eeNum_ = static_cast<int>(cache_.jacobians.size());
+
+  cache_.osdJacobian.resize(getEeNum() * getJacobianDim(), getDof());
+  cache_.osdJacobianDot.resize(getEeNum() * getJacobianDim(), getDof());
+  cache_.osdAcc.resize(getEeNum() * getJacobianDim());
+  cache_.osdVel.resize(getEeNum() * getJacobianDim());
+  cache_.osdTau.resize(getEeNum() * getJacobianDim());
+   cache_.lambdaMatrix.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
   cache_.crossLambdaMatrix.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
   cache_.lambdaMatrixInv.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
 
   cache_.rhoOne.resize(getEeNum() * getJacobianDim());
   cache_.rhoTwo.resize(getEeNum() * getJacobianDim());
 
-  //cache_.dcJacobianInv.resize(getDof(), getEeNum()*getJacobianDim());
-  //cache_.dcJacobianInv.setZero();
-
-  cache_.dcJacobianInvs.resize(getEeNum());
+ cache_.dcJacobianInvs.resize(getEeNum());
   cache_.effectiveLambdaMatrices.resize(getEeNum());
   /// Get the robot end-effectors
   for(int ii = 0; ii < getEeNum(); ii++)
@@ -135,10 +148,9 @@ mi_osd::mi_osd(// const dart::dynamics::SkeletonPtr & robotPtr,
     cache_.effectiveLambdaMatrices[ii].resize(getJacobianDim(), getDof());
   }
 
-  std::cout << "Updating OSD..." << std::endl;
-  update();
 
-  std::cout << "Updated OSD." << std::endl;
+  std::cout << "OSD data structure is created." << std::endl;
+
 }
 void mi_osd::updateCache_()
 {
@@ -168,7 +180,7 @@ void mi_osd::updateCache_()
     tempFullJacobian.resize(getJacobianDim(), getDof());
     tempFullJacobianDot.resize(getJacobianDim(), getDof());
 
-    // std::cout<<"temp Full Jacobian size is: "<<tempFullJacobian.rows()<<", "<<tempFullJacobian.cols()<<std::endl;
+    std::cout<<"temp Full Jacobian size is: "<<tempFullJacobian.rows()<<", "<<tempFullJacobian.cols()<<std::endl;
     if(useLinearJacobian_())
     {
       it->second.first->fullJacobian(getRobot().mb(), 

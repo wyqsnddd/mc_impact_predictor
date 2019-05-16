@@ -31,11 +31,13 @@ mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & rob
  // Initialize the GRF container: <delta-Vel, delta-Impulse>
   // std::string l_foot_name("l_ankle");
   // std::string r_foot_name("r_ankle");
+  /*
   if(useLinearJacobian_())
   {
     cache_.grfContainer["l_ankle"] = { Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
     cache_.grfContainer["r_ankle"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    cache_.grfContainer["l_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["body"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+     cache_.grfContainer["l_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
     cache_.grfContainer["r_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
 
 
@@ -43,16 +45,27 @@ mi_impactPredictor::mi_impactPredictor(//const dart::dynamics::SkeletonPtr & rob
   }
   else
   {
-    cache_.grfContainer["l_ankle"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    cache_.grfContainer["r_ankle"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    cache_.grfContainer["l_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    cache_.grfContainer["r_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
+    cache_.grfContainer["l_ankle"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
+    cache_.grfContainer["r_ankle"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
+    cache_.grfContainer["body"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
+    cache_.grfContainer["l_wrist"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
+    cache_.grfContainer["r_wrist"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
 
   }
+  */
 }
 
+void mi_impactPredictor::initializeDataStructure(){
+  getOsd_()->initializeDataStructure();  
+
+}
 void mi_impactPredictor::run()
 {
+  if(cache_.grfContainer.size()<3){
+    throw std::runtime_error("Impact-predictor: There are too less end-effector defined");
+  }
+  assert(cache_.grfContainer.size()==getOsd_->getEeNum());
+  
   // Update the equations of motions
   std::cout << "mi_impactPredictor::update() is called. " << std::endl;
   osdPtr_->update();
@@ -174,6 +187,7 @@ void mi_impactPredictor::tempTest_(){
   std::cout<<"The pseudo mass matrix between "<< it->first<<" and "<<getImpactBody_()<<" is: "<<std::endl<<
 	    getOsd_()->getCrossLambdaMatrix( getImpactBody_(), it->first)
 	    <<std::endl;
+
     Eigen:: Vector3d tempGRF = 
 	    //getOsd_()->getLambdaMatrix(getImpactBody_(), it->first)
 	    getOsd_()->getLambdaMatrix(it->first, getImpactBody_() )

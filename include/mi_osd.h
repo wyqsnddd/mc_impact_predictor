@@ -53,7 +53,21 @@ public:
 		  bool linearJacobian);
 
   ~mi_osd() {}
+  bool addEndeffector(const std::string & eeName){
+   unsigned eeNum = static_cast<unsigned>(cache_.jacobians.size());
 
+   cache_.jacobians[eeName] = std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName), cache_.jacobians.size());
+
+
+   if (cache_.jacobians.size() == (eeNum + 1)){
+	 eeNum_++;  
+	 return true;
+   }else{
+	 return false;
+  }
+  }
+  void initializeDataStructure();
+  
   Eigen::MatrixXd getLambdaMatrix() const
   {
     return cache_.lambdaMatrix;
@@ -124,6 +138,9 @@ public:
   // This needs to be called in every iteration only once
   void update()
   {
+    if(getEeNum()<3){
+	    throw std::runtime_error("OSD: Too less end-effectors are defined for the OSD. ");
+    }
     // mc_rtc components
     std::cout << "Updating OSD FD..." << std::endl;
     //FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
