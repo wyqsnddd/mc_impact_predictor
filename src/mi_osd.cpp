@@ -49,6 +49,8 @@ mi_osd::mi_osd( // const dart::dynamics::SkeletonPtr & robotPtr,
   // std::cout << "Updated OSD." << std::endl;
   cache_.jacobians = std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>>();
   eeNum_ = 0;
+  initializeDataStructure();
+  resetDataStructure();
   std::cout << "OSD is created." << std::endl;
 }
 void mi_osd::resetDataStructure(){
@@ -64,7 +66,6 @@ for(int ii = 0; ii < getEeNum(); ii++)
     cache_.dcJacobianInvs[ii].resize(getDof(), getJacobianDim());
     cache_.effectiveLambdaMatrices[ii].resize(getJacobianDim(), getDof());
   }
-
 }
 void mi_osd::initializeDataStructure()
 {
@@ -92,7 +93,7 @@ void mi_osd::initializeDataStructure()
 void mi_osd::updateCache_()
 {
   // Read from the robot:
-  //std::cout << "Updating OSD cache..." << std::endl;
+  std::cout << "Updating OSD cache..." << std::endl;
 
   // Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());

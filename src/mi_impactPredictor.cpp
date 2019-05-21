@@ -33,32 +33,6 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
   cache_.qVelJump.setZero();
   cache_.tauJump.resize(getOsd_()->getDof());
   cache_.tauJump.setZero();
-
-  // Initialize the GRF container: <delta-Vel, delta-Impulse>
-  // std::string l_foot_name("l_ankle");
-  // std::string r_foot_name("r_ankle");
-  /*
-  if(useLinearJacobian_())
-  {
-    cache_.grfContainer["l_ankle"] = { Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    cache_.grfContainer["r_ankle"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    cache_.grfContainer["body"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-     cache_.grfContainer["l_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    cache_.grfContainer["r_wrist"] ={ Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-
-
-
-  }
-  else
-  {
-    cache_.grfContainer["l_ankle"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
-    cache_.grfContainer["r_ankle"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
-    cache_.grfContainer["body"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
-    cache_.grfContainer["l_wrist"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
-    cache_.grfContainer["r_wrist"] ={ Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
-
-  }
-  */
 }
 void mi_impactPredictor::resetDataStructure()
 {
@@ -78,11 +52,12 @@ void mi_impactPredictor::resetDataStructure()
 	  it->second.accForce.setZero();
   }
 }
-
+/*
 void mi_impactPredictor::initializeDataStructure()
 {
   getOsd_()->initializeDataStructure();
 }
+*/
 void mi_impactPredictor::run()
 {
   if(cache_.grfContainer.size() < 3)

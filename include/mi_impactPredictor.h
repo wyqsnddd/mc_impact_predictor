@@ -37,7 +37,7 @@ public:
                      double coeRes = 0.8);
 
   ~mi_impactPredictor() {}
-  void initializeDataStructure();
+  //void initializeDataStructure();
   void resetDataStructure();
   void run();
   bool addEndeffector(const std::string & eeName)
