@@ -60,6 +60,24 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
   }
   */
 }
+void mi_impactPredictor::resetDataStructure()
+{
+  getOsd_()->resetDataStructure();
+  cache_.eeVelJump.setZero();
+  cache_.qVelJump.setZero();
+  cache_.tauJump.setZero();
+  cache_.eeImpulse.setZero();
+  cache_.newLeeImpulse.setZero();
+  cache_.newReeImpulse.setZero();
+  cache_.new_eeLeeImpulse.setZero();
+  cache_.new_eeReeImpulse.setZero();
+
+  for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it){
+	  it->second.deltaV.setZero();
+	  it->second.impulseForce.setZero();
+	  it->second.accForce.setZero();
+  }
+}
 
 void mi_impactPredictor::initializeDataStructure()
 {
@@ -88,6 +106,11 @@ void mi_impactPredictor::run()
 
   cache_.eeVelJump =
       -(getCoeRes_() + 1) * getOsd_()->getJacobian(getImpactBody_()) * (alpha + alphaD * getImpactDuration_());
+/*
+  cache_.eeVelJump =
+      -(getCoeRes_() + 1) * getOsd_()->getJacobian(getImpactBody_()).block(1, 0, 1, getOsd_()->getJacobianDim())
+      * (alpha + alphaD * getImpactDuration_());
+*/
 
   cache_.eeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
                      * getOsd_()->getDcJacobianInv(getImpactBody_()) * cache_.eeVelJump;
@@ -156,7 +179,7 @@ void mi_impactPredictor::tempTestAccEe_()
   Eigen::VectorXd q_ddot = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
   int dim = getOsd_()->getJacobianDim();
 
-  Eigen::Vector3d osdAcc =
+  Eigen::VectorXd osdAcc =
       getOsd_()->getJacobian(getImpactBody_()) * q_ddot + getOsd_()->getJacobianDot(getImpactBody_()) * q_dot;
   /*
     Eigen::VectorXd osdForce = getOsd_()->getLambdaMatrix().block(
@@ -191,22 +214,22 @@ void mi_impactPredictor::tempTestAcc_()
   Eigen::VectorXd osdAcc;
   osdAcc.resize(dim * getOsd_()->getEeNum());
   osdAcc.setZero();
-  /*
+  
     osdAcc.segment(
-         getOsd_()->nameToIndex_(getImpactBody_())*dim,
+         getOsd_()->nameToIndex_("l_sole")*dim,
          dim
        ) =
-       getOsd_()->getJacobian(getImpactBody_())*q_ddot +
-       getOsd_()->getJacobianDot(getImpactBody_())*q_dot;
-  */
-
+       getOsd_()->getJacobian("l_sole")*q_ddot +
+       getOsd_()->getJacobianDot("l_sole")*q_dot;
+  
+/*
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
   {
     // Calculate the acceleration for all the end effectors
     osdAcc.segment(getOsd_()->nameToIndex_(it->first) * dim, dim) =
         getOsd_()->getJacobian(it->first) * q_ddot + getOsd_()->getJacobianDot(it->first) * q_dot;
   }
-
+*/
   Eigen::VectorXd osdForce = getOsd_()->getLambdaMatrix() * osdAcc;
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
   {
@@ -220,47 +243,47 @@ void mi_impactPredictor::tempTestEe_()
   // For the established contacts:
   int dim = getOsd_()->getJacobianDim();
 
-  Eigen::Vector3d delta_vel_l_ankle =
-      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("l_ankle") * dim,
+  Eigen::VectorXd delta_vel_l_ankle =
+      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("l_sole") * dim,
                                             getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
       * cache_.eeImpulse;
 
-  Eigen::Vector3d delta_vel_r_ankle =
-      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("r_ankle") * dim,
+  Eigen::VectorXd delta_vel_r_ankle =
+      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("r_sole") * dim,
                                             getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
       * cache_.eeImpulse;
 
-  cache_.new_eeLeeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("l_ankle")
-                            * getOsd_()->getDcJacobianInv("l_ankle") * delta_vel_l_ankle;
+  cache_.new_eeLeeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("l_sole")
+                            * getOsd_()->getDcJacobianInv("l_sole") * delta_vel_l_ankle;
 
-  cache_.new_eeReeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("r_ankle")
-                            * getOsd_()->getDcJacobianInv("r_ankle") * delta_vel_r_ankle;
+  cache_.new_eeReeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("r_sole")
+                            * getOsd_()->getDcJacobianInv("r_sole") * delta_vel_r_ankle;
 }
 
 void mi_impactPredictor::tempTestBody_()
 {
 
-  Eigen::Vector3d bodyImpulseForce = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("body")
+  Eigen::VectorXd bodyImpulseForce = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("body")
                                      * getOsd_()->getDcJacobianInv(getImpactBody_()) * cache_.eeVelJump;
 
   // For the established contacts:
   int dim = getOsd_()->getJacobianDim();
 
-  Eigen::Vector3d delta_vel_l_ankle =
-      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("l_ankle") * dim,
+  Eigen::VectorXd delta_vel_l_ankle =
+      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("l_sole") * dim,
                                             getOsd_()->nameToIndex_("body") * dim, dim, dim)
       * bodyImpulseForce;
 
-  Eigen::Vector3d delta_vel_r_ankle =
-      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("r_ankle") * dim,
+  Eigen::VectorXd delta_vel_r_ankle =
+      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("r_sole") * dim,
                                             getOsd_()->nameToIndex_("body") * dim, dim, dim)
       * bodyImpulseForce;
 
-  cache_.newLeeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("l_ankle")
-                         * getOsd_()->getDcJacobianInv("l_ankle") * delta_vel_l_ankle;
+  cache_.newLeeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("l_sole")
+                         * getOsd_()->getDcJacobianInv("l_sole") * delta_vel_l_ankle;
 
-  cache_.newReeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("r_ankle")
-                         * getOsd_()->getDcJacobianInv("r_ankle") * delta_vel_r_ankle;
+  cache_.newReeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("r_sole")
+                         * getOsd_()->getDcJacobianInv("r_sole") * delta_vel_r_ankle;
 }
 void mi_impactPredictor::tempTest_()
 {

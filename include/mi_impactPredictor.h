@@ -38,6 +38,7 @@ public:
 
   ~mi_impactPredictor() {}
   void initializeDataStructure();
+  void resetDataStructure();
   void run();
   bool addEndeffector(const std::string & eeName)
   {

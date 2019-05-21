@@ -22,14 +22,10 @@ struct osdDataCache
 
   Eigen::MatrixXd invMassMatrix;
   Eigen::MatrixXd lambdaMatrix;
-  Eigen::MatrixXd crossLambdaMatrix;
-
-  Eigen::VectorXd rhoOne;
-  Eigen::VectorXd rhoTwo;
+  //Eigen::MatrixXd crossLambdaMatrix;
 
   Eigen::VectorXd osdAcc;
   Eigen::VectorXd osdVel;
-  Eigen::VectorXd osdTau;
 
   Eigen::MatrixXd lambdaMatrixInv;
 
@@ -70,6 +66,7 @@ public:
     }
   }
   void initializeDataStructure();
+  void resetDataStructure();
 
   Eigen::MatrixXd getLambdaMatrix() const
   {
@@ -88,14 +85,17 @@ public:
     auto tempEe = cache_.jacobians.find(eeName);
     if(tempEe != cache_.jacobians.end())
       return tempEe->second.second;
-    else
+    else{
+      std::cout<<"Link "<<eeName<< " is missing."<<std::endl;
       throw std::runtime_error("OSD::nameToIndex_: Link name does not exist.");
+    }
   }
   const Eigen::MatrixXd getLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
   {
     return cache_.lambdaMatrix.block(nameToIndex_(eeOne) * getJacobianDim(), nameToIndex_(eeTwo) * getJacobianDim(),
                                      getJacobianDim(), getJacobianDim());
   }
+  /*
   const Eigen::MatrixXd getCrossLambdaMatrix() const
   {
     return cache_.crossLambdaMatrix;
@@ -105,6 +105,7 @@ public:
     return cache_.crossLambdaMatrix.block(nameToIndex_(eeOne) * getJacobianDim(),
                                           nameToIndex_(eeTwo) * getJacobianDim(), getJacobianDim(), getJacobianDim());
   }
+  */
   const Eigen::MatrixXd getJacobian(const std::string & eeName) const
   {
     return cache_.osdJacobian.block(nameToIndex_(eeName) * getJacobianDim(), 0, getJacobianDim(), getDof());
@@ -118,13 +119,7 @@ public:
   {
     return cache_.effectiveLambdaMatrices[nameToIndex_(eeName)];
   }
-  /*
-  const Eigen::MatrixXd getNewDcJacobianInv(const std::string eeName) const
-  {
-    int index = nameToIndex_(eeName);
-    return cache_.dcJacobianInv.block(0, index*getJacobianDim(), getDof(), getJacobianDim());
-  }
-*/
+
   const Eigen::MatrixXd getDcJacobianInv(const std::string eeName) const
   {
     return cache_.dcJacobianInvs[nameToIndex_(eeName)];
@@ -142,7 +137,6 @@ public:
     }
     // mc_rtc components
     std::cout << "Updating OSD FD..." << std::endl;
-    // FDPtr_->forwardDynamics(getRobot().mb(), const_cast<rbd::MultiBodyConfig & >(getRobot().mbc()));
 
     // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
 
@@ -163,12 +157,6 @@ public:
   {
     return eeNum_;
   }
-  /*
-  const mc_rbdyn::Robot & getRobot()
-  {
-    return robot_;
-  }
-  */
   mc_rbdyn::Robot & getRobot()
   {
     return robot_;
@@ -201,19 +189,9 @@ private:
   osdDataCache cache_;
   int jacobianDim_;
   bool nonSingular_;
-  /*
-    const dart::dynamics::SkeletonPtr getDartRobot() const{
-      return robotPtr_;
-    }
-    std::size_t getDartBodyIndex_(const std::string input) const{
-      return getDartRobot()->getIndexOf(getDartRobot()->getBodyNode(input));
-    }
-  */
   // dart::dynamics::SkeletonPtr robotPtr_;
   mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
-  /// Direct inverse
-  // void intuitiveUpdateOsdDataCache_();
 
   /// Based on the symmetry, we calculate the inverse component wise.
   void updateCache_();
