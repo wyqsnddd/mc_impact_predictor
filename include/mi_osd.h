@@ -65,7 +65,7 @@ public:
       return false;
     }
   }
-  void initializeDataStructure();
+  void initializeDataStructure(int EeNum);
   void resetDataStructure();
 
   Eigen::MatrixXd getLambdaMatrix() const
@@ -141,12 +141,12 @@ public:
     // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
 
     rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-    rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-    rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+    //rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
+    //rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
     FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
     // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
     std::cout << "FD computed M ..." << std::endl;
-    std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
+    //std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
   }
   int getDof() const

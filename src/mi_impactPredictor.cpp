@@ -52,12 +52,12 @@ void mi_impactPredictor::resetDataStructure()
 	  it->second.accForce.setZero();
   }
 }
-/*
-void mi_impactPredictor::initializeDataStructure()
+
+void mi_impactPredictor::initializeDataStructure(int numEE)
 {
-  getOsd_()->initializeDataStructure();
+  getOsd_()->initializeDataStructure(numEE);
 }
-*/
+
 void mi_impactPredictor::run()
 {
   if(cache_.grfContainer.size() < 3)

@@ -18,21 +18,17 @@ mi_osd::mi_osd( // const dart::dynamics::SkeletonPtr & robotPtr,
   rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
   FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
   // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-  std::cout << "The masss matrix is built." << std::endl;
   // Initialize the Jacobians
   int mRows = static_cast<int>(getFD()->H().rows());
   int mCols = static_cast<int>(getFD()->H().cols());
   assert(mCols == mRows);
   robotDof_ = mRows;
   Eigen::MatrixXd tempMassMatrix = getFD()->H();
-  std::cout << "The masss matrix is built." << std::endl;
-  std::cout << "The masss matrix is: " << tempMassMatrix << std::endl;
+
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_mM(tempMassMatrix);
   cache_.invMassMatrix.resize(mRows, mCols);
-  std::cout << "The masss matrix is built." << std::endl;
   cache_.invMassMatrix = lu_decomp_mM.inverse();
 
-  std::cout << "The inv masss matrix is calculated." << std::endl;
   // assert(mRows == mCols);
 
   if(useLinearJacobian_())
@@ -49,8 +45,6 @@ mi_osd::mi_osd( // const dart::dynamics::SkeletonPtr & robotPtr,
   // std::cout << "Updated OSD." << std::endl;
   cache_.jacobians = std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>>();
   eeNum_ = 0;
-  initializeDataStructure();
-  resetDataStructure();
   std::cout << "OSD is created." << std::endl;
 }
 void mi_osd::resetDataStructure(){
@@ -67,20 +61,19 @@ for(int ii = 0; ii < getEeNum(); ii++)
     cache_.effectiveLambdaMatrices[ii].resize(getJacobianDim(), getDof());
   }
 }
-void mi_osd::initializeDataStructure()
+void mi_osd::initializeDataStructure(const int EeNum)
 {
-  eeNum_ = static_cast<int>(cache_.jacobians.size());
+  //eeNum_ = static_cast<int>(cache_.jacobians.size());
 
-  cache_.osdJacobian.resize(getEeNum() * getJacobianDim(), getDof());
-  cache_.osdJacobianDot.resize(getEeNum() * getJacobianDim(), getDof());
-  cache_.osdAcc.resize(getEeNum() * getJacobianDim());
-  cache_.osdVel.resize(getEeNum() * getJacobianDim());
-  cache_.lambdaMatrix.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
-  //cache_.crossLambdaMatrix.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
-  cache_.lambdaMatrixInv.resize(getEeNum() * getJacobianDim(), getEeNum() * getJacobianDim());
+  cache_.osdJacobian.resize(EeNum* getJacobianDim(), getDof());
+  cache_.osdJacobianDot.resize(EeNum * getJacobianDim(), getDof());
+  cache_.osdAcc.resize(EeNum * getJacobianDim());
+  cache_.osdVel.resize(EeNum * getJacobianDim());
+  cache_.lambdaMatrix.resize(EeNum * getJacobianDim(), EeNum * getJacobianDim());
+  cache_.lambdaMatrixInv.resize(EeNum * getJacobianDim(), EeNum * getJacobianDim());
 
-  cache_.dcJacobianInvs.resize(getEeNum());
-  cache_.effectiveLambdaMatrices.resize(getEeNum());
+  cache_.dcJacobianInvs.resize(EeNum);
+  cache_.effectiveLambdaMatrices.resize(EeNum);
   /// Get the robot end-effectors
   for(int ii = 0; ii < getEeNum(); ii++)
   {
@@ -103,6 +96,7 @@ void mi_osd::updateCache_()
     int ii = it->second.second;
     Eigen::MatrixXd tempJacobian = it->second.first->jacobian(getRobot().mb(), getRobot().mbc());
     Eigen::MatrixXd tempJacobianDot = it->second.first->jacobianDot(getRobot().mb(), getRobot().mbc());
+    
     Eigen::MatrixXd tempFullJacobian, tempFullJacobianDot;
     tempFullJacobian.resize(getJacobianDim(), getDof());
     tempFullJacobianDot.resize(getJacobianDim(), getDof());
@@ -113,6 +107,8 @@ void mi_osd::updateCache_()
                                      tempFullJacobian);
       it->second.first->fullJacobian(getRobot().mb(), tempJacobian.block(3, 0, 3, tempJacobianDot.cols()),
                                      tempFullJacobianDot);
+
+
       cache_.osdAcc.segment(ii * getJacobianDim(), getJacobianDim()) =
           (getRobot().mbc().bodyPosW[getRobot().mb().bodyIndexByName(it->first)]
            * getRobot().mbc().bodyAccB[getRobot().mb().bodyIndexByName(it->first)].vector())
@@ -151,7 +147,6 @@ void mi_osd::updateCache_()
   // Update the dynamically consistent Jacobian inverse:
   for(int ii = 0; ii < getEeNum(); ii++)
   {
-    // std::cout<<"ii: "<<ii<<std::endl;
     cache_.effectiveLambdaMatrices[ii] =
         cache_.lambdaMatrix.block(ii * getJacobianDim(), 0, getJacobianDim(), getEeNum() * getJacobianDim())
         * cache_.osdJacobian;
