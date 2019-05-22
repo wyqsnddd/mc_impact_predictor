@@ -24,8 +24,8 @@ struct osdDataCache
   Eigen::MatrixXd lambdaMatrix;
   // Eigen::MatrixXd crossLambdaMatrix;
 
-  Eigen::VectorXd osdAcc;
-  Eigen::VectorXd osdVel;
+  // Eigen::VectorXd osdAcc;
+  //  Eigen::VectorXd osdVel;
 
   Eigen::MatrixXd lambdaMatrixInv;
 
@@ -48,7 +48,7 @@ public:
       bool linearJacobian);
 
   ~mi_osd() {}
-  bool addEndeffector(const std::string & eeName)
+  bool addEndeffector(std::string eeName)
   {
     unsigned eeNum = static_cast<unsigned>(cache_.jacobians.size());
 
@@ -87,8 +87,9 @@ public:
       return tempEe->second.second;
     else
     {
-      std::cout << "Link " << eeName << " is missing." << std::endl;
-      throw std::runtime_error("OSD::nameToIndex_: Link name does not exist.");
+      // std::cout << "Link " << eeName << " is missing." << std::endl;
+      std::string error_msg = std::string("OSD::nameToIndex_: link-") + eeName + std::string(": does not exist.");
+      throw std::runtime_error(error_msg);
     }
   }
   const Eigen::MatrixXd getLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
@@ -96,17 +97,7 @@ public:
     return cache_.lambdaMatrix.block(nameToIndex_(eeOne) * getJacobianDim(), nameToIndex_(eeTwo) * getJacobianDim(),
                                      getJacobianDim(), getJacobianDim());
   }
-  /*
-  const Eigen::MatrixXd getCrossLambdaMatrix() const
-  {
-    return cache_.crossLambdaMatrix;
-  }
-  const Eigen::MatrixXd getCrossLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
-  {
-    return cache_.crossLambdaMatrix.block(nameToIndex_(eeOne) * getJacobianDim(),
-                                          nameToIndex_(eeTwo) * getJacobianDim(), getJacobianDim(), getJacobianDim());
-  }
-  */
+
   const Eigen::MatrixXd getJacobian(const std::string & eeName) const
   {
     return cache_.osdJacobian.block(nameToIndex_(eeName) * getJacobianDim(), 0, getJacobianDim(), getDof());
@@ -166,17 +157,9 @@ public:
   {
     return FDPtr_;
   }
-  bool nonSingular()
-  {
-    return nonSingular_;
-  }
   const int getJacobianDim() const
   {
     return jacobianDim_;
-  }
-  const Eigen::VectorXd & getOsdAcc() const
-  {
-    return cache_.osdAcc;
   }
 
 private:
@@ -189,7 +172,6 @@ private:
   int eeNum_;
   osdDataCache cache_;
   int jacobianDim_;
-  bool nonSingular_;
   // dart::dynamics::SkeletonPtr robotPtr_;
   mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;

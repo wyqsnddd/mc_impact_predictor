@@ -7,10 +7,31 @@
 
 struct impulseValues
 {
+
+  bool inContact;
   Eigen::VectorXd deltaV;
   Eigen::VectorXd impulseForce;
   Eigen::VectorXd deltaTau;
   Eigen::VectorXd deltaQDot;
+
+  void setContact()
+  {
+    inContact = true;
+  }
+  const bool contact()
+  {
+    return inContact;
+  }
+
+  void ini(const int & dim, const int & dof)
+  {
+    deltaV.resize(dim);
+    impulseForce.resize(dim);
+    deltaQDot.resize(dof);
+    deltaTau.resize(dof);
+    inContact = false;
+  }
+
   void reset()
   {
     deltaV.setZero();
@@ -22,27 +43,27 @@ struct impulseValues
 struct impactDataCache
 {
   //
-  Eigen::VectorXd eeVelJump;
+  // Eigen::VectorXd eeVelJump;
   Eigen::VectorXd qVelJump;
   Eigen::VectorXd tauJump;
-  Eigen::VectorXd eeImpulse;
-  Eigen::VectorXd newLeeImpulse;
-  Eigen::VectorXd newReeImpulse;
-  Eigen::VectorXd new_eeLeeImpulse;
-  Eigen::VectorXd new_eeReeImpulse;
+  // Eigen::VectorXd eeImpulse;
+  // Eigen::VectorXd newLeeImpulse;
+  // Eigen::VectorXd newReeImpulse;
+  // Eigen::VectorXd new_eeLeeImpulse;
+  // Eigen::VectorXd new_eeReeImpulse;
   /// <end-effector Name, <delta-V, delta-F, F-due-to-ee-acc>>
   std::map<std::string, impulseValues> grfContainer;
   // std::map<std::string, std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> > grfContainer;
   void reset()
   {
-    eeVelJump.setZero();
+    // eeVelJump.setZero();
     qVelJump.setZero();
     tauJump.setZero();
-    eeImpulse.setZero();
-    newLeeImpulse.setZero();
-    newReeImpulse.setZero();
-    new_eeLeeImpulse.setZero();
-    new_eeReeImpulse.setZero();
+    // eeImpulse.setZero();
+    // newLeeImpulse.setZero();
+    // newReeImpulse.setZero();
+    // new_eeLeeImpulse.setZero();
+    // new_eeReeImpulse.setZero();
 
     for(auto it = grfContainer.begin(); it != grfContainer.end(); ++it)
     {
@@ -50,16 +71,22 @@ struct impactDataCache
     }
 
   } // end of reset
-  void ini(const int dim)
+  void ini(const int & dim, const int & dof)
   {
-    newLeeImpulse.resize(dim);
-    newReeImpulse.resize(dim);
-    new_eeLeeImpulse.resize(dim);
-    new_eeReeImpulse.resize(dim);
-    eeImpulse.resize(dim);
-    eeVelJump.resize(dim);
-    qVelJump.resize(dim);
-    tauJump.resize(dim);
+    // newLeeImpulse.resize(dim);
+    // newReeImpulse.resize(dim);
+    // new_eeLeeImpulse.resize(dim);
+    // new_eeReeImpulse.resize(dim);
+    // eeImpulse.resize(dim);
+    // eeVelJump.resize(dim);
+    qVelJump.resize(dof);
+    tauJump.resize(dof);
+
+    for(auto it = grfContainer.begin(); it != grfContainer.end(); ++it)
+    {
+      it->second.ini(dim, dof);
+      it->second.reset();
+    }
 
     reset();
   }
@@ -69,88 +96,87 @@ class mi_impactPredictor
 {
 public:
   mi_impactPredictor(mc_rbdyn::Robot & robot,
-                     const std::string & impactBodyName,
+                     std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
                      double coeRes = 0.8);
 
   ~mi_impactPredictor() {}
-  void initializeDataStructure(int numEE);
-  void resetDataStructure();
   void run();
-  bool addEndeffector(const std::string & eeName)
-  {
 
-    unsigned eeNum = static_cast<unsigned>(cache_.grfContainer.size());
+  bool addEndeffector(std::string eeName);
 
-    if(useLinearJacobian_())
-    {
-      cache_.grfContainer[eeName] = {Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()};
-    }
-    else
-    {
-      cache_.grfContainer[eeName] = {Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero()};
-    }
-
-    if(!getOsd_()->addEndeffector(eeName))
-    {
-      throw std::runtime_error("OSd failed to add endeffector!");
-    }
-
-    unsigned eeNumNew = static_cast<unsigned>(cache_.grfContainer.size());
-    if((eeNum == eeNumNew - 1) && (eeNumNew == static_cast<unsigned>(getOsd_()->getEeNum())))
-    {
-      return true;
-    }
-    else
-    {
-      std::cout << "The ee container start with " << eeNum << ", now it has " << eeNumNew
-                << " endeffectors. The osd has " << getOsd_()->getEeNum() << " end-effectors. " << std::endl;
-      return false;
-    }
-  }
-  const Eigen::VectorXd & getEeVelocityJump() const
-  {
-    return cache_.eeVelJump;
-  }
   const Eigen::VectorXd & getTauJump() const
   {
     return cache_.tauJump;
   }
+  const Eigen::VectorXd & getJointVelocityJump() const
+  {
+    return cache_.qVelJump;
+  }
+  /*
+  const std::map<std::string, impulseValues>::iterator  nameToPointer(const std::string & eeName) const
+  {
+
+    const auto ee = cache_.grfContainer.find(eeName);
+    if(ee != (cache_.grfContainer.end()))
+    {
+      return ee;
+    }
+    else
+    {
+      std::cout << "nameToPointer: " << eeName << std::endl;
+      throw std::runtime_error("Predictor: required bodyname not found");
+    }
+  }
+  */
   const Eigen::VectorXd & getEeVelocityJump(const std::string & eeName) const
   {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaV;
   }
 
-  const Eigen::VectorXd & getJointVelocityJump() const
+  const Eigen::VectorXd & getEeVelocityJump()
   {
-    return cache_.qVelJump;
+    //  std::cout<<"calling eevel jump: "<<getImpactBody_()<<std::endl;
+    const auto ee = cache_.grfContainer.find(getImpactBody_());
+
+    // std::cout<<"Size of cache_.grfContainer is: "<<cache_.grfContainer.size()<<std::endl;
+    /*
+   if(ee==cache_.grfContainer.end()) {
+    throw std::runtime_error("ee name is not found");
+   }
+    std::cout<<"impact body name is: "<<ee->first<<std::endl;
+*/
+    return ee->second.deltaV;
+    // return Eigen::Vector3d::Zero();
   }
-  const Eigen::VectorXd & getImpulsiveForce() const
+
+  void resetDataStructure()
   {
-    return cache_.eeImpulse;
+    getOsd_()->resetDataStructure();
+    cache_.reset();
   }
-  const Eigen::VectorXd & getNewLeeImpulsiveForce() const
+  void initializeDataStructure(int numEE)
   {
-    return cache_.newLeeImpulse;
+
+    cache_.ini(getOsd_()->getJacobianDim(), getOsd_()->getDof());
+    getOsd_()->initializeDataStructure(numEE);
   }
-  const Eigen::VectorXd & getNewReeImpulsiveForce() const
+  const Eigen::VectorXd & getImpulsiveForce()
   {
-    return cache_.newReeImpulse;
+    const auto & ee = cache_.grfContainer.find(getImpactBody_());
+    return ee->second.impulseForce;
   }
-  const Eigen::VectorXd & getNewEeLeeImpulsiveForce() const
-  {
-    return cache_.new_eeLeeImpulse;
-  }
-  const Eigen::VectorXd & getNewEeReeImpulsiveForce() const
-  {
-    return cache_.new_eeReeImpulse;
-  }
-  const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName) const
+
+  const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName)
   {
     const auto & ee = cache_.grfContainer.find(eeName);
-    return ee->second.impulseForce;
+    if(ee->second.contact() || (ee->first == getImpactBody_()) ){
+      return ee->second.impulseForce;
+    }else{
+      throw std::runtime_error(std::string("Predictor: '-") + eeName+std::string("- ' is not in contact."));
+    }
   }
   const mc_rbdyn::Robot & getRobot() const
   {
@@ -160,25 +186,38 @@ public:
   {
     return robot_;
   }
-  void setImpactBody(std::string impactBodyName)
+
+  void setImpactBody(std::string & impactBodyName)
   {
     impactBodyName_ = impactBodyName;
+  }
+
+  void setContact(const std::string contactBodyName)
+  {
+    const auto & ee = cache_.grfContainer.find(contactBodyName);
+    ee->second.setContact();
+    std::cout<<"setContact: "<< contactBodyName<< ee->second.contact()<<std::endl;
   }
   // We need to specify the endeffectors that are in contact, e.g. two feet
   // std::vector<dart::dynamics::BodyNode *> contactEndEffectors;
 protected:
+  mc_rbdyn::Robot & robot_;
+  std::string impactBodyName_;
+  bool linearJacobian_;
+  double impactDuration_;
+  double coeRes_;
+
   std::shared_ptr<mi_osd> osdPtr_;
 
-  mc_rbdyn::Robot & robot_;
+  impactDataCache cache_;
+
   bool useLinearJacobian_() const
   {
     return linearJacobian_;
   }
-  bool linearJacobian_;
 
   // impact end-effector
   // dart::dynamics::BodyNodePtr impactBodyPtr_;
-  std::string impactBodyName_;
 
   // The returned pointer is not supposed to be changed.
   const std::string getImpactBody_()
@@ -193,8 +232,6 @@ protected:
   }
 
   // mc_rbdyn::Robot & loadRobot_(mc_rbdyn::RobotModulePtr rm, const std::string & name);
-  double impactDuration_;
-  double coeRes_;
   double getCoeRes_() const
   {
     return coeRes_;
@@ -204,6 +241,5 @@ protected:
     return impactDuration_;
   }
 
-  impactDataCache cache_;
-  void tempTestEe_();
+  //  void tempTestEe_();
 };
