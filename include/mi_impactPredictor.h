@@ -9,7 +9,15 @@ struct impulseValues
 {
   Eigen::VectorXd deltaV;
   Eigen::VectorXd impulseForce;
-  Eigen::VectorXd accForce;
+  Eigen::VectorXd deltaTau;
+  Eigen::VectorXd deltaQDot;
+  void reset()
+  {
+    deltaV.setZero();
+    impulseForce.setZero();
+    deltaTau.setZero();
+    deltaQDot.setZero();
+  }
 };
 struct impactDataCache
 {
@@ -25,6 +33,36 @@ struct impactDataCache
   /// <end-effector Name, <delta-V, delta-F, F-due-to-ee-acc>>
   std::map<std::string, impulseValues> grfContainer;
   // std::map<std::string, std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> > grfContainer;
+  void reset()
+  {
+    eeVelJump.setZero();
+    qVelJump.setZero();
+    tauJump.setZero();
+    eeImpulse.setZero();
+    newLeeImpulse.setZero();
+    newReeImpulse.setZero();
+    new_eeLeeImpulse.setZero();
+    new_eeReeImpulse.setZero();
+
+    for(auto it = grfContainer.begin(); it != grfContainer.end(); ++it)
+    {
+      it->second.reset();
+    }
+
+  } // end of reset
+  void ini(const int dim)
+  {
+    newLeeImpulse.resize(dim);
+    newReeImpulse.resize(dim);
+    new_eeLeeImpulse.resize(dim);
+    new_eeReeImpulse.resize(dim);
+    eeImpulse.resize(dim);
+    eeVelJump.resize(dim);
+    qVelJump.resize(dim);
+    tauJump.resize(dim);
+
+    reset();
+  }
 };
 
 class mi_impactPredictor
@@ -114,13 +152,6 @@ public:
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.impulseForce;
   }
-
-  const Eigen::VectorXd & getEeAccForce(const std::string & eeName) const
-  {
-    const auto & ee = cache_.grfContainer.find(eeName);
-    return ee->second.accForce;
-  }
-
   const mc_rbdyn::Robot & getRobot() const
   {
     return robot_;
@@ -174,9 +205,5 @@ protected:
   }
 
   impactDataCache cache_;
-  void tempTest_();
-  void tempTestBody_();
   void tempTestEe_();
-  void tempTestAcc_();
-  void tempTestAccEe_();
 };

@@ -22,7 +22,7 @@ struct osdDataCache
 
   Eigen::MatrixXd invMassMatrix;
   Eigen::MatrixXd lambdaMatrix;
-  //Eigen::MatrixXd crossLambdaMatrix;
+  // Eigen::MatrixXd crossLambdaMatrix;
 
   Eigen::VectorXd osdAcc;
   Eigen::VectorXd osdVel;
@@ -85,8 +85,9 @@ public:
     auto tempEe = cache_.jacobians.find(eeName);
     if(tempEe != cache_.jacobians.end())
       return tempEe->second.second;
-    else{
-      std::cout<<"Link "<<eeName<< " is missing."<<std::endl;
+    else
+    {
+      std::cout << "Link " << eeName << " is missing." << std::endl;
       throw std::runtime_error("OSD::nameToIndex_: Link name does not exist.");
     }
   }
@@ -141,12 +142,12 @@ public:
     // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
 
     rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-    //rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-    //rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+    // rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
+    // rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
     FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
     // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
     std::cout << "FD computed M ..." << std::endl;
-    //std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
+    // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
   }
   int getDof() const
