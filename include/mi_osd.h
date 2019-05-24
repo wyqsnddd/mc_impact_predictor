@@ -43,8 +43,9 @@ struct osdDataCache
 class mi_osd
 {
 public:
-  mi_osd( // const dart::dynamics::SkeletonPtr & robotPtr,
-      mc_rbdyn::Robot & robot,
+  mi_osd( 
+      const mc_rbdyn::Robot & robot,
+      std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
       bool linearJacobian);
 
   ~mi_osd() {}
@@ -128,16 +129,16 @@ public:
       throw std::runtime_error("OSD: Too less end-effectors are defined for the OSD. ");
     }
     // mc_rtc components
-    std::cout << "Updating OSD FD..." << std::endl;
+    //std::cout << "Updating OSD FD..." << std::endl;
 
     // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
 
-    rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-    // rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-    // rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
-    FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
+    //rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
+    //rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
+   // rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+    //FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
     // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-    std::cout << "FD computed M ..." << std::endl;
+    //std::cout << "FD computed M ..." << std::endl;
     // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
   }
@@ -149,7 +150,7 @@ public:
   {
     return eeNum_;
   }
-  mc_rbdyn::Robot & getRobot()
+  const mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
@@ -173,7 +174,7 @@ private:
   osdDataCache cache_;
   int jacobianDim_;
   // dart::dynamics::SkeletonPtr robotPtr_;
-  mc_rbdyn::Robot & robot_;
+  const mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
 
   /// Based on the symmetry, we calculate the inverse component wise.

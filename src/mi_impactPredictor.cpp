@@ -1,6 +1,7 @@
 #include "mi_impactPredictor.h"
 
-mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
+mi_impactPredictor::mi_impactPredictor(const mc_rbdyn::Robot & robot,
+		std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
                                        std::string impactBodyName,
                                        bool linearJacobian,
                                        double impactDuration,
@@ -11,7 +12,7 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
   std::cout << "The impact predictor constuctor is started." << std::endl;
   setImpactBody(impactBodyName);
   std::cout << "The impact body name is: " << getImpactBody_() << std::endl;
-  osdPtr_ = std::make_shared<mi_osd>(getRobot(), useLinearJacobian_());
+  osdPtr_ = std::make_shared<mi_osd>(getRobot(), fdPtr, useLinearJacobian_());
 
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
@@ -53,7 +54,7 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
   }
 }
 
-void mi_impactPredictor::run()
+void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
 {
   if(cache_.grfContainer.size() < 3)
   {
@@ -64,37 +65,39 @@ void mi_impactPredictor::run()
   // Update the equations of motions
   osdPtr_->update();
   // std::cout << "OSD updated. " << std::endl;
+  Eigen::Matrix3d tempProjector = surfaceNormal * surfaceNormal.transpose();
 
   Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
   Eigen::VectorXd alphaD = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
   const auto & impactBodyValuesPtr = cache_.grfContainer.find(getImpactBody_());
 
-  impactBodyValuesPtr->second.deltaV =
-      -(getCoeRes_() + 1) * getOsd_()->getJacobian(getImpactBody_()) * (alpha + alphaD * getImpactDuration_());
-
+  //(0.0) update impact body-velocity jump
+  
+  impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector * getOsd_()->getJacobian(getImpactBody_())
+                                       * (alpha + alphaD * getImpactDuration_());
+				       
+  //Eigen::Vector3d eeVel = getRobot().mbc().bodyVelW[getRobot().mb().bodyIndexByName(getImpactBody_())].linear();
+ //impactBodyValuesPtr->second.deltaV =  eeVel;
+ //std::cout<<"The ee vel is: "<<eeVel<<std::endl;
+ //std::cout<<"The ee vel jump is: "<< impactBodyValuesPtr->second.deltaV<<std::endl;
+  //(0.1) update impact body-velocity impulsive force
   impactBodyValuesPtr->second.impulseForce = (1 / getImpactDuration_())
                                              * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
                                              * getOsd_()->getDcJacobianInv(getImpactBody_()) * getEeVelocityJump();
 
-  impactBodyValuesPtr->second.deltaQDot = getOsd_()->getDcJacobianInv(getImpactBody_()) * getEeVelocityJump();
+  //(0.2) update impact body-velocity induced joint velocity jump
+  impactBodyValuesPtr->second.deltaQDot =
+      getOsd_()->getDcJacobianInv(getImpactBody_()) * getEeVelocityJump();
 
   // add the impact body joint velocity first
   cache_.qVelJump = impactBodyValuesPtr->second.deltaQDot;
-  // cache_.qVelJump = getOsd_()->getNewDcJacobianInv(getImpactBody_()) * cache_.eeVelJump;
-  std::cout << "The predicted impact body velocity jump is: " << std::endl << getEeVelocityJump() << std::endl;
 
-  // cache_.tauJump =
-  //	  getOsd_()->getJacobian(getImpactBody_()).transpose()
-  //	  * cache_.eeImpulse;
-
+  //(0.3) update impact body-velocity induced impulsive joint torque
   // * Update the impulsive force of end-effectors with established contact
   impactBodyValuesPtr->second.deltaTau = getOsd_()->getJacobian(getImpactBody_()).transpose() * getImpulsiveForce();
 
   // add the impact body impulsive force first
   cache_.tauJump = impactBodyValuesPtr->second.deltaTau;
-  // std::cout<<"The predicted joint velocity jump is: "<<std::endl<<cache_.qVelJump.transpose()<<std::endl;
-  std::cout << "The predicted end-effector impulsive force is: " << std::endl
-            << getImpulsiveForce() << std::endl; // cache_.eeImpulse.transpose() << std::endl;
 
   // std::cout << "------------------Impact body impulsive forces ------------------------------------" << std::endl;
   // Update the ground reaction forces:
@@ -109,12 +112,12 @@ void mi_impactPredictor::run()
     int dim = getOsd_()->getJacobianDim();
     // End-effector velocity jump:
 
-    it->second.deltaV = getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_(it->first) * dim,
-                                                              getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
-                        * getImpulsiveForce();
+    //(1.0) update impact body-velocity induced end-effector velocity jump
+    //it->second.deltaV = getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_(it->first) * dim,
+     //                                                         getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
+      //                  * getImpulsiveForce();
 
-    // it->second.deltaV = getOsd_()->getJacobian(it->first) * cache_.qVelJump;
-    // it->second.deltaV = getOsd_()->getJacobian(it->first) * cache_.qVelJump;
+    //(1.1) update impact body-velocity induced end-effector impulsive force
     // End-effector reaction force:
     if(it->second.contact())
     {
@@ -124,41 +127,8 @@ void mi_impactPredictor::run()
       it->second.deltaTau = getOsd_()->getJacobian(it->first).transpose() * it->second.impulseForce;
     }
 
-    // Eigen::Vector3d tempGRF_three = getOsd_()->getDcJacobianInv(it->first).transpose() * cache_.tauJump;
-
-    std::cout << "The predicted GRF impulsive force of " << it->first << " is: " << it->second.impulseForce.transpose()
-              << std::endl
-              << " velocity jump is: " << it->second.deltaV.transpose() << std::endl;
-    //         << "The predicted GRF impulsive force three is " << tempGRF_three.transpose() << std::endl;
     // Add to dq
     cache_.qVelJump += it->second.deltaQDot;
     cache_.tauJump += it->second.deltaTau;
-
-    // Add to dtau
   } // End of looping through the container
-  // tempTestEe_();
 }
-/*
-void mi_impactPredictor::tempTestEe_()
-{
-
-  // For the established contacts:
-  int dim = getOsd_()->getJacobianDim();
-
-  Eigen::VectorXd delta_vel_l_ankle =
-      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("l_sole") * dim,
-                                            getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
-      * cache_.eeImpulse;
-
-  Eigen::VectorXd delta_vel_r_ankle =
-      getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_("r_sole") * dim,
-                                            getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
-      * cache_.eeImpulse;
-
-  cache_.new_eeLeeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("l_sole")
-                            * getOsd_()->getDcJacobianInv("l_sole") * delta_vel_l_ankle;
-
-  cache_.new_eeReeImpulse = (1 / getImpactDuration_()) * getOsd_()->getEffectiveLambdaMatrix("r_sole")
-                            * getOsd_()->getDcJacobianInv("r_sole") * delta_vel_r_ankle;
-}
-*/

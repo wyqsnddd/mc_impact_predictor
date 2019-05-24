@@ -95,14 +95,15 @@ struct impactDataCache
 class mi_impactPredictor
 {
 public:
-  mi_impactPredictor(mc_rbdyn::Robot & robot,
+  mi_impactPredictor(const mc_rbdyn::Robot & robot,
+		     std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
                      double coeRes = 0.8);
 
   ~mi_impactPredictor() {}
-  void run();
+  void run(const Eigen::Vector3d & surfaceNormal);
 
   bool addEndeffector(std::string eeName);
 
@@ -172,21 +173,25 @@ public:
   const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName)
   {
     const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact() || (ee->first == getImpactBody_()) ){
+    if(ee->second.contact() || (ee->first == getImpactBody_()))
+    {
       return ee->second.impulseForce;
-    }else{
-      throw std::runtime_error(std::string("Predictor: '-") + eeName+std::string("- ' is not in contact."));
+    }
+    else
+    {
+      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
     }
   }
   const mc_rbdyn::Robot & getRobot() const
   {
     return robot_;
   }
+ /* 
   mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
-
+*/
   void setImpactBody(std::string & impactBodyName)
   {
     impactBodyName_ = impactBodyName;
@@ -196,12 +201,12 @@ public:
   {
     const auto & ee = cache_.grfContainer.find(contactBodyName);
     ee->second.setContact();
-    std::cout<<"setContact: "<< contactBodyName<< ee->second.contact()<<std::endl;
+    std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
   }
   // We need to specify the endeffectors that are in contact, e.g. two feet
   // std::vector<dart::dynamics::BodyNode *> contactEndEffectors;
 protected:
-  mc_rbdyn::Robot & robot_;
+  const mc_rbdyn::Robot & robot_;
   std::string impactBodyName_;
   bool linearJacobian_;
   double impactDuration_;

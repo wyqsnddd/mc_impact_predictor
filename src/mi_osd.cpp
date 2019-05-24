@@ -1,29 +1,32 @@
 #include "mi_osd.h"
 
-mi_osd::mi_osd( // const dart::dynamics::SkeletonPtr & robotPtr,
-    mc_rbdyn::Robot & robot,
+mi_osd::mi_osd( 
+    const mc_rbdyn::Robot & robot,
+    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
     bool linearJacobian)
-: robot_(robot) // robotPtr_(robotPtr),
+: robot_(robot), FDPtr_(fdPtr) // robotPtr_(robotPtr),
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
   linearJacobian_ = linearJacobian;
   // Initilize the forward dynamics:
-  FDPtr_ = std::make_shared<rbd::ForwardDynamics>(getRobot().mb());
+  //FDPtr_ = std::make_shared<rbd::ForwardDynamics>(getRobot().mb());
 
-  std::cout << "The FD constructor is built." << std::endl;
+  //std::cout << "The FD constructor is built." << std::endl;
   // Create a local copy to avoid touching the mc_rtc controller robot.
   // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
-  rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-  rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-  rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
-  FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
+  //rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
+  //rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
+  //rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+  //FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
   // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
   // Initialize the Jacobians
   int mRows = static_cast<int>(getFD()->H().rows());
   int mCols = static_cast<int>(getFD()->H().cols());
   assert(mCols == mRows);
   robotDof_ = mRows;
+
   Eigen::MatrixXd tempMassMatrix = getFD()->H();
+  //std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl; 
 
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_mM(tempMassMatrix);
   cache_.invMassMatrix.resize(mRows, mCols);
@@ -85,11 +88,15 @@ void mi_osd::updateCache_()
 {
   // Read from the robot:
   //  std::cout << "Updating OSD cache..." << std::endl;
+  Eigen::MatrixXd tempMassMatrix = getFD()->H();
+  std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl; 
 
-  // Update the mass matrix inverse
+  std::cout<<"The C is: "<<getFD()->C()<<std::endl;
+  // (0) Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix = lu_decomp_M.inverse();
 
+  // (1) Update the OSD Jacobian
   for(auto it = cache_.jacobians.begin(); it != cache_.jacobians.end(); ++it)
   {
     int ii = it->second.second;
@@ -117,14 +124,15 @@ void mi_osd::updateCache_()
     cache_.osdJacobianDot.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobianDot;
   }
 
+  // (2) Update the OSD Innertia matrix
   cache_.lambdaMatrixInv = cache_.osdJacobian * getInvMassMatrix() * (cache_.osdJacobian.transpose());
 
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_inv(cache_.lambdaMatrixInv);
   cache_.lambdaMatrix = lu_decomp_lambda_inv.inverse();
 
-  auto tempJointTorque = rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
+  // auto tempJointTorque = rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
 
-  // Update the dynamically consistent Jacobian inverse:
+  // (3) Update the dynamically consistent Jacobian inverse:
   for(int ii = 0; ii < getEeNum(); ii++)
   {
     cache_.effectiveLambdaMatrices[ii] =
