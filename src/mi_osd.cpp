@@ -1,23 +1,23 @@
 #include "mi_osd.h"
 
 mi_osd::mi_osd( 
-    const mc_rbdyn::Robot & robot,
-    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+    mc_rbdyn::Robot & robot,
+//    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
     bool linearJacobian)
-: robot_(robot), FDPtr_(fdPtr) // robotPtr_(robotPtr),
+: robot_(robot)//, FDPtr_(fdPtr) // robotPtr_(robotPtr),
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
   linearJacobian_ = linearJacobian;
   // Initilize the forward dynamics:
-  //FDPtr_ = std::make_shared<rbd::ForwardDynamics>(getRobot().mb());
+  FDPtr_ = std::make_shared<rbd::ForwardDynamics>(getRobot().mb());
 
-  //std::cout << "The FD constructor is built." << std::endl;
+  std::cout << "The FD constructor is built." << std::endl;
   // Create a local copy to avoid touching the mc_rtc controller robot.
   // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
-  //rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-  //rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-  //rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
-  //FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
+  rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
+  rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
+  rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+  FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
   // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
   // Initialize the Jacobians
   int mRows = static_cast<int>(getFD()->H().rows());
@@ -88,10 +88,10 @@ void mi_osd::updateCache_()
 {
   // Read from the robot:
   //  std::cout << "Updating OSD cache..." << std::endl;
-  Eigen::MatrixXd tempMassMatrix = getFD()->H();
-  std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl; 
+  //Eigen::MatrixXd tempMassMatrix = getFD()->H();
+  //std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl; 
 
-  std::cout<<"The C is: "<<getFD()->C()<<std::endl;
+  //std::cout<<"The C is: "<<getFD()->C()<<std::endl;
   // (0) Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix = lu_decomp_M.inverse();

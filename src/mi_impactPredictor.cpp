@@ -1,7 +1,7 @@
 #include "mi_impactPredictor.h"
 
-mi_impactPredictor::mi_impactPredictor(const mc_rbdyn::Robot & robot,
-		std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
+		//std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
                                        std::string impactBodyName,
                                        bool linearJacobian,
                                        double impactDuration,
@@ -12,7 +12,8 @@ mi_impactPredictor::mi_impactPredictor(const mc_rbdyn::Robot & robot,
   std::cout << "The impact predictor constuctor is started." << std::endl;
   setImpactBody(impactBodyName);
   std::cout << "The impact body name is: " << getImpactBody_() << std::endl;
-  osdPtr_ = std::make_shared<mi_osd>(getRobot(), fdPtr, useLinearJacobian_());
+  //osdPtr_ = std::make_shared<mi_osd>(getRobot(), fdPtr, useLinearJacobian_());
+  osdPtr_ = std::make_shared<mi_osd>(getRobot(), useLinearJacobian_());
 
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
@@ -112,11 +113,11 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
     int dim = getOsd_()->getJacobianDim();
     // End-effector velocity jump:
 
-    //(1.0) update impact body-velocity induced end-effector velocity jump
-    //it->second.deltaV = getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_(it->first) * dim,
-     //                                                         getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
-      //                  * getImpulsiveForce();
-
+    //(1.0) update impact body-velocity induced end-effector velocity jump and joint velocity jump
+    it->second.deltaV = getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_(it->first) * dim,
+                                                              getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
+                        * getImpulsiveForce();
+  it->second.deltaQDot = getOsd_()->getDcJacobianInv(it->first)*it->second.deltaV;
     //(1.1) update impact body-velocity induced end-effector impulsive force
     // End-effector reaction force:
     if(it->second.contact())

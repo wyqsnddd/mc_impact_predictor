@@ -44,8 +44,8 @@ class mi_osd
 {
 public:
   mi_osd( 
-      const mc_rbdyn::Robot & robot,
-      std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+      mc_rbdyn::Robot & robot,
+      //std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
       bool linearJacobian);
 
   ~mi_osd() {}
@@ -133,10 +133,10 @@ public:
 
     // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
 
-    //rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-    //rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-   // rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
-    //FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
+    rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
+    rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
+    rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+    FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
     // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
     //std::cout << "FD computed M ..." << std::endl;
     // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
@@ -150,10 +150,11 @@ public:
   {
     return eeNum_;
   }
-  const mc_rbdyn::Robot & getRobot()
+  mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
+  
   const std::shared_ptr<rbd::ForwardDynamics> getFD() const
   {
     return FDPtr_;
@@ -174,7 +175,7 @@ private:
   osdDataCache cache_;
   int jacobianDim_;
   // dart::dynamics::SkeletonPtr robotPtr_;
-  const mc_rbdyn::Robot & robot_;
+  mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
 
   /// Based on the symmetry, we calculate the inverse component wise.
