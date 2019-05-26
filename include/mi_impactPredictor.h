@@ -43,27 +43,18 @@ struct impulseValues
 struct impactDataCache
 {
   //
-  // Eigen::VectorXd eeVelJump;
   Eigen::VectorXd qVelJump;
   Eigen::VectorXd tauJump;
-  // Eigen::VectorXd eeImpulse;
-  // Eigen::VectorXd newLeeImpulse;
-  // Eigen::VectorXd newReeImpulse;
-  // Eigen::VectorXd new_eeLeeImpulse;
-  // Eigen::VectorXd new_eeReeImpulse;
-  /// <end-effector Name, <delta-V, delta-F, F-due-to-ee-acc>>
+  Eigen::MatrixXd jacobianDeltaAlpha;
+  Eigen::MatrixXd jacobianDeltaTau;
   std::map<std::string, impulseValues> grfContainer;
-  // std::map<std::string, std::tuple<Eigen::VectorXd, Eigen::VectorXd, Eigen::VectorXd> > grfContainer;
   void reset()
   {
-    // eeVelJump.setZero();
     qVelJump.setZero();
     tauJump.setZero();
-    // eeImpulse.setZero();
-    // newLeeImpulse.setZero();
-    // newReeImpulse.setZero();
-    // new_eeLeeImpulse.setZero();
-    // new_eeReeImpulse.setZero();
+
+    jacobianDeltaAlpha.setZero();
+    jacobianDeltaTau.setZero();
 
     for(auto it = grfContainer.begin(); it != grfContainer.end(); ++it)
     {
@@ -73,15 +64,10 @@ struct impactDataCache
   } // end of reset
   void ini(const int & dim, const int & dof)
   {
-    // newLeeImpulse.resize(dim);
-    // newReeImpulse.resize(dim);
-    // new_eeLeeImpulse.resize(dim);
-    // new_eeReeImpulse.resize(dim);
-    // eeImpulse.resize(dim);
-    // eeVelJump.resize(dim);
     qVelJump.resize(dof);
     tauJump.resize(dof);
-
+    jacobianDeltaAlpha.resize(dof, dof);
+    jacobianDeltaTau.resize(dof, dof);
     for(auto it = grfContainer.begin(); it != grfContainer.end(); ++it)
     {
       it->second.ini(dim, dof);
@@ -215,6 +201,17 @@ public:
   }
   // We need to specify the endeffectors that are in contact, e.g. two feet
   // std::vector<dart::dynamics::BodyNode *> contactEndEffectors;
+
+  //----------------Public API for control ----------------------------/
+  const Eigen::MatrixXd & getJacobianDeltaAlpha()
+  {
+    return cache_.jacobianDeltaAlpha;
+  }
+  const Eigen::MatrixXd & getJacobianDeltaTau()
+  {
+    return cache_.jacobianDeltaTau;
+  }
+
 protected:
   mc_rbdyn::Robot & robot_;
   std::string impactBodyName_;

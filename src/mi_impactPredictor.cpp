@@ -108,10 +108,13 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
     // End-effector velocity jump:
 
     //(1.0) update impact body-velocity induced end-effector velocity jump and joint velocity jump
-
-    it->second.deltaV = getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_(it->first) * dim,
-                                                              getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim, dim)
-                        * getImpulsiveForce();
+    /*
+        it->second.deltaV = getOsd_()->getLambdaMatrixInv().block(getOsd_()->nameToIndex_(it->first) * dim,
+                                                                  getOsd_()->nameToIndex_(getImpactBody_()) * dim, dim,
+       dim)
+                            * getImpulsiveForce();
+          */
+    it->second.deltaV = getOsd_()->getLambdaMatrixInv(it->first, getImpactBody_()) * getImpulsiveForce();
 
     it->second.deltaQDot = getOsd_()->getDcJacobianInv(it->first) * it->second.deltaV;
     //(1.1) update impact body-velocity induced end-effector impulsive force
@@ -122,7 +125,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
     cache_.tauJump += it->second.deltaTau;
   } // End of looping through the container
 
-  // (2.0) Calculate the propagated impulse 
+  // (2.0) Calculate the propagated impulse
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
   {
     if(it->first == getImpactBody_())
@@ -132,14 +135,82 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
     }
     it->second.impulseForce.setZero();
     if(it->second.contact())
-    {
-	    
-      for(auto idx = cache_.grfContainer.begin(); idx!= cache_.grfContainer.end(); ++idx){
-	      it->second.impulseForce += getOsd_()->getLambdaMatrix(it->first, idx->first)*getEeVelocityJump(it->first);
-      }
-      it->second.impulseForce = (1/getImpactDuration_())*it->second.impulseForce;
+    { // If this body has an established contact
+      // loop over the entire row according to the OSD model
+      for(auto idx = cache_.grfContainer.begin(); idx != cache_.grfContainer.end(); ++idx)
+      {
+        it->second.impulseForce += getOsd_()->getLambdaMatrix(it->first, idx->first) * getEeVelocityJump(it->first);
+      } // end of row calculation
+      it->second.impulseForce = (1 / getImpactDuration_()) * it->second.impulseForce;
       it->second.deltaTau = getOsd_()->getJacobian(it->first).transpose() * it->second.impulseForce;
-    } // end of second loop
+    } // end of contact force jump
 
   } // end of impulsive force and torque loop
+
+  // (3.0) update the jacobians for mc_rtc
+
+  Eigen::MatrixXd tempJDeltaAlpha;
+  tempJDeltaAlpha.resize(getOsd_()->getDof(), getOsd_()->getJacobianDim());
+  tempJDeltaAlpha.setZero();
+
+  for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
+  {
+    if(it->first == getImpactBody_())
+    {
+      // We skip the impact body
+      continue;
+    }
+    tempJDeltaAlpha +=
+        getOsd_()->getDcJacobianInv(it->first) * getOsd_()->getLambdaMatrixInv(it->first, getImpactBody_());
+
+  } // end of temp J delta alpha
+
+  Eigen::MatrixXd tempJDeltaTau;
+  tempJDeltaTau.resize(getOsd_()->getDof(), 3);
+  tempJDeltaTau.setZero();
+
+  for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
+  {
+    if(!it->second.contact())
+    {
+      // Skip body not in contact
+      continue;
+    }
+    Eigen::Matrix3d temp;
+    temp.setZero();
+
+    for(auto idx = cache_.grfContainer.begin(); idx != cache_.grfContainer.end(); ++idx)
+    {
+      if(!it->second.contact())
+      {
+        // Skip body not in contact
+        continue;
+      }
+      temp += getOsd_()->getLambdaMatrix(it->first, idx->first)
+              * getOsd_()->getLambdaMatrixInv(idx->first, getImpactBody_());
+
+    } // end of inner loop
+    tempJDeltaTau += getOsd_()->getJacobian(it->first).transpose() * temp;
+  } // end of temp J delta tau
+  
+
+  cache_.jacobianDeltaAlpha =
+      -(1 + getCoeRes_())
+      * (getOsd_()->getDcJacobianInv(getImpactBody_())
+         + (1 / getImpactDuration_()) * tempJDeltaAlpha * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_()) * getOsd_()->getDcJacobianInv(getImpactBody_())
+	 )
+      * tempProjector * getOsd_()->getJacobian(getImpactBody_());
+      
+
+  
+  cache_.jacobianDeltaTau = 
+	  -(1 + getCoeRes_())
+                            * (getOsd_()->getJacobian(getImpactBody_()).transpose() + (1 / getImpactDuration_()) * tempJDeltaTau)
+			    
+                            * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_()) 
+			    * getOsd_()->getDcJacobianInv(getImpactBody_())
+			    * tempProjector
+                            * getOsd_()->getJacobian(getImpactBody_());
+			    
+			    
 }

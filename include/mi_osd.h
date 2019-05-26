@@ -97,6 +97,11 @@ public:
     return cache_.lambdaMatrix.block(nameToIndex_(eeOne) * getJacobianDim(), nameToIndex_(eeTwo) * getJacobianDim(),
                                      getJacobianDim(), getJacobianDim());
   }
+  const Eigen::MatrixXd getLambdaMatrixInv(const std::string & eeOne, const std::string & eeTwo) const
+  {
+    return cache_.lambdaMatrixInv.block(nameToIndex_(eeOne) * getJacobianDim(), nameToIndex_(eeTwo) * getJacobianDim(),
+                                        getJacobianDim(), getJacobianDim());
+  }
 
   const Eigen::MatrixXd getJacobian(const std::string & eeName) const
   {
