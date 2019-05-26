@@ -96,7 +96,7 @@ class mi_impactPredictor
 {
 public:
   mi_impactPredictor(mc_rbdyn::Robot & robot,
-		     //std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+                     // std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
@@ -152,15 +152,15 @@ public:
     return ee->second.deltaV;
     // return Eigen::Vector3d::Zero();
   }
-  const Eigen::VectorXd & getBranchJointVelJump(const std::string & eeName) const{
+  const Eigen::VectorXd & getBranchJointVelJump(const std::string & eeName) const
+  {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaQDot;
- 
   }
-  const Eigen::VectorXd & getBranchTauJump(const std::string & eeName) const{
+  const Eigen::VectorXd & getBranchTauJump(const std::string & eeName) const
+  {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaTau;
- 
   }
 
   void resetDataStructure()
@@ -192,16 +192,16 @@ public:
       throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
     }
   }
-  mc_rbdyn::Robot & getRobot() 
-  {
-    return robot_;
-  }
- /* 
   mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
-*/
+  /*
+   mc_rbdyn::Robot & getRobot()
+   {
+     return robot_;
+   }
+ */
   void setImpactBody(std::string & impactBodyName)
   {
     impactBodyName_ = impactBodyName;

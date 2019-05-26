@@ -43,10 +43,9 @@ struct osdDataCache
 class mi_osd
 {
 public:
-  mi_osd( 
-      mc_rbdyn::Robot & robot,
-      //std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
-      bool linearJacobian);
+  mi_osd(mc_rbdyn::Robot & robot,
+         // std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+         bool linearJacobian);
 
   ~mi_osd() {}
   bool addEndeffector(std::string eeName)
@@ -129,7 +128,7 @@ public:
       throw std::runtime_error("OSD: Too less end-effectors are defined for the OSD. ");
     }
     // mc_rtc components
-    //std::cout << "Updating OSD FD..." << std::endl;
+    // std::cout << "Updating OSD FD..." << std::endl;
 
     // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
 
@@ -138,7 +137,7 @@ public:
     rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
     FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
     // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-    //std::cout << "FD computed M ..." << std::endl;
+    // std::cout << "FD computed M ..." << std::endl;
     // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
   }
@@ -154,7 +153,7 @@ public:
   {
     return robot_;
   }
-  
+
   const std::shared_ptr<rbd::ForwardDynamics> getFD() const
   {
     return FDPtr_;

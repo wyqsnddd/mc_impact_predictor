@@ -1,10 +1,9 @@
 #include "mi_osd.h"
 
-mi_osd::mi_osd( 
-    mc_rbdyn::Robot & robot,
-//    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
-    bool linearJacobian)
-: robot_(robot)//, FDPtr_(fdPtr) // robotPtr_(robotPtr),
+mi_osd::mi_osd(mc_rbdyn::Robot & robot,
+               //    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+               bool linearJacobian)
+: robot_(robot) //, FDPtr_(fdPtr) // robotPtr_(robotPtr),
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
   linearJacobian_ = linearJacobian;
@@ -26,7 +25,7 @@ mi_osd::mi_osd(
   robotDof_ = mRows;
 
   Eigen::MatrixXd tempMassMatrix = getFD()->H();
-  //std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl; 
+  // std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl;
 
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_mM(tempMassMatrix);
   cache_.invMassMatrix.resize(mRows, mCols);
@@ -88,10 +87,10 @@ void mi_osd::updateCache_()
 {
   // Read from the robot:
   //  std::cout << "Updating OSD cache..." << std::endl;
-  //Eigen::MatrixXd tempMassMatrix = getFD()->H();
-  //std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl; 
+  // Eigen::MatrixXd tempMassMatrix = getFD()->H();
+  // std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl;
 
-  //std::cout<<"The C is: "<<getFD()->C()<<std::endl;
+  // std::cout<<"The C is: "<<getFD()->C()<<std::endl;
   // (0) Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix = lu_decomp_M.inverse();
