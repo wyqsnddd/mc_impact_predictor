@@ -130,13 +130,14 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
       // We skip the impact body
       continue;
     }
-
+    it->second.impulseForce.setZero();
     if(it->second.contact())
     {
-	    for(auto idx = cache_.grfContainer.begin(); idx!= cache_.grfContainer.end(); ++idx){
+	    
+      for(auto idx = cache_.grfContainer.begin(); idx!= cache_.grfContainer.end(); ++idx){
 	      it->second.impulseForce += getOsd_()->getLambdaMatrix(it->first, idx->first)*getEeVelocityJump(it->first);
-       }
-
+      }
+      it->second.impulseForce = (1/getImpactDuration_())*it->second.impulseForce;
       it->second.deltaTau = getOsd_()->getJacobian(it->first).transpose() * it->second.impulseForce;
     } // end of second loop
 
