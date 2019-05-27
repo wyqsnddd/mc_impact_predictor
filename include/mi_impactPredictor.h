@@ -215,6 +215,7 @@ public:
   {
     return impactDuration_;
   }
+
 protected:
   mc_rbdyn::Robot & robot_;
   std::string impactBodyName_;
@@ -251,7 +252,6 @@ protected:
   {
     return coeRes_;
   }
-  
 
   //  void tempTestEe_();
 };
