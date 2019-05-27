@@ -139,7 +139,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
       // loop over the entire row according to the OSD model
       for(auto idx = cache_.grfContainer.begin(); idx != cache_.grfContainer.end(); ++idx)
       {
-        it->second.impulseForce += getOsd_()->getLambdaMatrix(it->first, idx->first) * getEeVelocityJump(it->first);
+        it->second.impulseForce += getOsd_()->getLambdaMatrix(it->first, idx->first) * getEeVelocityJump(idx->first);
       } // end of row calculation
       it->second.impulseForce = (1 / getImpactDuration_()) * it->second.impulseForce;
       it->second.deltaTau = getOsd_()->getJacobian(it->first).transpose() * it->second.impulseForce;
