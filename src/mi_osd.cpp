@@ -36,6 +36,7 @@ mi_osd::mi_osd(mc_rbdyn::Robot & robot,
   if(useLinearJacobian_())
   {
     jacobianDim_ = 3;
+    //jacobianDim_ = 1;
   }
   else
   {
@@ -44,7 +45,7 @@ mi_osd::mi_osd(mc_rbdyn::Robot & robot,
   // getJacobianDim() = 6;
 
   // std::cout << "Updated OSD." << std::endl;
-  cache_.jacobians = std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>>();
+  //cache_.jacobians = std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>>();
   eeNum_ = 0;
   std::cout << "OSD is created." << std::endl;
 }
@@ -94,13 +95,21 @@ void mi_osd::updateCache_()
   // (0) Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix = lu_decomp_M.inverse();
+  cache_.osdJacobian.setZero();
+  cache_.osdJacobianDot.setZero();
 
   // (1) Update the OSD Jacobian
   for(auto it = cache_.jacobians.begin(); it != cache_.jacobians.end(); ++it)
   {
-    int ii = it->second.second;
+    //int ii = it->second.second;
+    int ii = it->second.containerIndex;
+/*
     Eigen::MatrixXd tempJacobian = it->second.first->jacobian(getRobot().mb(), getRobot().mbc());
     Eigen::MatrixXd tempJacobianDot = it->second.first->jacobianDot(getRobot().mb(), getRobot().mbc());
+    */
+    Eigen::MatrixXd tempJacobian = it->second.jacPtr->bodyJacobian(getRobot().mb(), getRobot().mbc());
+    Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->bodyJacobianDot(getRobot().mb(), getRobot().mbc());
+
 
     Eigen::MatrixXd tempFullJacobian, tempFullJacobianDot;
     tempFullJacobian.resize(getJacobianDim(), getDof());
@@ -108,19 +117,28 @@ void mi_osd::updateCache_()
 
     if(useLinearJacobian_())
     {
-      it->second.first->fullJacobian(getRobot().mb(), tempJacobian.block(3, 0, 3, tempJacobian.cols()),
+      it->second.jacPtr->fullJacobian(getRobot().mb(), 
+		      tempJacobian.block(3, 0, 3, tempJacobian.cols()),
                                      tempFullJacobian);
-      it->second.first->fullJacobian(getRobot().mb(), tempJacobian.block(3, 0, 3, tempJacobianDot.cols()),
+      it->second.jacPtr->fullJacobian(getRobot().mb(), 
+		      tempJacobianDot.block(3, 0, 3, tempJacobianDot.cols()),
                                      tempFullJacobianDot);
     }
     else
     {
-      it->second.first->fullJacobian(getRobot().mb(), tempJacobian, tempFullJacobian);
-      it->second.first->fullJacobian(getRobot().mb(), tempJacobianDot, tempFullJacobianDot);
+      it->second.jacPtr->fullJacobian(getRobot().mb(), tempJacobian, tempFullJacobian);
+      it->second.jacPtr->fullJacobian(getRobot().mb(), tempJacobianDot, tempFullJacobianDot);
     }
 
     cache_.osdJacobian.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobian;
     cache_.osdJacobianDot.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobianDot;
+
+/*
+    cache_.osdJacobian.block(ii * getJacobianDim() + it->second.contactDirection, 0, 1, getDof()) = tempFullJacobian.block(it->second.containerIndex, 0, 1, getDof());
+    cache_.osdJacobianDot.block(ii * getJacobianDim() + it->second.contactDirection, 0, 1, getDof()) = tempFullJacobianDot.block(it->second.containerIndex, 0, 1, getDof());
+*/
+
+
   }
 
   // (2) Update the OSD Innertia matrix
@@ -141,3 +159,25 @@ void mi_osd::updateCache_()
     cache_.dcJacobianInvs[ii] = (cache_.effectiveLambdaMatrices[ii] * getInvMassMatrix()).transpose();
   }
 }
+bool mi_osd::addEndeffector(std::string eeName){
+    unsigned eeNum = static_cast<unsigned>(cache_.jacobians.size());
+/*
+    cache_.jacobians[eeName] =
+        std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName), cache_.jacobians.size());
+*/
+
+    cache_.jacobians[eeName] = {
+	   cache_.jacobians.size(), // index in the container
+	   std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName)
+    };
+
+    if(cache_.jacobians.size() == (eeNum + 1))
+    {
+      eeNum_++;
+      return true;
+    }
+    else
+    {
+      return false;
+    }
+  }

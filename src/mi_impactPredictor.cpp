@@ -74,7 +74,9 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
 
   //(0.0) update impact body-velocity jump
 
-  impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector * getOsd_()->getJacobian(getImpactBody_())
+  //impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector * getOsd_()->getJacobian(getImpactBody_())
+  
+  impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector* getOsd_()->getJacobian(getImpactBody_())
                                        * (alpha + alphaD * getImpactDuration_());
   //(0.1) update impact body-velocity impulsive force
   impactBodyValuesPtr->second.impulseForce = (1 / getImpactDuration_())

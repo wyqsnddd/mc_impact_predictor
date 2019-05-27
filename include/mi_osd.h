@@ -14,6 +14,12 @@
 #include <assert.h>
 #include <map>
 
+
+struct objJac{
+	int containerIndex;  
+	std::shared_ptr<rbd::Jacobian>	jacPtr;
+};
+
 struct osdDataCache
 {
   // osdJacobian, osdJ_dot, dcJacobian, effectiveLambda, x_dot, tau have the same order.
@@ -30,7 +36,8 @@ struct osdDataCache
   Eigen::MatrixXd lambdaMatrixInv;
 
   // Hash table: bodyNode <-> index in the local container
-  std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
+  //std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
+  std::map<std::string, objJac> jacobians;
 
   // This is a vector of the dynamically consistent Jacobian pseudo inverse of all the end-effectors.
   std::vector<Eigen::MatrixXd> dcJacobianInvs;
@@ -48,23 +55,8 @@ public:
          bool linearJacobian);
 
   ~mi_osd() {}
-  bool addEndeffector(std::string eeName)
-  {
-    unsigned eeNum = static_cast<unsigned>(cache_.jacobians.size());
-
-    cache_.jacobians[eeName] =
-        std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName), cache_.jacobians.size());
-
-    if(cache_.jacobians.size() == (eeNum + 1))
-    {
-      eeNum_++;
-      return true;
-    }
-    else
-    {
-      return false;
-    }
-  }
+  
+  bool addEndeffector(std::string eeName);
   void initializeDataStructure(int EeNum);
   void resetDataStructure();
 
@@ -84,7 +76,8 @@ public:
   {
     auto tempEe = cache_.jacobians.find(eeName);
     if(tempEe != cache_.jacobians.end())
-      return tempEe->second.second;
+      //return tempEe->second.second;
+      return tempEe->second.containerIndex;
     else
     {
       // std::cout << "Link " << eeName << " is missing." << std::endl;
