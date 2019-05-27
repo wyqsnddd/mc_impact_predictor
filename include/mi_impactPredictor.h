@@ -211,7 +211,10 @@ public:
   {
     return cache_.jacobianDeltaTau;
   }
-
+  const double & getImpactDuration_() const
+  {
+    return impactDuration_;
+  }
 protected:
   mc_rbdyn::Robot & robot_;
   std::string impactBodyName_;
@@ -248,10 +251,7 @@ protected:
   {
     return coeRes_;
   }
-  double getImpactDuration_() const
-  {
-    return impactDuration_;
-  }
+  
 
   //  void tempTestEe_();
 };
