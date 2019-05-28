@@ -166,7 +166,17 @@ public:
     const auto & ee = cache_.grfContainer.find(getImpactBody_());
     return ee->second.impulseForce;
   }
-
+  sva::ForceVecd  getImpulsiveForceCOM()
+  {
+    sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(getImpactBody_()).inv();
+    
+    return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce()));
+  }
+  sva::ForceVecd getImpulsiveForceCOM(const std::string & eeName)
+  {
+    sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(eeName).inv();
+    return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(eeName)));
+  }
   const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName)
   {
     const auto & ee = cache_.grfContainer.find(eeName);
