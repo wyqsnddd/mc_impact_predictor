@@ -206,7 +206,7 @@ cache_.jacobianDeltaAlpha =
     * (getOsd_()->getDcJacobianInv(getImpactBody_())
        + (1 / getImpactDuration_()) * tempJDeltaAlpha * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
              * getOsd_()->getDcJacobianInv(getImpactBody_()))
-    * tempProjector * getOsd_()->getJacobian(getImpactBody_());
+    * (tempProjector + getCoeFricDe_()*tempNullProjector)* getOsd_()->getJacobian(getImpactBody_());
 /*
 cache_.jacobianDeltaTau = -(1 + getCoeRes_()) * (1 / getImpactDuration_()) * tempJDeltaTau
                           * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
@@ -221,7 +221,7 @@ cache_.jacobianDeltaTau = -(1 + getCoeRes_()) * (1 / getImpactDuration_()) * tem
            )
                            * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
          * getOsd_()->getDcJacobianInv(getImpactBody_())
-         * tempProjector
+         * (tempProjector + getCoeFricDe_()*tempNullProjector)
                            * getOsd_()->getJacobian(getImpactBody_());
 
 
