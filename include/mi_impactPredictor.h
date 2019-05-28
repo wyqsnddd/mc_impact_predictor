@@ -86,6 +86,7 @@ public:
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
+		     double coeFrictionDeduction,
                      double coeRes = 0.8);
 
   ~mi_impactPredictor() {}
@@ -221,6 +222,8 @@ protected:
   std::string impactBodyName_;
   bool linearJacobian_;
   double impactDuration_;
+
+  double coeFrictionDeduction_;
   double coeRes_;
 
   std::shared_ptr<mi_osd> osdPtr_;
@@ -248,10 +251,13 @@ protected:
   }
 
   // mc_rbdyn::Robot & loadRobot_(mc_rbdyn::RobotModulePtr rm, const std::string & name);
-  double getCoeRes_() const
+  const double getCoeRes_() const
   {
     return coeRes_;
   }
-
+  const double getCoeFricDe_() const
+  {
+    return coeFrictionDeduction_;
+  }
   //  void tempTestEe_();
 };

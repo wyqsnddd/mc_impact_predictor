@@ -5,8 +5,9 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
                                        std::string impactBodyName,
                                        bool linearJacobian,
                                        double impactDuration,
+                                       double coeFrictionDeduction,
                                        double coeRes)
-: robot_(robot), linearJacobian_(linearJacobian), impactDuration_(impactDuration), coeRes_(coeRes)
+: robot_(robot), linearJacobian_(linearJacobian), impactDuration_(impactDuration), coeFrictionDeduction_(coeFrictionDeduction), coeRes_(coeRes)
 {
 
   std::cout << "The impact predictor constuctor is started." << std::endl;
@@ -67,6 +68,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   osdPtr_->update();
   // std::cout << "OSD updated. " << std::endl;
   Eigen::Matrix3d tempProjector = surfaceNormal * surfaceNormal.transpose();
+  Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - surfaceNormal * surfaceNormal.transpose();
 
   Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
   Eigen::VectorXd alphaD = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
@@ -76,7 +78,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
 
   //impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector * getOsd_()->getJacobian(getImpactBody_())
   
-  impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector* getOsd_()->getJacobian(getImpactBody_())
+  impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) *(tempProjector + getCoeFricDe_()*tempNullProjector)*   getOsd_()->getJacobian(getImpactBody_())
                                        * (alpha + alphaD * getImpactDuration_());
   //(0.1) update impact body-velocity impulsive force
   impactBodyValuesPtr->second.impulseForce = (1 / getImpactDuration_())
@@ -180,7 +182,14 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
       continue;
     }
 
-  Eigen::Matrix3d temp;
+
+
+  Eigen::MatrixXd temp;
+  if (useLinearJacobian_()){
+    temp.resize(3,3);
+  }else{
+    temp.resize(6,6);
+  }
   temp.setZero();
 
   for(auto idx = cache_.grfContainer.begin(); idx != cache_.grfContainer.end(); ++idx)
