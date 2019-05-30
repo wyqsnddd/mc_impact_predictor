@@ -33,7 +33,7 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
   }
   else
   {
-    cache_.grfContainer[eeName] = {false, Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(),
+    cache_.grfContainer[eeName] = {false,  Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(),
                                    Eigen::VectorXd::Zero(getOsd_()->getDof()),
                                    Eigen::VectorXd::Zero(getOsd_()->getDof())};
   }
@@ -98,6 +98,18 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   // add the impact body impulsive force first
   cache_.tauJump = impactBodyValuesPtr->second.deltaTau;
 
+  // Update the acc force 
+  /*
+  Eigen::Vector3d tempImpactBodyAcceleration =
+             getOsd_()->getJacobian(getImpactBody_())*alphaD 
+	     + getOsd_()->getJacobianDot(getImpactBody_())*alpha;
+
+  
+  impactBodyValuesPtr->second.accForce =
+	  getOsd_()->getLambdaMatrix(getImpactBody_(), getImpactBody_())
+	  *tempImpactBodyAcceleration;
+*/
+
   // std::cout << "------------------Impact body impulsive forces ------------------------------------" << std::endl;
   // Update the ground reaction forces:
   for(auto it = cache_.grfContainer.begin(); it != cache_.grfContainer.end(); ++it)
@@ -138,16 +150,49 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
       continue;
     }
     it->second.impulseForce.setZero();
+    //it->second.accForce.setZero();
+    
+
+    // For the body with established contact: 
     if(it->second.contact())
     { // If this body has an established contact
       // loop over the entire row according to the OSD model
       for(auto idx = cache_.grfContainer.begin(); idx != cache_.grfContainer.end(); ++idx)
       {
         it->second.impulseForce += getOsd_()->getLambdaMatrix(it->first, idx->first) * getEeVelocityJump(idx->first);
+/*	
+	it->second.accForce +=
+		getOsd_()->getLambdaMatrix(it->first, idx->first)
+		*getRobot().mbc().bodyAccB
+		[
+		getRobot().mb().bodyIndexByName(idx->first)
+		].linear();
+*/
       } // end of row calculation
       it->second.impulseForce = (1 / getImpactDuration_()) * it->second.impulseForce;
       it->second.deltaTau = getOsd_()->getJacobian(it->first).transpose() * it->second.impulseForce;
+
+
+    
+
+
     } // end of contact force jump
+
+
+
+   // 2.2 Update the acc force 
+   /*
+    Eigen::Vector3d tempImpactBodyAcceleration =
+             getOsd_()->getJacobian(getImpactBody_())*alphaD 
+	     + getOsd_()->getJacobianDot(getImpactBody_())*alpha;
+	     */
+/*
+      auto tempImpactBodyAcceleration =
+              getRobot().mbc().bodyAccB
+              [
+	      getRobot().mb().bodyIndexByName(it->first)
+              ];
+	      */
 
   } // end of impulsive force and torque loop
 

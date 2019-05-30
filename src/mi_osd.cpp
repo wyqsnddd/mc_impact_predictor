@@ -53,6 +53,7 @@ void mi_osd::resetDataStructure()
 {
   cache_.osdJacobian.setZero();
   cache_.osdJacobianDot.setZero();
+  //cache_.osdF.setZero();
   // cache_.osdAcc.setZero();
   // cache_.osdVel.setZero();
   cache_.lambdaMatrix.setZero();
@@ -70,6 +71,7 @@ void mi_osd::initializeDataStructure(const int EeNum)
 
   cache_.osdJacobian.resize(EeNum * getJacobianDim(), getDof());
   cache_.osdJacobianDot.resize(EeNum * getJacobianDim(), getDof());
+  //cache_.osdF.resize(EeNum * getJacobianDim());
   // cache_.osdAcc.resize(EeNum * getJacobianDim());
   // cache_.osdVel.resize(EeNum * getJacobianDim());
   cache_.lambdaMatrix.resize(EeNum * getJacobianDim(), EeNum * getJacobianDim());
@@ -147,9 +149,19 @@ void mi_osd::updateCache_()
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_lambda_inv(cache_.lambdaMatrixInv);
   cache_.lambdaMatrix = lu_decomp_lambda_inv.inverse();
 
-  // auto tempJointTorque = rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
+  // This is the QP torque 
+  /*
+  auto tempOsdJointTorque = rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
 
-  // (3) Update the dynamically consistent Jacobian inverse:
+    if(useLinearJacobian_()){
+	    tempOsdJointTorque += getJacobian("l_sole").transpose() * getRobot().forceSensor("LeftFootForceSensor").force()
+	  + getJacobian("r_sole").transpose() * getRobot().forceSensor("RightFootForceSensor").force();
+    }else{
+     tempOsdJointTorque +=   getJacobian("l_sole").transpose() * getRobot().forceSensor("LeftFootForceSensor").wrench().vector()
+             + getJacobian("r_sole").transpose() * getRobot().forceSensor("RightFootForceSensor").wrench().vector();
+    }
+*/	  
+	    // (3) Update the dynamically consistent Jacobian inverse:
   for(int ii = 0; ii < getEeNum(); ii++)
   {
     cache_.effectiveLambdaMatrices[ii] =
@@ -157,6 +169,9 @@ void mi_osd::updateCache_()
         * cache_.osdJacobian;
 
     cache_.dcJacobianInvs[ii] = (cache_.effectiveLambdaMatrices[ii] * getInvMassMatrix()).transpose();
+    
+    //cache_.osdF.segment(ii * getJacobianDim(), getJacobianDim()) =
+//	    cache_.dcJacobianInvs[ii].transpose()*tempOsdJointTorque; 
   }
 }
 bool mi_osd::addEndeffector(std::string eeName){

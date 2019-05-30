@@ -9,8 +9,10 @@ struct impulseValues
 {
 
   bool inContact;
+  //Eigen::Vector3d deltaCoP;
   Eigen::VectorXd deltaV;
   Eigen::VectorXd impulseForce;
+  //Eigen::VectorXd accForce;
   Eigen::VectorXd deltaTau;
   Eigen::VectorXd deltaQDot;
 
@@ -27,6 +29,7 @@ struct impulseValues
   {
     deltaV.resize(dim);
     impulseForce.resize(dim);
+    //accForce.resize(dim);
     deltaQDot.resize(dof);
     deltaTau.resize(dof);
     inContact = false;
@@ -36,6 +39,8 @@ struct impulseValues
   {
     deltaV.setZero();
     impulseForce.setZero();
+    deltaCoP.setZero();
+    //accForce.setZero();
     deltaTau.setZero();
     deltaQDot.setZero();
   }
@@ -102,6 +107,11 @@ public:
   {
     return cache_.qVelJump;
   }
+  const Eigen::VectorXd & getJointVelocityJump(const std::string & eeName) const
+  {
+    const auto & ee = cache_.grfContainer.find(eeName);
+    return ee->second.deltaQDot;
+  }
   /*
   const std::map<std::string, impulseValues>::iterator  nameToPointer(const std::string & eeName) const
   {
@@ -161,6 +171,35 @@ public:
     cache_.ini(getOsd_()->getJacobianDim(), getOsd_()->getDof());
     getOsd_()->initializeDataStructure(numEE);
   }
+  /*
+  const Eigen::Vector3d & getDeltaCoP(const std::string & eeName)
+  {
+    const auto & ee = cache_.grfContainer.find(eeName);
+    return ee->second.deltaCoP;
+  }
+*/
+  /*
+  Eigen::VectorXd getOsdForce(const std::string & eeName)
+  {
+    return getOsd_()->getOsdForce(eeName);
+  }
+  */
+ /* 
+  const Eigen::VectorXd & getAccForce(const std::string & eeName)
+  {
+    const auto & ee = cache_.grfContainer.find(eeName);
+    return ee->second.accForce;
+  }
+  */
+  /*
+  Eigen::VectorXd getQPForce(const std::string & eeName)
+  {
+	  std::cout<<"The dc jacobian size is: "<< getOsd_()->getDcJacobianInv(eeName).transpose().size()<<std::endl;
+	  std::cout<<"The joint torque size is: "<< rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque).size()<<std::endl;
+    return getOsd_()->getDcJacobianInv(eeName).transpose()
+	    *rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
+  }
+  */
   const Eigen::VectorXd & getImpulsiveForce()
   {
     const auto & ee = cache_.grfContainer.find(getImpactBody_());

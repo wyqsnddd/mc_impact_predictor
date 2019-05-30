@@ -30,6 +30,7 @@ struct osdDataCache
   Eigen::MatrixXd lambdaMatrix;
   // Eigen::MatrixXd crossLambdaMatrix;
 
+  //Eigen::VectorXd osdF;
   // Eigen::VectorXd osdAcc;
   //  Eigen::VectorXd osdVel;
 
@@ -109,7 +110,12 @@ public:
   {
     return cache_.effectiveLambdaMatrices[nameToIndex_(eeName)];
   }
-
+  /*
+  Eigen::VectorXd getOsdForce(const std::string eeName) const
+  {
+    return cache_.osdF.segment(nameToIndex_(eeName) * getJacobianDim(), getJacobianDim());
+  }
+*/
   const Eigen::MatrixXd getDcJacobianInv(const std::string eeName) const
   {
     return cache_.dcJacobianInvs[nameToIndex_(eeName)];
