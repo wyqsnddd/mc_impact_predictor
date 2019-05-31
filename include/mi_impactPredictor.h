@@ -39,7 +39,7 @@ struct impulseValues
   {
     deltaV.setZero();
     impulseForce.setZero();
-    deltaCoP.setZero();
+    // deltaCoP.setZero();
     //accForce.setZero();
     deltaTau.setZero();
     deltaQDot.setZero();
