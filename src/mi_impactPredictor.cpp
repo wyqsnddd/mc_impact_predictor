@@ -27,13 +27,14 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
 
   if(useLinearJacobian_())
   {
-    cache_.grfContainer[eeName] = {false, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(),
+    cache_.grfContainer[eeName] = {false, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), sva::ForceVecd(Eigen::Vector6d::Zero()), 
                                    Eigen::VectorXd::Zero(getOsd_()->getDof()),
                                    Eigen::VectorXd::Zero(getOsd_()->getDof())};
   }
   else
   {
-    cache_.grfContainer[eeName] = {false,  Eigen::Vector6d::Zero(), Eigen::Vector6d::Zero(),
+    cache_.grfContainer[eeName] = {false,  Eigen::Vector6d::Zero(), 
+	    Eigen::Vector6d::Zero(), sva::ForceVecd(Eigen::Vector6d::Zero()), 
                                    Eigen::VectorXd::Zero(getOsd_()->getDof()),
                                    Eigen::VectorXd::Zero(getOsd_()->getDof())};
   }
@@ -84,6 +85,14 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   impactBodyValuesPtr->second.impulseForce = (1 / getImpactDuration_())
                                              * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_())
                                              * getOsd_()->getDcJacobianInv(getImpactBody_()) * getEeVelocityJump();
+
+
+  // calculate the equivalent wrench at the COM
+  sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(getImpactBody_()).inv();
+  impactBodyValuesPtr->second.impulseForceCOM =   
+	  X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(getImpactBody_())));
+
+
 
   //(0.2) update impact body-velocity induced joint velocity jump
   impactBodyValuesPtr->second.deltaQDot = getOsd_()->getDcJacobianInv(getImpactBody_()) * getEeVelocityJump();
@@ -172,9 +181,10 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
       it->second.impulseForce = (1 / getImpactDuration_()) * it->second.impulseForce;
       it->second.deltaTau = getOsd_()->getJacobian(it->first).transpose() * it->second.impulseForce;
 
-
-    
-
+      // calculate the equivalent wrench at the COM
+      sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(it->first).inv();
+      it->second.impulseForceCOM =   
+	      X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(it->first)));
 
     } // end of contact force jump
 

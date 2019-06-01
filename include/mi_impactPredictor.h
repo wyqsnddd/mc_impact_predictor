@@ -12,6 +12,8 @@ struct impulseValues
   //Eigen::Vector3d deltaCoP;
   Eigen::VectorXd deltaV;
   Eigen::VectorXd impulseForce;
+  /// This is the equivalent impulsive wrench at the COM
+  sva::ForceVecd impulseForceCOM; 
   //Eigen::VectorXd accForce;
   Eigen::VectorXd deltaTau;
   Eigen::VectorXd deltaQDot;
@@ -39,6 +41,7 @@ struct impulseValues
   {
     deltaV.setZero();
     impulseForce.setZero();
+    impulseForceCOM.vector().setZero();
     // deltaCoP.setZero();
     //accForce.setZero();
     deltaTau.setZero();
@@ -207,14 +210,30 @@ public:
   }
   sva::ForceVecd  getImpulsiveForceCOM()
   {
+	  /*
     sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(getImpactBody_()).inv();
     
     return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce()));
+    */
+    const auto & ee = cache_.grfContainer.find(getImpactBody_());
+    return ee->second.impulseForceCOM;
   }
   sva::ForceVecd getImpulsiveForceCOM(const std::string & eeName)
   {
+	  /*
     sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(eeName).inv();
     return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(eeName)));
+    */
+    const auto & ee = cache_.grfContainer.find(eeName);
+    if(ee->second.contact() || (ee->first == getImpactBody_()))
+    {
+      return ee->second.impulseForceCOM;
+    }
+    else
+    {
+      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
+    }
+
   }
   const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName)
   {
