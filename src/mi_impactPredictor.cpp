@@ -27,16 +27,21 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
 
   if(useLinearJacobian_())
   {
-    cache_.grfContainer[eeName] = {false, Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero(), sva::ForceVecd(Eigen::Vector6d::Zero()), 
-                                   Eigen::VectorXd::Zero(getOsd_()->getDof()),
-                                   Eigen::VectorXd::Zero(getOsd_()->getDof())};
+    cache_.grfContainer[eeName] = {false, Eigen::Vector3d::Zero(), 
+	    Eigen::Vector3d::Zero(), 
+	    sva::ForceVecd(Eigen::Vector6d::Zero()), 
+	    sva::ForceVecd(Eigen::Vector6d::Zero()), 
+	    Eigen::VectorXd::Zero(getOsd_()->getDof()),
+	    Eigen::VectorXd::Zero(getOsd_()->getDof())};
   }
   else
   {
     cache_.grfContainer[eeName] = {false,  Eigen::Vector6d::Zero(), 
-	    Eigen::Vector6d::Zero(), sva::ForceVecd(Eigen::Vector6d::Zero()), 
-                                   Eigen::VectorXd::Zero(getOsd_()->getDof()),
-                                   Eigen::VectorXd::Zero(getOsd_()->getDof())};
+	    Eigen::Vector6d::Zero(), 
+	    sva::ForceVecd(Eigen::Vector6d::Zero()), 
+	    sva::ForceVecd(Eigen::Vector6d::Zero()), 
+	    Eigen::VectorXd::Zero(getOsd_()->getDof()),
+	    Eigen::VectorXd::Zero(getOsd_()->getDof())};
   }
 
   if(!getOsd_()->addEndeffector(eeName))
@@ -189,7 +194,6 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
     } // end of contact force jump
 
 
-
    // 2.2 Update the acc force 
    /*
     Eigen::Vector3d tempImpactBodyAcceleration =
@@ -206,6 +210,28 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
 
   } // end of impulsive force and torque loop
 
+  // 2.2 Calculate the sum of the equivalent impulsive forces: 
+  for (auto ii = cache_.contactEndeffectors.begin(); ii !=cache_.contactEndeffectors.end(); ++ii) {
+    const auto & ee = cache_.grfContainer.find(*ii);
+
+    sva::PTransformd X_0_ee = getRobot().bodyPosW(getImpactBody_());
+    sva::PTransformd X_0_self= getRobot().bodyPosW(*ii);
+
+    sva::PTransformd X_ee_self = X_0_self* X_0_ee.inv();
+    sva::ForceVecd f_ee =
+        X_ee_self.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce()));
+
+    ee->second.impulseForceCOP = sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(*ii)) + f_ee;
+  
+    for (auto jj = cache_.contactEndeffectors.begin(); jj !=cache_.contactEndeffectors.end(); ++jj) {
+	 if(jj == ii){
+		 continue;
+	 }
+    sva::PTransformd X_0_other = getRobot().bodyPosW(*jj);
+    sva::PTransformd X_other_self = X_0_self* X_0_other.inv();
+    ee->second.impulseForceCOP += X_other_self.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(*jj)));
+    }  
+  }
   // (3.0) update the jacobians for mc_rtc
 
   Eigen::MatrixXd tempJDeltaAlpha;

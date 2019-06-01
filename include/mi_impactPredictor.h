@@ -14,6 +14,7 @@ struct impulseValues
   Eigen::VectorXd impulseForce;
   /// This is the equivalent impulsive wrench at the COM
   sva::ForceVecd impulseForceCOM; 
+  sva::ForceVecd impulseForceCOP; 
   //Eigen::VectorXd accForce;
   Eigen::VectorXd deltaTau;
   Eigen::VectorXd deltaQDot;
@@ -56,6 +57,7 @@ struct impactDataCache
   Eigen::MatrixXd jacobianDeltaAlpha;
   Eigen::MatrixXd jacobianDeltaTau;
   std::map<std::string, impulseValues> grfContainer;
+  std::vector<std::string> contactEndeffectors;
   void reset()
   {
     qVelJump.setZero();
@@ -218,6 +220,19 @@ public:
     const auto & ee = cache_.grfContainer.find(getImpactBody_());
     return ee->second.impulseForceCOM;
   }
+  const sva::ForceVecd & getImpulsiveForceCOP(const std::string & eeName)
+  { 
+    const auto & ee = cache_.grfContainer.find(eeName);
+    if(ee->second.contact() )
+    {
+      return ee->second.impulseForceCOP;
+    }
+    else
+    {
+      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
+    }
+
+  }
   const sva::ForceVecd & getImpulsiveForceCOM(const std::string & eeName)
   {
 	  /*
@@ -262,11 +277,21 @@ public:
     impactBodyName_ = impactBodyName;
   }
 
-  void setContact(const std::string contactBodyName)
+  void setContact(std::string contactBodyName)
   {
     const auto & ee = cache_.grfContainer.find(contactBodyName);
-    ee->second.setContact();
-    std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
+    if(ee != (cache_.grfContainer.end()))
+    {
+       ee->second.setContact();
+       cache_.contactEndeffectors.push_back(contactBodyName);
+       std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
+
+    }
+    else
+    {
+      std::cout << "setContact: " << contactBodyName<< std::endl;
+      throw std::runtime_error(std::string("setContact: '-") + contactBodyName+ std::string("- ' is not in the container."));
+    }
   }
   // We need to specify the endeffectors that are in contact, e.g. two feet
   // std::vector<dart::dynamics::BodyNode *> contactEndEffectors;
