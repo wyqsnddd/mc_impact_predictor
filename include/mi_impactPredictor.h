@@ -9,13 +9,13 @@ struct impulseValues
 {
 
   bool inContact;
-  //Eigen::Vector3d deltaCoP;
+  // Eigen::Vector3d deltaCoP;
   Eigen::VectorXd deltaV;
   Eigen::VectorXd impulseForce;
   /// This is the equivalent impulsive wrench at the COM
-  sva::ForceVecd impulseForceCOM; 
-  sva::ForceVecd impulseForceCOP; 
-  //Eigen::VectorXd accForce;
+  sva::ForceVecd impulseForceCOM;
+  sva::ForceVecd impulseForceCOP;
+  // Eigen::VectorXd accForce;
   Eigen::VectorXd deltaTau;
   Eigen::VectorXd deltaQDot;
 
@@ -32,7 +32,7 @@ struct impulseValues
   {
     deltaV.resize(dim);
     impulseForce.resize(dim);
-    //accForce.resize(dim);
+    // accForce.resize(dim);
     deltaQDot.resize(dof);
     deltaTau.resize(dof);
     inContact = false;
@@ -44,7 +44,7 @@ struct impulseValues
     impulseForce.setZero();
     impulseForceCOM.vector().setZero();
     // deltaCoP.setZero();
-    //accForce.setZero();
+    // accForce.setZero();
     deltaTau.setZero();
     deltaQDot.setZero();
   }
@@ -96,7 +96,7 @@ public:
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
-		     double coeFrictionDeduction,
+                     double coeFrictionDeduction,
                      double coeRes = 0.8);
 
   ~mi_impactPredictor() {}
@@ -189,20 +189,20 @@ public:
     return getOsd_()->getOsdForce(eeName);
   }
   */
- /* 
-  const Eigen::VectorXd & getAccForce(const std::string & eeName)
-  {
-    const auto & ee = cache_.grfContainer.find(eeName);
-    return ee->second.accForce;
-  }
-  */
+  /*
+   const Eigen::VectorXd & getAccForce(const std::string & eeName)
+   {
+     const auto & ee = cache_.grfContainer.find(eeName);
+     return ee->second.accForce;
+   }
+   */
   /*
   Eigen::VectorXd getQPForce(const std::string & eeName)
   {
-	  std::cout<<"The dc jacobian size is: "<< getOsd_()->getDcJacobianInv(eeName).transpose().size()<<std::endl;
-	  std::cout<<"The joint torque size is: "<< rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque).size()<<std::endl;
-    return getOsd_()->getDcJacobianInv(eeName).transpose()
-	    *rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
+    std::cout<<"The dc jacobian size is: "<< getOsd_()->getDcJacobianInv(eeName).transpose().size()<<std::endl;
+    std::cout<<"The joint torque size is: "<< rbd::dofToVector(getRobot().mb(),
+  getRobot().mbc().jointTorque).size()<<std::endl; return getOsd_()->getDcJacobianInv(eeName).transpose()
+      *rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
   }
   */
   const Eigen::VectorXd & getImpulsiveForce()
@@ -210,20 +210,20 @@ public:
     const auto & ee = cache_.grfContainer.find(getImpactBody_());
     return ee->second.impulseForce;
   }
-  const sva::ForceVecd  & getImpulsiveForceCOM()
+  const sva::ForceVecd & getImpulsiveForceCOM()
   {
-	  /*
+    /*
     sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(getImpactBody_()).inv();
-    
+
     return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce()));
     */
     const auto & ee = cache_.grfContainer.find(getImpactBody_());
     return ee->second.impulseForceCOM;
   }
   const sva::ForceVecd & getImpulsiveForceCOP(const std::string & eeName)
-  { 
+  {
     const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact() )
+    if(ee->second.contact())
     {
       return ee->second.impulseForceCOP;
     }
@@ -231,11 +231,10 @@ public:
     {
       throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
     }
-
   }
   const sva::ForceVecd & getImpulsiveForceCOM(const std::string & eeName)
   {
-	  /*
+    /*
     sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(eeName).inv();
     return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(eeName)));
     */
@@ -248,7 +247,6 @@ public:
     {
       throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
     }
-
   }
   const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName)
   {
@@ -282,15 +280,15 @@ public:
     const auto & ee = cache_.grfContainer.find(contactBodyName);
     if(ee != (cache_.grfContainer.end()))
     {
-       ee->second.setContact();
-       cache_.contactEndeffectors.push_back(contactBodyName);
-       std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
-
+      ee->second.setContact();
+      cache_.contactEndeffectors.push_back(contactBodyName);
+      std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
     }
     else
     {
-      std::cout << "setContact: " << contactBodyName<< std::endl;
-      throw std::runtime_error(std::string("setContact: '-") + contactBodyName+ std::string("- ' is not in the container."));
+      std::cout << "setContact: " << contactBodyName << std::endl;
+      throw std::runtime_error(std::string("setContact: '-") + contactBodyName
+                               + std::string("- ' is not in the container."));
     }
   }
   // We need to specify the endeffectors that are in contact, e.g. two feet

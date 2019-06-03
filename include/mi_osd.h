@@ -14,10 +14,10 @@
 #include <assert.h>
 #include <map>
 
-
-struct objJac{
-	int containerIndex;  
-	std::shared_ptr<rbd::Jacobian>	jacPtr;
+struct objJac
+{
+  int containerIndex;
+  std::shared_ptr<rbd::Jacobian> jacPtr;
 };
 
 struct osdDataCache
@@ -30,14 +30,14 @@ struct osdDataCache
   Eigen::MatrixXd lambdaMatrix;
   // Eigen::MatrixXd crossLambdaMatrix;
 
-  //Eigen::VectorXd osdF;
+  // Eigen::VectorXd osdF;
   // Eigen::VectorXd osdAcc;
   //  Eigen::VectorXd osdVel;
 
   Eigen::MatrixXd lambdaMatrixInv;
 
   // Hash table: bodyNode <-> index in the local container
-  //std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
+  // std::map<std::string, std::pair<std::shared_ptr<rbd::Jacobian>, int>> jacobians;
   std::map<std::string, objJac> jacobians;
 
   // This is a vector of the dynamically consistent Jacobian pseudo inverse of all the end-effectors.
@@ -56,7 +56,7 @@ public:
          bool linearJacobian);
 
   ~mi_osd() {}
-  
+
   bool addEndeffector(std::string eeName);
   void initializeDataStructure(int EeNum);
   void resetDataStructure();
@@ -77,7 +77,7 @@ public:
   {
     auto tempEe = cache_.jacobians.find(eeName);
     if(tempEe != cache_.jacobians.end())
-      //return tempEe->second.second;
+      // return tempEe->second.second;
       return tempEe->second.containerIndex;
     else
     {
