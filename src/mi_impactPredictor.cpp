@@ -299,6 +299,12 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
         // std::cout<<"temp is: "<<getOsd_()->getLambdaMatrix( it->first, idx->first) *
         // getOsd_()->getLambdaMatrixInv(idx->first, getImpactBody_())<<std::endl;
       } // end of inner loop
+      it->second.jacobianDeltaF = (1 / getImpactDuration_())*temp  
+	      * getOsd_()->getEffectiveLambdaMatrix(getImpactBody_()) 
+	      * getOsd_()->getDcJacobianInv(getImpactBody_())
+	      * tempReductionProjector 
+	      * getOsd_()->getJacobian(getImpactBody_());
+
       tempJDeltaTau += getOsd_()->getJacobian(it->first).transpose() * temp;
       // std::cout<<"tempJdeltaTau is: "<<tempJDeltaTau<<std::endl;
     }

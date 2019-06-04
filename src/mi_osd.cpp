@@ -105,10 +105,7 @@ void mi_osd::updateCache_()
   {
     // int ii = it->second.second;
     int ii = it->second.containerIndex;
-    /*
-        Eigen::MatrixXd tempJacobian = it->second.first->jacobian(getRobot().mb(), getRobot().mbc());
-        Eigen::MatrixXd tempJacobianDot = it->second.first->jacobianDot(getRobot().mb(), getRobot().mbc());
-        */
+    
     Eigen::MatrixXd tempJacobian = it->second.jacPtr->bodyJacobian(getRobot().mb(), getRobot().mbc());
     Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->bodyJacobianDot(getRobot().mb(), getRobot().mbc());
 

@@ -18,6 +18,7 @@ struct impulseValues
   // Eigen::VectorXd accForce;
   Eigen::VectorXd deltaTau;
   Eigen::VectorXd deltaQDot;
+  Eigen::MatrixXd jacobianDeltaF;
 
   void setContact()
   {
@@ -302,6 +303,11 @@ public:
   const Eigen::MatrixXd & getJacobianDeltaTau()
   {
     return cache_.jacobianDeltaTau;
+  }
+  const Eigen::MatrixXd & getJacobianDeltaF(const std::string & eeName)
+  {
+    const auto & ee = cache_.grfContainer.find(eeName);
+    return ee->second.jacobianDeltaF;
   }
   const double & getImpactDuration_() const
   {
