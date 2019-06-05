@@ -142,8 +142,8 @@ public:
 
   inline const Eigen::VectorXd & getEeVelocityJump()
   {
-    //  std::cout<<"calling eevel jump: "<<getImpactBody_()<<std::endl;
-    const auto ee = cache_.grfContainer.find(getImpactBody_());
+    //  std::cout<<"calling eevel jump: "<<getImpactBody()<<std::endl;
+    const auto ee = cache_.grfContainer.find(getImpactBody());
 
     // std::cout<<"Size of cache_.grfContainer is: "<<cache_.grfContainer.size()<<std::endl;
     /*
@@ -208,17 +208,17 @@ public:
   */
   inline const Eigen::VectorXd & getImpulsiveForce()
   {
-    const auto & ee = cache_.grfContainer.find(getImpactBody_());
+    const auto & ee = cache_.grfContainer.find(getImpactBody());
     return ee->second.impulseForce;
   }
   inline const sva::ForceVecd & getImpulsiveForceCOM()
   {
     /*
-    sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(getImpactBody_()).inv();
+    sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(getImpactBody()).inv();
 
     return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce()));
     */
-    const auto & ee = cache_.grfContainer.find(getImpactBody_());
+    const auto & ee = cache_.grfContainer.find(getImpactBody());
     return ee->second.impulseForceCOM;
   }
   const sva::ForceVecd & getImpulsiveForceCOP(const std::string & eeName);
@@ -256,6 +256,12 @@ public:
     return impactDuration_;
   }
 
+  inline const std::string & getImpactBody()
+  {
+    return impactBodyName_;
+  }
+
+
 protected:
   mc_rbdyn::Robot & robot_;
   std::string impactBodyName_;
@@ -269,7 +275,7 @@ protected:
 
   impactDataCache cache_;
 
-  bool useLinearJacobian_() const
+  inline bool useLinearJacobian_() const
   {
     return linearJacobian_;
   }
@@ -278,23 +284,18 @@ protected:
   // dart::dynamics::BodyNodePtr impactBodyPtr_;
 
   // The returned pointer is not supposed to be changed.
-  const std::string getImpactBody_()
-  {
-    return impactBodyName_;
-  }
-
   // The returned pointer is not supposed to be changed.
-  const std::shared_ptr<mi_osd> getOsd_() const
+  inline const std::shared_ptr<mi_osd> & getOsd_() const
   {
     return osdPtr_;
   }
 
   // mc_rbdyn::Robot & loadRobot_(mc_rbdyn::RobotModulePtr rm, const std::string & name);
-  const double getCoeRes_() const
+  inline const double & getCoeRes_() const
   {
     return coeRes_;
   }
-  const double getCoeFricDe_() const
+  inline const double & getCoeFricDe_() const
   {
     return coeFrictionDeduction_;
   }
