@@ -73,19 +73,8 @@ public:
   {
     return cache_.lambdaMatrix.block(rowInt * getEeNum(), columnInt * getEeNum(), 6, 6);
   }
-  const int nameToIndex_(const std::string & eeName) const
-  {
-    auto tempEe = cache_.jacobians.find(eeName);
-    if(tempEe != cache_.jacobians.end())
-      // return tempEe->second.second;
-      return tempEe->second.containerIndex;
-    else
-    {
-      // std::cout << "Link " << eeName << " is missing." << std::endl;
-      std::string error_msg = std::string("OSD::nameToIndex_: link-") + eeName + std::string(": does not exist.");
-      throw std::runtime_error(error_msg);
-    }
-  }
+  const int nameToIndex_(const std::string & eeName) const;
+  
   const Eigen::MatrixXd getLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
   {
     return cache_.lambdaMatrix.block(nameToIndex_(eeOne) * getJacobianDim(), nameToIndex_(eeTwo) * getJacobianDim(),

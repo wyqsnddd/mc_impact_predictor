@@ -221,77 +221,19 @@ public:
     const auto & ee = cache_.grfContainer.find(getImpactBody_());
     return ee->second.impulseForceCOM;
   }
-  const sva::ForceVecd & getImpulsiveForceCOP(const std::string & eeName)
-  {
-    const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact())
-    {
-      return ee->second.impulseForceCOP;
-    }
-    else
-    {
-      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
-    }
-  }
-  const sva::ForceVecd & getImpulsiveForceCOM(const std::string & eeName)
-  {
-    /*
-    sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(eeName).inv();
-    return X_ee_CoM.dualMul(sva::ForceVecd(Eigen::Vector3d::Zero(), getImpulsiveForce(eeName)));
-    */
-    const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact() || (ee->first == getImpactBody_()))
-    {
-      return ee->second.impulseForceCOM;
-    }
-    else
-    {
-      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
-    }
-  }
-  const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName)
-  {
-    const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact() || (ee->first == getImpactBody_()))
-    {
-      return ee->second.impulseForce;
-    }
-    else
-    {
-      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
-    }
-  }
+  const sva::ForceVecd & getImpulsiveForceCOP(const std::string & eeName);
+  const sva::ForceVecd & getImpulsiveForceCOM(const std::string & eeName);
+  const Eigen::VectorXd & getImpulsiveForce(const std::string & eeName);
   inline mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
-  /*
-   mc_rbdyn::Robot & getRobot()
-   {
-     return robot_;
-   }
- */
   inline void setImpactBody(std::string & impactBodyName)
   {
     impactBodyName_ = impactBodyName;
   }
 
-  void setContact(std::string contactBodyName)
-  {
-    const auto & ee = cache_.grfContainer.find(contactBodyName);
-    if(ee != (cache_.grfContainer.end()))
-    {
-      ee->second.setContact();
-      cache_.contactEndeffectors.push_back(contactBodyName);
-      std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
-    }
-    else
-    {
-      std::cout << "setContact: " << contactBodyName << std::endl;
-      throw std::runtime_error(std::string("setContact: '-") + contactBodyName
-                               + std::string("- ' is not in the container."));
-    }
-  }
+  void setContact(std::string contactBodyName);
   // We need to specify the endeffectors that are in contact, e.g. two feet
   // std::vector<dart::dynamics::BodyNode *> contactEndEffectors;
 

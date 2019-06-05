@@ -107,7 +107,19 @@ void mi_osd::update()
     // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
     updateCache_();
   }
-
+const int mi_osd::nameToIndex_(const std::string & eeName) const
+  {
+    auto tempEe = cache_.jacobians.find(eeName);
+    if(tempEe != cache_.jacobians.end())
+      // return tempEe->second.second;
+      return tempEe->second.containerIndex;
+    else
+    {
+      // std::cout << "Link " << eeName << " is missing." << std::endl;
+      std::string error_msg = std::string("OSD::nameToIndex_: link-") + eeName + std::string(": does not exist.");
+      throw std::runtime_error(error_msg);
+    }
+  }
 void mi_osd::updateCache_()
 {
   // Read from the robot:

@@ -20,7 +20,59 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
 }
+void mi_impactPredictor::setContact(std::string contactBodyName)
+  {
+    const auto & ee = cache_.grfContainer.find(contactBodyName);
+    if(ee != (cache_.grfContainer.end()))
+    {
+      ee->second.setContact();
+      cache_.contactEndeffectors.push_back(contactBodyName);
+      std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
+    }
+    else
+    {
+      std::cout << "setContact: " << contactBodyName << std::endl;
+      throw std::runtime_error(std::string("setContact: '-") + contactBodyName
+                               + std::string("- ' is not in the container."));
+    }
+  }
+const Eigen::VectorXd & mi_impactPredictor::getImpulsiveForce(const std::string & eeName)
+  {
+    const auto & ee = cache_.grfContainer.find(eeName);
+    if(ee->second.contact() || (ee->first == getImpactBody_()))
+    {
+      return ee->second.impulseForce;
+    }
+    else
+    {
+      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
+    }
+  }
+ const sva::ForceVecd & mi_impactPredictor::getImpulsiveForceCOM(const std::string & eeName)
+  {
+    const auto & ee = cache_.grfContainer.find(eeName);
+    if(ee->second.contact() || (ee->first == getImpactBody_()))
+    {
+      return ee->second.impulseForceCOM;
+    }
+    else
+    {
+      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
+    }
+  }
 
+const sva::ForceVecd & mi_impactPredictor::getImpulsiveForceCOP(const std::string & eeName)
+  {
+    const auto & ee = cache_.grfContainer.find(eeName);
+    if(ee->second.contact())
+    {
+      return ee->second.impulseForceCOP;
+    }
+    else
+    {
+      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
+    }
+  }
 bool mi_impactPredictor::addEndeffector(std::string eeName)
 {
 
