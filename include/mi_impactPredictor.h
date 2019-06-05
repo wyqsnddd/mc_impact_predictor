@@ -105,15 +105,15 @@ public:
 
   bool addEndeffector(std::string eeName);
 
-  const Eigen::VectorXd & getTauJump() const
+  inline const Eigen::VectorXd & getTauJump() const
   {
     return cache_.tauJump;
   }
-  const Eigen::VectorXd & getJointVelocityJump() const
+  inline const Eigen::VectorXd & getJointVelocityJump() const
   {
     return cache_.qVelJump;
   }
-  const Eigen::VectorXd & getJointVelocityJump(const std::string & eeName) const
+  inline const Eigen::VectorXd & getJointVelocityJump(const std::string & eeName) const
   {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaQDot;
@@ -134,13 +134,13 @@ public:
     }
   }
   */
-  const Eigen::VectorXd & getEeVelocityJump(const std::string & eeName) const
+  inline const Eigen::VectorXd & getEeVelocityJump(const std::string & eeName) const
   {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaV;
   }
 
-  const Eigen::VectorXd & getEeVelocityJump()
+  inline const Eigen::VectorXd & getEeVelocityJump()
   {
     //  std::cout<<"calling eevel jump: "<<getImpactBody_()<<std::endl;
     const auto ee = cache_.grfContainer.find(getImpactBody_());
@@ -155,23 +155,23 @@ public:
     return ee->second.deltaV;
     // return Eigen::Vector3d::Zero();
   }
-  const Eigen::VectorXd & getBranchJointVelJump(const std::string & eeName) const
+  inline const Eigen::VectorXd & getBranchJointVelJump(const std::string & eeName) const
   {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaQDot;
   }
-  const Eigen::VectorXd & getBranchTauJump(const std::string & eeName) const
+  inline const Eigen::VectorXd & getBranchTauJump(const std::string & eeName) const
   {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.deltaTau;
   }
 
-  void resetDataStructure()
+  inline void resetDataStructure()
   {
     getOsd_()->resetDataStructure();
     cache_.reset();
   }
-  void initializeDataStructure(int numEE)
+  inline void initializeDataStructure(int numEE)
   {
 
     cache_.ini(getOsd_()->getJacobianDim(), getOsd_()->getDof());
@@ -206,12 +206,12 @@ public:
       *rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
   }
   */
-  const Eigen::VectorXd & getImpulsiveForce()
+  inline const Eigen::VectorXd & getImpulsiveForce()
   {
     const auto & ee = cache_.grfContainer.find(getImpactBody_());
     return ee->second.impulseForce;
   }
-  const sva::ForceVecd & getImpulsiveForceCOM()
+  inline const sva::ForceVecd & getImpulsiveForceCOM()
   {
     /*
     sva::PTransformd X_ee_CoM = sva::PTransformd(getRobot().com())*getRobot().bodyPosW(getImpactBody_()).inv();
@@ -261,7 +261,7 @@ public:
       throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
     }
   }
-  mc_rbdyn::Robot & getRobot()
+  inline mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
@@ -271,7 +271,7 @@ public:
      return robot_;
    }
  */
-  void setImpactBody(std::string & impactBodyName)
+  inline void setImpactBody(std::string & impactBodyName)
   {
     impactBodyName_ = impactBodyName;
   }
@@ -296,20 +296,20 @@ public:
   // std::vector<dart::dynamics::BodyNode *> contactEndEffectors;
 
   //----------------Public API for control ----------------------------/
-  const Eigen::MatrixXd & getJacobianDeltaAlpha()
+  inline const Eigen::MatrixXd & getJacobianDeltaAlpha()
   {
     return cache_.jacobianDeltaAlpha;
   }
-  const Eigen::MatrixXd & getJacobianDeltaTau()
+  inline const Eigen::MatrixXd & getJacobianDeltaTau()
   {
     return cache_.jacobianDeltaTau;
   }
-  const Eigen::MatrixXd & getJacobianDeltaF(const std::string & eeName)
+  inline const Eigen::MatrixXd & getJacobianDeltaF(const std::string & eeName)
   {
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.jacobianDeltaF;
   }
-  const double & getImpactDuration_() const
+  inline const double & getImpactDuration_() const
   {
     return impactDuration_;
   }

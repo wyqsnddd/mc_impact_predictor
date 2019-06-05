@@ -61,11 +61,11 @@ public:
   void initializeDataStructure(int EeNum);
   void resetDataStructure();
 
-  const Eigen::MatrixXd & getLambdaMatrix() const
+  inline const Eigen::MatrixXd & getLambdaMatrix() const
   {
     return cache_.lambdaMatrix;
   }
-  const Eigen::MatrixXd & getLambdaMatrixInv() const
+  inline const Eigen::MatrixXd & getLambdaMatrixInv() const
   {
     return cache_.lambdaMatrixInv;
   }
@@ -106,7 +106,7 @@ public:
     return cache_.osdJacobianDot.block(nameToIndex_(eeName) * getJacobianDim(), 0, getJacobianDim(), getDof());
   }
 
-  const Eigen::MatrixXd & getEffectiveLambdaMatrix(const std::string & eeName) const
+  inline const Eigen::MatrixXd & getEffectiveLambdaMatrix(const std::string & eeName) const
   {
     return cache_.effectiveLambdaMatrices[nameToIndex_(eeName)];
   }
@@ -116,53 +116,35 @@ public:
     return cache_.osdF.segment(nameToIndex_(eeName) * getJacobianDim(), getJacobianDim());
   }
 */
-  const Eigen::MatrixXd & getDcJacobianInv(const std::string eeName) const
+  inline const Eigen::MatrixXd & getDcJacobianInv(const std::string eeName) const
   {
     return cache_.dcJacobianInvs[nameToIndex_(eeName)];
   }
-  const Eigen::MatrixXd & getInvMassMatrix() const
+  inline const Eigen::MatrixXd & getInvMassMatrix() const
   {
     return cache_.invMassMatrix;
   }
   // This needs to be called in every iteration only once
-  void update()
-  {
-    if(getEeNum() < 3)
-    {
-      throw std::runtime_error("OSD: Too less end-effectors are defined for the OSD. ");
-    }
-    // mc_rtc components
-    // std::cout << "Updating OSD FD..." << std::endl;
-
-    // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
-
-    rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-    rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-    rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
-    FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
-    // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-    // std::cout << "FD computed M ..." << std::endl;
-    // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
-    updateCache_();
-  }
-  int getDof() const
+  void update();
+  
+  inline int getDof() const
   {
     return robotDof_;
   }
-  int getEeNum() const
+  inline int getEeNum() const
   {
     return eeNum_;
   }
-  mc_rbdyn::Robot & getRobot()
+  inline mc_rbdyn::Robot & getRobot()
   {
     return robot_;
   }
 
-  const std::shared_ptr<rbd::ForwardDynamics> getFD() const
+  inline const std::shared_ptr<rbd::ForwardDynamics> getFD() const
   {
     return FDPtr_;
   }
-  const int getJacobianDim() const
+  inline const int getJacobianDim() const
   {
     return jacobianDim_;
   }
