@@ -61,11 +61,11 @@ public:
   void initializeDataStructure(int EeNum);
   void resetDataStructure();
 
-  Eigen::MatrixXd getLambdaMatrix() const
+  const Eigen::MatrixXd & getLambdaMatrix() const
   {
     return cache_.lambdaMatrix;
   }
-  Eigen::MatrixXd getLambdaMatrixInv() const
+  const Eigen::MatrixXd & getLambdaMatrixInv() const
   {
     return cache_.lambdaMatrixInv;
   }
@@ -97,7 +97,7 @@ public:
                                         getJacobianDim(), getJacobianDim());
   }
 
-  const Eigen::MatrixXd getJacobian(const std::string & eeName) const
+  const Eigen::MatrixXd  getJacobian(const std::string & eeName) const
   {
     return cache_.osdJacobian.block(nameToIndex_(eeName) * getJacobianDim(), 0, getJacobianDim(), getDof());
   }
@@ -106,7 +106,7 @@ public:
     return cache_.osdJacobianDot.block(nameToIndex_(eeName) * getJacobianDim(), 0, getJacobianDim(), getDof());
   }
 
-  const Eigen::MatrixXd getEffectiveLambdaMatrix(const std::string & eeName) const
+  const Eigen::MatrixXd & getEffectiveLambdaMatrix(const std::string & eeName) const
   {
     return cache_.effectiveLambdaMatrices[nameToIndex_(eeName)];
   }
@@ -116,11 +116,11 @@ public:
     return cache_.osdF.segment(nameToIndex_(eeName) * getJacobianDim(), getJacobianDim());
   }
 */
-  const Eigen::MatrixXd getDcJacobianInv(const std::string eeName) const
+  const Eigen::MatrixXd & getDcJacobianInv(const std::string eeName) const
   {
     return cache_.dcJacobianInvs[nameToIndex_(eeName)];
   }
-  const Eigen::MatrixXd getInvMassMatrix() const
+  const Eigen::MatrixXd & getInvMassMatrix() const
   {
     return cache_.invMassMatrix;
   }
