@@ -131,7 +131,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   Eigen::Matrix3d tempProjector = surfaceNormal * surfaceNormal.transpose();
   Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - surfaceNormal * surfaceNormal.transpose();
 
-  Eigen::Matrix3d tempReductionProjector = -(1 + getCoeRes_()) * (tempProjector + getCoeFricDe_() * tempNullProjector);
+  Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes_()) * tempProjector + getCoeFricDe_() * tempNullProjector);
   Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
   Eigen::VectorXd alphaD = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
   const auto & impactBodyValuesPtr = cache_.grfContainer.find(getImpactBody());
@@ -161,6 +161,14 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   //(0.3) update impact body-velocity induced impulsive joint torque
   // * Update the impulsive force of end-effectors with established contact
   impactBodyValuesPtr->second.deltaTau = getOsd_()->getJacobian(getImpactBody()).transpose() * getImpulsiveForce();
+
+  // (0.4) Update the Jacobian
+  impactBodyValuesPtr->second.jacobianDeltaF = 
+	       getOsd_()->getEffectiveLambdaMatrix(getImpactBody()) 
+	      * getOsd_()->getDcJacobianInv(getImpactBody())
+	      * tempReductionProjector 
+	      * getOsd_()->getJacobian(getImpactBody());
+
 
   // add the impact body impulsive force first
   cache_.tauJump = impactBodyValuesPtr->second.deltaTau;
