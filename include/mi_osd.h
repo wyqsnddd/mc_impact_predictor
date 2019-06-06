@@ -74,7 +74,7 @@ public:
     return cache_.lambdaMatrix.block(rowInt * getEeNum(), columnInt * getEeNum(), 6, 6);
   }
   const int nameToIndex_(const std::string & eeName) const;
-  
+
   const Eigen::MatrixXd getLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
   {
     return cache_.lambdaMatrix.block(nameToIndex_(eeOne) * getJacobianDim(), nameToIndex_(eeTwo) * getJacobianDim(),
@@ -86,7 +86,7 @@ public:
                                         getJacobianDim(), getJacobianDim());
   }
 
-  const Eigen::MatrixXd  getJacobian(const std::string & eeName) const
+  const Eigen::MatrixXd getJacobian(const std::string & eeName) const
   {
     return cache_.osdJacobian.block(nameToIndex_(eeName) * getJacobianDim(), 0, getJacobianDim(), getDof());
   }
@@ -115,7 +115,7 @@ public:
   }
   // This needs to be called in every iteration only once
   void update();
-  
+
   inline int getDof() const
   {
     return robotDof_;

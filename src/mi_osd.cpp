@@ -88,45 +88,45 @@ void mi_osd::initializeDataStructure(const int EeNum)
 }
 
 void mi_osd::update()
+{
+  if(getEeNum() < 3)
   {
-    if(getEeNum() < 3)
-    {
-      throw std::runtime_error("OSD: Too less end-effectors are defined for the OSD. ");
-    }
-    // mc_rtc components
-    // std::cout << "Updating OSD FD..." << std::endl;
-
-    // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
-
-    rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
-    rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
-    rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
-    FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
-    // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
-    // std::cout << "FD computed M ..." << std::endl;
-    // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
-    updateCache_();
+    throw std::runtime_error("OSD: Too less end-effectors are defined for the OSD. ");
   }
+  // mc_rtc components
+  // std::cout << "Updating OSD FD..." << std::endl;
+
+  // rbd::MultiBodyConfig & tempMbc = getRobot().mbc();
+
+  rbd::forwardKinematics(getRobot().mb(), getRobot().mbc());
+  rbd::forwardVelocity(getRobot().mb(), getRobot().mbc());
+  rbd::forwardAcceleration(getRobot().mb(), getRobot().mbc());
+  FDPtr_->forwardDynamics(getRobot().mb(), getRobot().mbc());
+  // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
+  // std::cout << "FD computed M ..." << std::endl;
+  // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
+  updateCache_();
+}
 const int mi_osd::nameToIndex_(const std::string & eeName) const
+{
+  auto tempEe = cache_.jacobians.find(eeName);
+  if(tempEe != cache_.jacobians.end())
+    // return tempEe->second.second;
+    return tempEe->second.containerIndex;
+  else
   {
-    auto tempEe = cache_.jacobians.find(eeName);
-    if(tempEe != cache_.jacobians.end())
-      // return tempEe->second.second;
-      return tempEe->second.containerIndex;
-    else
-    {
-      // std::cout << "Link " << eeName << " is missing." << std::endl;
-      std::string error_msg = std::string("OSD::nameToIndex_: link-") + eeName + std::string(": does not exist.");
-      throw std::runtime_error(error_msg);
-    }
+    // std::cout << "Link " << eeName << " is missing." << std::endl;
+    std::string error_msg = std::string("OSD::nameToIndex_: link-") + eeName + std::string(": does not exist.");
+    throw std::runtime_error(error_msg);
   }
+}
 void mi_osd::updateCache_()
 {
   // Read from the robot:
   //  std::cout << "Updating OSD cache..." << std::endl;
   // Eigen::MatrixXd tempMassMatrix = getFD()->H();
   // std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl;
-// std::cout<<"The C is: "<<getFD()->C()<<std::endl;
+  // std::cout<<"The C is: "<<getFD()->C()<<std::endl;
   // (0) Update the mass matrix inverse
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_M(getFD()->H());
   cache_.invMassMatrix = lu_decomp_M.inverse();
@@ -138,7 +138,7 @@ void mi_osd::updateCache_()
   {
     // int ii = it->second.second;
     int ii = it->second.containerIndex;
-    
+
     Eigen::MatrixXd tempJacobian = it->second.jacPtr->bodyJacobian(getRobot().mb(), getRobot().mbc());
     Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->bodyJacobianDot(getRobot().mb(), getRobot().mbc());
 

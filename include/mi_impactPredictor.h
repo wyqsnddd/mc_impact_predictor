@@ -261,7 +261,6 @@ public:
     return impactBodyName_;
   }
 
-
 protected:
   mc_rbdyn::Robot & robot_;
   std::string impactBodyName_;

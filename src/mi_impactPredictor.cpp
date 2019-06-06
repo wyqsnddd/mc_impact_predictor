@@ -21,58 +21,58 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
 }
 void mi_impactPredictor::setContact(std::string contactBodyName)
+{
+  const auto & ee = cache_.grfContainer.find(contactBodyName);
+  if(ee != (cache_.grfContainer.end()))
   {
-    const auto & ee = cache_.grfContainer.find(contactBodyName);
-    if(ee != (cache_.grfContainer.end()))
-    {
-      ee->second.setContact();
-      cache_.contactEndeffectors.push_back(contactBodyName);
-      std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
-    }
-    else
-    {
-      std::cout << "setContact: " << contactBodyName << std::endl;
-      throw std::runtime_error(std::string("setContact: '-") + contactBodyName
-                               + std::string("- ' is not in the container."));
-    }
+    ee->second.setContact();
+    cache_.contactEndeffectors.push_back(contactBodyName);
+    std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
   }
+  else
+  {
+    std::cout << "setContact: " << contactBodyName << std::endl;
+    throw std::runtime_error(std::string("setContact: '-") + contactBodyName
+                             + std::string("- ' is not in the container."));
+  }
+}
 const Eigen::VectorXd & mi_impactPredictor::getImpulsiveForce(const std::string & eeName)
+{
+  const auto & ee = cache_.grfContainer.find(eeName);
+  if(ee->second.contact() || (ee->first == getImpactBody()))
   {
-    const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact() || (ee->first == getImpactBody()))
-    {
-      return ee->second.impulseForce;
-    }
-    else
-    {
-      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
-    }
+    return ee->second.impulseForce;
   }
- const sva::ForceVecd & mi_impactPredictor::getImpulsiveForceCOM(const std::string & eeName)
+  else
   {
-    const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact() || (ee->first == getImpactBody()))
-    {
-      return ee->second.impulseForceCOM;
-    }
-    else
-    {
-      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
-    }
+    throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
   }
+}
+const sva::ForceVecd & mi_impactPredictor::getImpulsiveForceCOM(const std::string & eeName)
+{
+  const auto & ee = cache_.grfContainer.find(eeName);
+  if(ee->second.contact() || (ee->first == getImpactBody()))
+  {
+    return ee->second.impulseForceCOM;
+  }
+  else
+  {
+    throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
+  }
+}
 
 const sva::ForceVecd & mi_impactPredictor::getImpulsiveForceCOP(const std::string & eeName)
+{
+  const auto & ee = cache_.grfContainer.find(eeName);
+  if(ee->second.contact())
   {
-    const auto & ee = cache_.grfContainer.find(eeName);
-    if(ee->second.contact())
-    {
-      return ee->second.impulseForceCOP;
-    }
-    else
-    {
-      throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
-    }
+    return ee->second.impulseForceCOP;
   }
+  else
+  {
+    throw std::runtime_error(std::string("Predictor: '-") + eeName + std::string("- ' is not in contact."));
+  }
+}
 bool mi_impactPredictor::addEndeffector(std::string eeName)
 {
 
@@ -163,12 +163,9 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   impactBodyValuesPtr->second.deltaTau = getOsd_()->getJacobian(getImpactBody()).transpose() * getImpulsiveForce();
 
   // (0.4) Update the Jacobian
-  impactBodyValuesPtr->second.jacobianDeltaF = 
-	       getOsd_()->getEffectiveLambdaMatrix(getImpactBody()) 
-	      * getOsd_()->getDcJacobianInv(getImpactBody())
-	      * tempReductionProjector 
-	      * getOsd_()->getJacobian(getImpactBody());
-
+  impactBodyValuesPtr->second.jacobianDeltaF = getOsd_()->getEffectiveLambdaMatrix(getImpactBody())
+                                               * getOsd_()->getDcJacobianInv(getImpactBody()) * tempReductionProjector
+                                               * getOsd_()->getJacobian(getImpactBody());
 
   // add the impact body impulsive force first
   cache_.tauJump = impactBodyValuesPtr->second.deltaTau;
@@ -359,11 +356,10 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
         // std::cout<<"temp is: "<<getOsd_()->getLambdaMatrix( it->first, idx->first) *
         // getOsd_()->getLambdaMatrixInv(idx->first, getImpactBody())<<std::endl;
       } // end of inner loop
-      it->second.jacobianDeltaF = (1 / getImpactDuration_())*temp  
-	      * getOsd_()->getEffectiveLambdaMatrix(getImpactBody()) 
-	      * getOsd_()->getDcJacobianInv(getImpactBody())
-	      * tempReductionProjector 
-	      * getOsd_()->getJacobian(getImpactBody());
+      it->second.jacobianDeltaF = (1 / getImpactDuration_()) * temp
+                                  * getOsd_()->getEffectiveLambdaMatrix(getImpactBody())
+                                  * getOsd_()->getDcJacobianInv(getImpactBody()) * tempReductionProjector
+                                  * getOsd_()->getJacobian(getImpactBody());
 
       tempJDeltaTau += getOsd_()->getJacobian(it->first).transpose() * temp;
       // std::cout<<"tempJdeltaTau is: "<<tempJDeltaTau<<std::endl;
