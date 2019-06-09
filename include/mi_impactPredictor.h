@@ -6,20 +6,29 @@
 #include "mi_osd.h"
 
 struct impulseValues
+/** \brief Impulsive values associated with one end-effector
+ */
 {
+  bool inContact; ///< If this end-effector is in contact
 
-  bool inContact;
-  // Eigen::Vector3d deltaCoP;
-  Eigen::VectorXd deltaV;
-  Eigen::VectorXd impulseForce;
-  /// This is the equivalent impulsive wrench at the COM
-  sva::ForceVecd impulseForceCOM;
+  Eigen::VectorXd deltaV; ///< End-effector velocity jump \f$ \delta \v_k \f$
+
+  Eigen::VectorXd impulseForce; ///< End-effector velocity jump \f$ \bar{f}_k \f$
+
+  sva::ForceVecd impulseForceCOM; ///< Equivalent force of \f$ \bar{f}_k \f$ at the CoM
+
   sva::ForceVecd impulseForceCOP;
   // Eigen::VectorXd accForce;
-  Eigen::VectorXd deltaTau;
-  Eigen::VectorXd deltaQDot;
-  Eigen::MatrixXd jacobianDeltaF;
+  Eigen::VectorXd deltaTau; ///< Impact induced joint torque jump \f$ \delta \tau_k \f$ of the \f$k\f$th kinematic branch associated with the end-effector
 
+  Eigen::VectorXd deltaQDot; ///< Impact induced joint velocity jump \f$ \delta \dot{q}_k \f$ of the \f$k\f$th kinematic branch associated with the end-effector
+
+  Eigen::MatrixXd
+      jacobianDeltaF; ///< We use this Jacobian to calculate the impact-induced impulsive force: \f$ \bar{f}_m =  \frac{1}{\delta t}\mathcal{J}_{f}(\dot{q} + \ddot{q}\Delta t) \f$ where we have the definition:   \f$  \mathcal{J}_{f} = \frac{1}{\delta t }  \sum^{m}_{i=1}\Lambda_{ki} \Lambda^{-1}_{km} \tilde{\Lambda}_m P_{\delta}J_m. \f$
+
+  /*!
+   * Set this end-effector in contact
+   */
   void setContact()
   {
     inContact = true;
@@ -51,14 +60,22 @@ struct impulseValues
   }
 };
 struct impactDataCache
+/** \brief Impulsive values associated with the robot
+ */
 {
-  //
-  Eigen::VectorXd qVelJump;
-  Eigen::VectorXd tauJump;
-  Eigen::MatrixXd jacobianDeltaAlpha;
-  Eigen::MatrixXd jacobianDeltaTau;
-  std::map<std::string, impulseValues> grfContainer;
-  std::vector<std::string> contactEndeffectors;
+  Eigen::VectorXd qVelJump; ///< Impact induced joint velocity jump \f$ \delta \dot{q}\f$ of all the kinematic branches
+
+  Eigen::VectorXd tauJump; ///< Impact induced joint torque jump \f$ \delta \tau \f$ of all the kinematic branches.
+
+  Eigen::MatrixXd
+      jacobianDeltaAlpha; ///<     We use this Jacobian to calculate the impact-induced joint velocity jump: \f$ \delta \dot{q} = \frac{1}{\delta t}\mathcal{J}_{\delta \dot{q}}(\dot{q} + \ddot{q}\Delta t)   \f$ where we have the definition: \f$ \mathcal{J}_{\delta \dot{q}} = ( \bar{J}_m  +   \frac{1}{\delta t} (\sum_{i \neq m}  \bar{J}_i \Lambda^{-1}_{im}  )\tilde{\Lambda}_{m}) P_{\delta}J_m \f$
+
+  Eigen::MatrixXd
+      jacobianDeltaTau; ///< We use this Jacobian to calculate the impact-induced joint torque jump: \f$ \delta \tau = \frac{1}{\delta t}\mathcal{J}_{\delta \tau }(\dot{q} + \ddot{q}\Delta t) \f$ where we have the definition: \f$  \mathcal{J}_{\delta \tau} = (J^\top_m  +  \frac{1}{\delta t }  \sum_{k\in \mathcal{I}_c} J^\top_k\sum^{m}_{i=1}\Lambda_{ki}  \Lambda^{-1}_{km} )\tilde{\Lambda}_m P_{\delta}J_m \f$
+
+  std::map<std::string, impulseValues>
+      grfContainer; ///< a container that helps to find the impulsive values associated with an end-effector.
+  std::vector<std::string> contactEndeffectors; ///< end-effectors with established contact.
   void reset()
   {
     qVelJump.setZero();
@@ -90,10 +107,19 @@ struct impactDataCache
 };
 
 class mi_impactPredictor
+/** \brief impact-induced state jumps calculation when one end-effector is expecting an impact.
+ */
 {
 public:
+  /*!
+      \param robot reference to the robot model used by the QP
+      \param osdPtr reference to the shared pointer of the Operational space dynamics
+      \param impactBodyName name of the end-effector that expects an impact
+      \param coeFrictionDeduction tangential velocity deduction coeffecient at the impact.
+      \param coeRes coefficient of restitution
+      */
   mi_impactPredictor(mc_rbdyn::Robot & robot,
-		     const std::shared_ptr<mi_osd> & osdPtr,
+                     const std::shared_ptr<mi_osd> & osdPtr,
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
@@ -101,8 +127,15 @@ public:
                      double coeRes = 0.8);
 
   ~mi_impactPredictor() {}
+  /*!
+  \param surfaceNormal normal direction of the expected contact surface.
+  */
   void run(const Eigen::Vector3d & surfaceNormal);
 
+  /*!
+    \param add the end-effector to the operational space model
+    \return operation status
+    */
   bool addEndeffector(std::string eeName);
 
   inline const Eigen::VectorXd & getTauJump() const
@@ -168,14 +201,14 @@ public:
 
   inline void resetDataStructure()
   {
-    //getOsd_()->resetDataStructure();
+    // getOsd_()->resetDataStructure();
     cache_.reset();
   }
   inline void initializeDataStructure(int numEE)
   {
 
     cache_.ini(getOsd_()->getJacobianDim(), getOsd_()->getDof());
-    //getOsd_()->initializeDataStructure(numEE);
+    // getOsd_()->initializeDataStructure(numEE);
   }
   /*
   const Eigen::Vector3d & getDeltaCoP(const std::string & eeName)
@@ -272,7 +305,6 @@ protected:
 
   double coeFrictionDeduction_;
   double coeRes_;
-
 
   impactDataCache cache_;
 
