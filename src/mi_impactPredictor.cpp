@@ -1,13 +1,13 @@
 #include "mi_impactPredictor.h"
 
 mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
-                                       // std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+				       const std::shared_ptr<mi_osd> & osdPtr,
                                        std::string impactBodyName,
                                        bool linearJacobian,
                                        double impactDuration,
                                        double coeFrictionDeduction,
                                        double coeRes)
-: robot_(robot), linearJacobian_(linearJacobian), impactDuration_(impactDuration),
+: robot_(robot), osdPtr_(osdPtr), linearJacobian_(linearJacobian), impactDuration_(impactDuration),
   coeFrictionDeduction_(coeFrictionDeduction), coeRes_(coeRes)
 {
 
@@ -15,7 +15,7 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
   setImpactBody(impactBodyName);
   std::cout << "The impact body name is: " << getImpactBody() << std::endl;
   // osdPtr_ = std::make_shared<mi_osd>(getRobot(), fdPtr, useLinearJacobian_());
-  osdPtr_ = std::make_shared<mi_osd>(getRobot(), useLinearJacobian_());
+  //osdPtr_ = std::make_shared<mi_osd>(getRobot(), useLinearJacobian_());
 
   std::cout << "The impact predictor constuctor is finished." << std::endl;
   std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
@@ -126,7 +126,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   assert(cache_.grfContainer.size() == getOsd_()->getEeNum());
 
   // Update the equations of motions
-  osdPtr_->update();
+  //osdPtr_->update();
   // std::cout << "OSD updated. " << std::endl;
   Eigen::Matrix3d tempProjector = surfaceNormal * surfaceNormal.transpose();
   Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - surfaceNormal * surfaceNormal.transpose();

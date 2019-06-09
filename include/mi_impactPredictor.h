@@ -93,7 +93,7 @@ class mi_impactPredictor
 {
 public:
   mi_impactPredictor(mc_rbdyn::Robot & robot,
-                     // std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
+		     const std::shared_ptr<mi_osd> & osdPtr,
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
@@ -168,14 +168,14 @@ public:
 
   inline void resetDataStructure()
   {
-    getOsd_()->resetDataStructure();
+    //getOsd_()->resetDataStructure();
     cache_.reset();
   }
   inline void initializeDataStructure(int numEE)
   {
 
     cache_.ini(getOsd_()->getJacobianDim(), getOsd_()->getDof());
-    getOsd_()->initializeDataStructure(numEE);
+    //getOsd_()->initializeDataStructure(numEE);
   }
   /*
   const Eigen::Vector3d & getDeltaCoP(const std::string & eeName)
@@ -263,14 +263,16 @@ public:
 
 protected:
   mc_rbdyn::Robot & robot_;
+  const std::shared_ptr<mi_osd> & osdPtr_;
+
   std::string impactBodyName_;
+
   bool linearJacobian_;
   double impactDuration_;
 
   double coeFrictionDeduction_;
   double coeRes_;
 
-  std::shared_ptr<mi_osd> osdPtr_;
 
   impactDataCache cache_;
 

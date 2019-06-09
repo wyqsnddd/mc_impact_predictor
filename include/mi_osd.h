@@ -9,8 +9,6 @@
 #include <RBDyn/FV.h>
 #include <RBDyn/Jacobian.h>
 
-//#include <dart/dynamics/dynamics.hpp>
-
 #include <assert.h>
 #include <map>
 
