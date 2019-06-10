@@ -19,12 +19,17 @@ struct impulseValues
 
   sva::ForceVecd impulseForceCOP;
   // Eigen::VectorXd accForce;
-  Eigen::VectorXd deltaTau; ///< Impact induced joint torque jump \f$ \delta \tau_k \f$ of the \f$k\f$th kinematic branch associated with the end-effector
+  Eigen::VectorXd deltaTau; ///< Impact induced joint torque jump \f$ \delta \tau_k \f$ of the \f$k\f$th kinematic
+                            ///< branch associated with the end-effector */
 
-  Eigen::VectorXd deltaQDot; ///< Impact induced joint velocity jump \f$ \delta \dot{q}_k \f$ of the \f$k\f$th kinematic branch associated with the end-effector
+  Eigen::VectorXd deltaQDot; ///< Impact induced joint velocity jump \f$ \delta \dot{q}_k \f$ of the \f$k\f$th kinematic
+                             ///< branch associated with the end-effector
 
   Eigen::MatrixXd
-      jacobianDeltaF; ///< We use this Jacobian to calculate the impact-induced impulsive force: \f$ \bar{f}_m =  \frac{1}{\delta t}\mathcal{J}_{f}(\dot{q} + \ddot{q}\Delta t) \f$ where we have the definition:   \f$  \mathcal{J}_{f} = \frac{1}{\delta t }  \sum^{m}_{i=1}\Lambda_{ki} \Lambda^{-1}_{km} \tilde{\Lambda}_m P_{\delta}J_m. \f$
+      jacobianDeltaF; ///<   We use this Jacobian to calculate the impact-induced impulsive force: \f$ \bar{f}_m =
+                      ///<   \frac{1}{\delta t}\mathcal{J}_{f}(\dot{q} + \ddot{q}\Delta t) \f$ where we have the
+                      ///<   definition:   \f$  \mathcal{J}_{f} = \frac{1}{\delta t }  \sum^{m}_{i=1}\Lambda_{ki}
+                      ///<   \Lambda^{-1}_{km} \tilde{\Lambda}_m P_{\delta}J_m. \f$
 
   /*!
    * Set this end-effector in contact
@@ -68,10 +73,18 @@ struct impactDataCache
   Eigen::VectorXd tauJump; ///< Impact induced joint torque jump \f$ \delta \tau \f$ of all the kinematic branches.
 
   Eigen::MatrixXd
-      jacobianDeltaAlpha; ///<     We use this Jacobian to calculate the impact-induced joint velocity jump: \f$ \delta \dot{q} = \frac{1}{\delta t}\mathcal{J}_{\delta \dot{q}}(\dot{q} + \ddot{q}\Delta t)   \f$ where we have the definition: \f$ \mathcal{J}_{\delta \dot{q}} = ( \bar{J}_m  +   \frac{1}{\delta t} (\sum_{i \neq m}  \bar{J}_i \Lambda^{-1}_{im}  )\tilde{\Lambda}_{m}) P_{\delta}J_m \f$
+      jacobianDeltaAlpha; ///<     We use this Jacobian to calculate the impact-induced joint velocity jump: \f$ \delta
+                          ///<     \dot{q} = \frac{1}{\delta t}\mathcal{J}_{\delta \dot{q}}(\dot{q} + \ddot{q}\Delta t)
+                          ///<     \f$ where we have the definition: \f$ \mathcal{J}_{\delta \dot{q}} = ( \bar{J}_m  +
+                          ///<     \frac{1}{\delta t} (\sum_{i \neq m}  \bar{J}_i \Lambda^{-1}_{im}
+                          ///<     )\tilde{\Lambda}_{m}) P_{\delta}J_m \f$
 
   Eigen::MatrixXd
-      jacobianDeltaTau; ///< We use this Jacobian to calculate the impact-induced joint torque jump: \f$ \delta \tau = \frac{1}{\delta t}\mathcal{J}_{\delta \tau }(\dot{q} + \ddot{q}\Delta t) \f$ where we have the definition: \f$  \mathcal{J}_{\delta \tau} = (J^\top_m  +  \frac{1}{\delta t }  \sum_{k\in \mathcal{I}_c} J^\top_k\sum^{m}_{i=1}\Lambda_{ki}  \Lambda^{-1}_{km} )\tilde{\Lambda}_m P_{\delta}J_m \f$
+      jacobianDeltaTau; ///< We use this Jacobian to calculate the impact-induced joint torque jump: \f$ \delta \tau =
+                        ///< \frac{1}{\delta t}\mathcal{J}_{\delta \tau }(\dot{q} + \ddot{q}\Delta t) \f$ where we have
+                        ///< the definition: \f$  \mathcal{J}_{\delta \tau} = (J^\top_m  +  \frac{1}{\delta t }
+                        ///< \sum_{k\in \mathcal{I}_c} J^\top_k\sum^{m}_{i=1}\Lambda_{ki}  \Lambda^{-1}_{km}
+                        ///< )\tilde{\Lambda}_m P_{\delta}J_m \f$
 
   std::map<std::string, impulseValues>
       grfContainer; ///< a container that helps to find the impulsive values associated with an end-effector.

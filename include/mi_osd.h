@@ -54,6 +54,10 @@ class mi_osd
  */
 {
 public:
+  /*!
+      \param robot reference to the robot model used by the QP
+      \param linearJacobian whether use the linear part of the Jacobian?
+      */
   mi_osd(mc_rbdyn::Robot & robot, bool linearJacobian);
 
   ~mi_osd() {}
