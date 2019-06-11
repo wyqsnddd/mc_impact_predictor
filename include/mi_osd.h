@@ -189,5 +189,6 @@ private:
   mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
 
+  bool addEndeffector_(std::string eeName);
   void updateCache_();
 };

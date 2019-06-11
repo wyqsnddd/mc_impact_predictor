@@ -204,6 +204,16 @@ void mi_osd::updateCache_()
 }
 bool mi_osd::addEndeffector(std::string eeName)
 {
+auto tempEe = cache_.jacobians.find(eeName);
+if(tempEe == cache_.jacobians.end()){
+  return addEndeffector_(eeName);
+}else{
+  std::cout<<"end-effector: "<<eeName<<" already exists in the OSD. "<<std::endl;
+  return true; 
+}
+}
+bool mi_osd::addEndeffector_(std::string eeName)
+{
   unsigned eeNum = static_cast<unsigned>(cache_.jacobians.size());
   /*
       cache_.jacobians[eeName] =

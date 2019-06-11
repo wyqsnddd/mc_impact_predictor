@@ -27,13 +27,13 @@ void mi_impactPredictor::setContact(std::string contactBodyName)
   {
     ee->second.setContact();
     cache_.contactEndeffectors.push_back(contactBodyName);
-    std::cout << "setContact: " << contactBodyName << ee->second.contact() << std::endl;
+    std::cout << "setContact: " << contactBodyName << ": "<<ee->second.contact() << std::endl;
   }
   else
   {
     std::cout << "setContact: " << contactBodyName << std::endl;
-    throw std::runtime_error(std::string("setContact: '-") + contactBodyName
-                             + std::string("- ' is not in the container."));
+    throw std::runtime_error(std::string("setContact: '") + contactBodyName
+                             + std::string("' is not in the container."));
   }
 }
 const Eigen::VectorXd & mi_impactPredictor::getImpulsiveForce(const std::string & eeName)
@@ -101,11 +101,11 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
 
   if(!getOsd_()->addEndeffector(eeName))
   {
-    throw std::runtime_error(std::string("OSd failed to add endeffector!") + eeName);
+    throw std::runtime_error(std::string("OSD failed to add endeffector! ") + eeName);
   }
 
   unsigned eeNumNew = static_cast<unsigned>(cache_.grfContainer.size());
-  if((eeNum == eeNumNew - 1) && (eeNumNew == static_cast<unsigned>(getOsd_()->getEeNum())))
+  if(eeNum == eeNumNew - 1)
   {
     return true;
   }

@@ -21,7 +21,15 @@ mi_multiImpactPredictor::mi_multiImpactPredictor(mc_rbdyn::Robot & robot,
 
 void mi_multiImpactPredictor::run(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
 {
-
+  if(surfaceNormals.size()!=predictorContainer.size() ){
+    throw std::runtime_error(
+		    std::string("mi_multiImpactPredictor-run: surfaceNormals size(") 
+		    + std::to_string(static_cast<int>(surfaceNormals.size()))
+		    + std::string(") does not match predictor container size (") 
+		    + std::to_string(predictorContainer.size())
+		    + std::string(").")
+		    );
+  }
   osdPtr_->update();
 
   int dof = getRobot().mb().nrDof();
@@ -77,10 +85,11 @@ bool mi_multiImpactPredictor::addEndeffectors(const std::vector<std::string> & i
   else
   {
     // Initialize the data structure:
-
     pi->second->initializeDataStructure(static_cast<int>(ees.size()));
 
     pi->second->resetDataStructure();
+
+    std::cout<<"Initialized impact predictor for impact body: "<<pi->first<<std::endl;
     // Go through all the data
     for(auto index = ees.begin(); index != ees.end(); ++index)
     {
@@ -90,13 +99,15 @@ bool mi_multiImpactPredictor::addEndeffectors(const std::vector<std::string> & i
       }
       else
       {
-        std::cout << "End-effector: " << *index << "is added to the impact-predictor of: " << pi->first << std::endl;
+        std::cout << "End-effector: " << *index << " is added to the impact-predictor of: " << pi->first << std::endl;
       }
-    }
-    return true;
+    } // end of end-effectors
   }
+
   // add!
- }
+ } // end of impact bodies
+
+    return true;
 }
 
 
