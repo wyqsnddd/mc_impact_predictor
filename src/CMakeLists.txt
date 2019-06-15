@@ -2,11 +2,13 @@ set(mc_impact_predictor_src
   mi_osd.cpp
   mi_impactPredictor.cpp
   mi_multiImpactPredictor.cpp
+  mi_lcp.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
-pkg_config_use_dependency(mc_impact_predictor mc_rtc)
+pkg_config_use_dependency(mc_impact_predictor mc_rtc nlopt)
 target_link_libraries(mc_impact_predictor ${Boost_LIBRARIES})
+target_link_libraries(mc_impact_predictor nlopt)
 set_target_properties(mc_impact_predictor PROPERTIES COMPILE_FLAGS "-std=c++0x")
 
 install(
