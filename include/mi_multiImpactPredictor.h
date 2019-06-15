@@ -41,7 +41,10 @@ public:
     for(auto ii = predictorContainer.begin(); ii != predictorContainer.end(); ii++)
       ii->second->initializeDataStructure(numEE);
   }
-
+  inline int getContactNum()
+  {
+    return osdPtr_->getContactNum();
+  }
   inline mc_rbdyn::Robot & getRobot()
   {
     return robot_;

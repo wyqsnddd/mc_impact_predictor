@@ -150,7 +150,6 @@ public:
     \return operation status
     */
   bool addEndeffector(std::string eeName);
-
   inline const Eigen::VectorXd & getTauJump() const
   {
     return cache_.tauJump;

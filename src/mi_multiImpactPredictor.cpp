@@ -71,6 +71,7 @@ void mi_multiImpactPredictor::setContact(std::vector<std::string> & ees)
   {
     for(auto index = ees.begin(); index != ees.end(); ++index) pi->second->setContact(*index);
   }
+  getOsd_()->setContact(ees);
 }
 
 bool mi_multiImpactPredictor::addEndeffectors(const std::vector<std::string> & impactBodies, const std::vector<std::string> & ees)

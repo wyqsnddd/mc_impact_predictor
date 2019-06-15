@@ -62,6 +62,9 @@ public:
 
   ~mi_osd() {}
 
+  void setContact(std::vector<std::string> & ees);
+
+  
   bool addEndeffector(std::string eeName);
   /*!
     \param EeNum the number of end-effectors to be used in the OSD.
@@ -77,7 +80,14 @@ public:
   {
     return cache_.lambdaMatrix;
   }
-
+  inline const std::vector<std::string> & getContactEes()
+  {
+    return contactEndeffectors;
+  }
+  inline std::size_t getContactNum()
+  {
+    return contactEndeffectors.size(); 
+  }
   /*!
       \return the inverse of the Operational space inertia matrix: \f$ \Lambda^{-1} = JM^{-1}J^\top \f$
       */
@@ -188,6 +198,8 @@ private:
   int jacobianDim_;
   mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
+
+  std::vector<std::string> contactEndeffectors; ///< end-effectors with established contact.
 
   bool addEndeffector_(std::string eeName);
   void updateCache_();

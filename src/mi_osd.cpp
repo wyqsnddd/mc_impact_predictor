@@ -233,3 +233,11 @@ bool mi_osd::addEndeffector_(std::string eeName)
     return false;
   }
 }
+
+
+void mi_osd::setContact(std::vector<std::string> & ees)
+{
+  contactEndeffectors = ees;
+}
+
+
