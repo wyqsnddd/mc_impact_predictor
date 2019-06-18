@@ -9,8 +9,11 @@ void print_vector(const std::vector<double> & input)
 
 mi_lcp::mi_lcp(mc_rbdyn::Robot & robot,
 		const std::shared_ptr<mi_osd> & osdPtr,
-	int  dim)
-: robot_(robot), osdPtr_(osdPtr), dim_(dim){
+		int  dim,
+	  	const std::string & solverName,
+		double convergenceThreshold
+		)
+: robot_(robot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName), convergenceThreshold_(convergenceThreshold){
 }
 
 /*
@@ -38,7 +41,7 @@ void mi_lcp::update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & J
  Eigen::MatrixXd tempLambdaInv = tempMInv*Jacobian.transpose(); 
  
  // (3) solve the lcp problem 
- std::vector<double>solutionForce = solver_.solveLCP(tempLambdaInv, d_);
+ std::vector<double>solutionForce = solver_.solveLCP(tempLambdaInv, d_, getSolver_(), getThreshold_());
 //std::vector<std::string> cEes = osdPtr_->getContactEes();
 int contactCounter = 0; 
  std::vector<std::string> cEes = osdPtr_->getContactEes();
@@ -119,13 +122,15 @@ void mi_lcp::update(std::map<std::string, Eigen::Vector3d> contactSurfaceNormals
 
 
 
-std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H, const Eigen::VectorXd & d )
+std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H, const Eigen::VectorXd & d, const std::string & solverName, double convergenceThreshold )
 {
   int numVar = static_cast<int>(d.size());
   //std::cout<<"LCP:: The number of variables is: "<<numVar<<std::endl;
-  //nlopt::opt opt(nlopt::LD_CCSAQ, numVar);
+  nlopt::opt opt(nlopt::LD_CCSAQ, numVar);
   //nlopt::opt opt(nlopt::LD_MMA, numVar);
-  nlopt::opt opt(nlopt::LD_SLSQP, numVar);
+  //nlopt::opt opt(nlopt::LD_SLSQP, numVar);
+  // I am not sure how to case from string to nlopt::algorithm
+  //nlopt::opt opt(nlopt::algorithm_name(solverName), numVar);
   std::vector<double> lb(numVar, 0.0);
   //std::cout<<"Lower bound: "<<std::endl;
   //print_vector(lb);
@@ -135,7 +140,7 @@ std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H, const Eige
   void * objDataPtr  = &objData;
   opt.set_min_objective(lcp_solver::objFunction, objDataPtr);
   //std::cout<<"LCP::objective is set"<<std::endl; 
-  opt.set_xtol_rel(1e-1);
+  opt.set_xtol_rel(convergenceThreshold);
   solution.resize(numVar);
   std::fill(solution.begin(), solution.end(), 0.0);
   double minf;

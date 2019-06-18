@@ -11,16 +11,10 @@ struct quadraticObjData{
  const Eigen::VectorXd d;
 };
 
-struct positiveForceConstraintData{
- const Eigen::MatrixXd G;
- const Eigen::VectorXd h;
-};
-
-
 struct lcp_solver{
   static double objFunction(const std::vector<double> &x, std::vector<double> &grad, void *obj_data);
   //static double positiveForceConstraint( unsigned n, const double *x, double *grad, void *data);
-  std::vector<double>& solveLCP(const Eigen::MatrixXd & H, const Eigen::VectorXd & d );
+  std::vector<double>& solveLCP(const Eigen::MatrixXd & H, const Eigen::VectorXd & d, const std::string & solverName, double convergenceThreshold);
  nlopt::result result;
  std::vector<double> solution;
 };
@@ -32,7 +26,9 @@ class  mi_lcp
   public: 
   mi_lcp( mc_rbdyn::Robot & robot,
 		const std::shared_ptr<mi_osd> & osdPtr,
-		int dim
+		int dim,
+	  	const std::string & solverName,
+		double convergenceThreshold
 		);
 
   ~mi_lcp(){}
@@ -61,5 +57,14 @@ class  mi_lcp
   
   int dim_;
   std::map<std::string, Eigen::VectorXd> predictedContactForce_;
-
+  inline const std::string & getSolver_()
+  {
+    return solverName_; 
+  } 
+  std::string solverName_;
+  inline const double & getThreshold_()
+  {
+    return convergenceThreshold_; 
+  }
+  double convergenceThreshold_;
 };
