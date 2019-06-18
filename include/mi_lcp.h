@@ -1,5 +1,5 @@
 # pragma once 
-
+#include <iomanip>
 # include "mi_osd.h" 
 # include <nlopt.hpp>
 # include <math.h>
@@ -11,8 +11,15 @@ struct quadraticObjData{
  const Eigen::VectorXd d;
 };
 
+struct positiveForceConstraintData{
+ const Eigen::MatrixXd G;
+ const Eigen::VectorXd h;
+};
+
+
 struct lcp_solver{
   static double objFunction(const std::vector<double> &x, std::vector<double> &grad, void *obj_data);
+  //static double positiveForceConstraint( unsigned n, const double *x, double *grad, void *data);
   std::vector<double>& solveLCP(const Eigen::MatrixXd & H, const Eigen::VectorXd & d );
  nlopt::result result;
  std::vector<double> solution;
@@ -35,6 +42,11 @@ class  mi_lcp
   {
     return robot_;
   }
+  const Eigen::VectorXd  & getPredictedContactForce(const std::string & bodyName);
+  inline const int & getDim()
+  {
+   return dim_; 
+  }
   protected: 
 
   void update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & JacobianDot);
@@ -46,10 +58,8 @@ class  mi_lcp
   const std::shared_ptr<mi_osd> & osdPtr_;
 
   lcp_solver solver_;
-  inline const int & getDim_()
-  {
-   return dim_; 
-  }
+  
   int dim_;
-   
+  std::map<std::string, Eigen::VectorXd> predictedContactForce_;
+
 };

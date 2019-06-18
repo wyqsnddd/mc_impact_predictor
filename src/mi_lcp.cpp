@@ -1,12 +1,26 @@
 # include "mi_lcp.h"
 
 
+void print_vector(const std::vector<double> & input)
+{
+  for(auto ee = input.begin(); ee!= input.end(); ++ee)
+	std::cout<<" "<<*ee<<" ";
+}
+
 mi_lcp::mi_lcp(mc_rbdyn::Robot & robot,
 		const std::shared_ptr<mi_osd> & osdPtr,
 	int  dim)
 : robot_(robot), osdPtr_(osdPtr), dim_(dim){
 }
 
+/*
+const Eigen::Vector3d  & getPredictedContactForce(const std::string & bodyName)
+{
+bodyName = 
+
+
+}
+*/
 void mi_lcp::update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & JacobianDot)
 {
 // (1) Update beta and d 
@@ -14,7 +28,7 @@ void mi_lcp::update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & J
  Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
  Eigen::MatrixXd tempMInv = Jacobian*osdPtr_->getInvMassMatrix();
  Eigen::VectorXd tau = rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
- std::cout<<"Tau is: "<<tau.transpose()<<std::endl;
+ //std::cout<<"Tau is: "<<tau.transpose()<<std::endl;
  beta_ = JacobianDot*alpha - tempMInv*osdPtr_->getFD()->C();
  //std::cout<<"C is: "<<osdPtr_->getFD()->C().transpose()<<std::endl;
  d_ = tempMInv*tau + beta_;
@@ -24,12 +38,40 @@ void mi_lcp::update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & J
  Eigen::MatrixXd tempLambdaInv = tempMInv*Jacobian.transpose(); 
  
  // (3) solve the lcp problem 
- std::vector<double>testForce = solver_.solveLCP(tempLambdaInv, d_);
-
- Eigen::Map<const Eigen::VectorXd> q_opt( testForce.data(), testForce.size());
- std::cout<<"LCP says that the contact Force is: "<<q_opt.transpose()<<std::endl;
+ std::vector<double>solutionForce = solver_.solveLCP(tempLambdaInv, d_);
+//std::vector<std::string> cEes = osdPtr_->getContactEes();
+int contactCounter = 0; 
+ std::vector<std::string> cEes = osdPtr_->getContactEes();
+ for ( auto idx = cEes.begin(); idx != cEes.end(); ++idx)
+ {
+ Eigen::VectorXd temp = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&solutionForce[contactCounter*getDim()], getDim());
+	 
+  predictedContactForce_[*idx] = temp; 
+ }
+ // get the order from the contact 
+ //
+ // fill in 
+ //Eigen::Map<const Eigen::VectorXd> q_opt( solutionForce.data(), solutionForce.size());
+ //std::cout<<"LCP says that the contact Force is: "<<q_opt.transpose()<<std::endl;
 
 }
+
+
+const Eigen::VectorXd  & mi_lcp::getPredictedContactForce(const std::string & bodyName)
+{
+  const auto & ee = predictedContactForce_.find(bodyName);
+  if(ee != (predictedContactForce_.end()))
+  {
+    return ee->second;
+  }
+  else
+  {
+    throw std::runtime_error(std::string("getPredictedContactForce : '") + bodyName 
+                             + std::string("' is not in the container."));
+  }
+}
+
+
 
 void mi_lcp::update()
 {
@@ -37,16 +79,16 @@ void mi_lcp::update()
 // The number of contact is: 
  std::size_t contactNum = osdPtr_->getContactNum();
  int dof = osdPtr_->getDof();
- Eigen::MatrixXd Jacobian = Eigen::MatrixXd::Zero(contactNum*getDim_(), dof); 
- Eigen::MatrixXd JacobianDot = Eigen::MatrixXd::Zero(contactNum*getDim_(), dof); 
+ Eigen::MatrixXd Jacobian = Eigen::MatrixXd::Zero(contactNum*getDim(), dof); 
+ Eigen::MatrixXd JacobianDot = Eigen::MatrixXd::Zero(contactNum*getDim(), dof); 
 
  int contactCounter = 0; 
  //for ( std::vector<std::string>::iterator idx = osdPtr_->getContactEes().begin(); idx != osdPtr_->getContactEes.end(); ++idx)
  std::vector<std::string> cEes = osdPtr_->getContactEes();
  for ( auto idx = cEes.begin(); idx != cEes.end(); ++idx)
  {
-  Jacobian.block(contactCounter*getDim_(), 0, getDim_(), dof) = osdPtr_->getJacobian(*idx);
-  JacobianDot.block(contactCounter*getDim_(), 0, getDim_(), dof) = osdPtr_->getJacobianDot(*idx);
+  Jacobian.block(contactCounter*getDim(), 0, getDim(), dof) = osdPtr_->getJacobian(*idx);
+  JacobianDot.block(contactCounter*getDim(), 0, getDim(), dof) = osdPtr_->getJacobianDot(*idx);
   contactCounter++;
  }
  update_(Jacobian, JacobianDot);
@@ -68,8 +110,8 @@ void mi_lcp::update(std::map<std::string, Eigen::Vector3d> contactSurfaceNormals
  {
   auto ee = contactSurfaceNormals.find(*idx);
   
-  Jacobian.block(contactCounter*getDim_(), 0, getDim_(), dof) = ee->second.transpose()*osdPtr_->getJacobian(*idx);
-  JacobianDot.block(contactCounter*getDim_(), 0, getDim_(), dof) = ee->second.transpose()*osdPtr_->getJacobianDot(*idx);
+  Jacobian.block(contactCounter*getDim(), 0, getDim(), dof) = ee->second.transpose()*osdPtr_->getJacobian(*idx);
+  JacobianDot.block(contactCounter*getDim(), 0, getDim(), dof) = ee->second.transpose()*osdPtr_->getJacobianDot(*idx);
   contactCounter++;
  }
  update_(Jacobian, JacobianDot);
@@ -80,25 +122,32 @@ void mi_lcp::update(std::map<std::string, Eigen::Vector3d> contactSurfaceNormals
 std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H, const Eigen::VectorXd & d )
 {
   int numVar = static_cast<int>(d.size());
-  std::cout<<"LCP:: The number of variables is: "<<numVar<<std::endl;
-  nlopt::opt opt(nlopt::LD_CCSAQ, numVar);
+  //std::cout<<"LCP:: The number of variables is: "<<numVar<<std::endl;
+  //nlopt::opt opt(nlopt::LD_CCSAQ, numVar);
+  //nlopt::opt opt(nlopt::LD_MMA, numVar);
+  nlopt::opt opt(nlopt::LD_SLSQP, numVar);
   std::vector<double> lb(numVar, 0.0);
+  //std::cout<<"Lower bound: "<<std::endl;
+  //print_vector(lb);
+	  // < <print_vector(lb)<<std::endl; 
   opt.set_lower_bounds(lb);
   quadraticObjData objData = {H, d};
   void * objDataPtr  = &objData;
   opt.set_min_objective(lcp_solver::objFunction, objDataPtr);
-  std::cout<<"LCP::objective is set"<<std::endl; 
-  opt.set_xtol_rel(1e-2);
+  //std::cout<<"LCP::objective is set"<<std::endl; 
+  opt.set_xtol_rel(1e-1);
   solution.resize(numVar);
-  std::fill(solution.begin(), solution.end(), 100.0);
+  std::fill(solution.begin(), solution.end(), 0.0);
   double minf;
   try{
     result = opt.optimize(solution, minf);
 
-    std::cout<<"LCP::solved"<<std::endl; 
+    //std::cout<<"LCP::solved"<<std::endl; 
     Eigen::Map<const Eigen::VectorXd> q_opt( solution.data(), solution.size());
-    std::cout << "found minimum at f(" << q_opt.transpose()<< ") = "
+    /*
+     std::cout << "found minimum at f(" << q_opt.transpose()<< ") = "
         << minf << std::endl;
+  */
   }
   catch(std::exception &e) {
     std::cout << "lcp_solver::nlopt failed: " << e.what() << std::endl;
@@ -118,11 +167,17 @@ double lcp_solver::objFunction(const std::vector<double> &x, std::vector<double>
 {
   quadraticObjData* objDataPtr = static_cast<quadraticObjData*> (obj_data);
 
-  std::cout<<"LCP objective:: H is: "<<objDataPtr->H<<std::endl; 
-  std::cout<<"LCP objective:: d is: "<<objDataPtr->d.transpose()<<std::endl; 
+  //std::cout<<"LCP objective:: H is: "<<objDataPtr->H<<std::endl; 
+  //std::cout<<"LCP objective:: d is: "<<objDataPtr->d.transpose()<<std::endl; 
   Eigen::Map<const Eigen::VectorXd> q( x.data(), objDataPtr->d.size());
+  Eigen::VectorXd gradient = objDataPtr->H*q +  objDataPtr->d;
 
-  //double temp =  (double)0.5*q.transpose()*objDataPtr->H*q;
+  for (std::size_t  ii = 0; ii <grad.size(); ++ii)
+  {
+    grad[ii] = gradient(static_cast<int>(ii));
+  }
+
+
   return (double)(0.5*q.transpose()*objDataPtr->H*q) + objDataPtr->d.transpose()*q;
 
 }
