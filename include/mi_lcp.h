@@ -24,7 +24,7 @@ class  mi_lcp
  */
 {
   public: 
-  mi_lcp( mc_rbdyn::Robot & robot,
+  mi_lcp( const mc_rbdyn::Robot & robot,
 		const std::shared_ptr<mi_osd> & osdPtr,
 		int dim,
 	  	const std::string & solverName,
@@ -50,7 +50,7 @@ class  mi_lcp
   Eigen::VectorXd beta_; ///< \beta = \dot{J}\dot{q} - JM^{-1}C
   Eigen::VectorXd d_; ///< d = JM^{-1}\tau + \beta 
 
-  mc_rbdyn::Robot & robot_;
+  const mc_rbdyn::Robot & robot_;
   const std::shared_ptr<mi_osd> & osdPtr_;
 
   lcp_solver solver_;

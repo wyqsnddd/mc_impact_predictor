@@ -7,7 +7,7 @@ void print_vector(const std::vector<double> & input)
 	std::cout<<" "<<*ee<<" ";
 }
 
-mi_lcp::mi_lcp(mc_rbdyn::Robot & robot,
+mi_lcp::mi_lcp(const mc_rbdyn::Robot & robot,
 		const std::shared_ptr<mi_osd> & osdPtr,
 		int  dim,
 	  	const std::string & solverName,
@@ -15,6 +15,8 @@ mi_lcp::mi_lcp(mc_rbdyn::Robot & robot,
 		)
 : robot_(robot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName), convergenceThreshold_(convergenceThreshold){
 }
+
+
 
 /*
 const Eigen::Vector3d  & getPredictedContactForce(const std::string & bodyName)
@@ -27,7 +29,6 @@ bodyName =
 void mi_lcp::update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & JacobianDot)
 {
 // (1) Update beta and d 
-
  Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
  Eigen::MatrixXd tempMInv = Jacobian*osdPtr_->getInvMassMatrix();
  Eigen::VectorXd tau = rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
