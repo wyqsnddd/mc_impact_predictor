@@ -215,6 +215,7 @@ if(tempEe == cache_.jacobians.end()){
 bool mi_osd::addEndeffector_(std::string eeName)
 {
   unsigned eeNum = static_cast<unsigned>(cache_.jacobians.size());
+
   /*
       cache_.jacobians[eeName] =
           std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName), cache_.jacobians.size());

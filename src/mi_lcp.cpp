@@ -7,13 +7,15 @@ void print_vector(const std::vector<double> & input)
 	std::cout<<" "<<*ee<<" ";
 }
 
-mi_lcp::mi_lcp(const mc_rbdyn::Robot & robot,
+mi_lcp::mi_lcp(
+		 const mc_rbdyn::Robot & simRobot,
+		 const mc_rbdyn::Robot & realRobot,
 		const std::shared_ptr<mi_osd> & osdPtr,
 		int  dim,
 	  	const std::string & solverName,
 		double convergenceThreshold
 		)
-: robot_(robot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName), convergenceThreshold_(convergenceThreshold){
+: simRobot_(simRobot), realRobot_(realRobot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName), convergenceThreshold_(convergenceThreshold){
 }
 
 
@@ -29,9 +31,10 @@ bodyName =
 void mi_lcp::update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & JacobianDot)
 {
 // (1) Update beta and d 
- Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
+ //Eigen::VectorXd alpha = rbd::dofToVector(getRealRobot().mb(), getRealRobot().mbc().alpha);
+ Eigen::VectorXd alpha = rbd::dofToVector(getSimRobot().mb(), getSimRobot().mbc().alpha);
  Eigen::MatrixXd tempMInv = Jacobian*osdPtr_->getInvMassMatrix();
- Eigen::VectorXd tau = rbd::dofToVector(getRobot().mb(), getRobot().mbc().jointTorque);
+ Eigen::VectorXd tau = rbd::dofToVector(getSimRobot().mb(), getSimRobot().mbc().jointTorque);
  //std::cout<<"Tau is: "<<tau.transpose()<<std::endl;
  beta_ = JacobianDot*alpha - tempMInv*osdPtr_->getFD()->C();
  //std::cout<<"C is: "<<osdPtr_->getFD()->C().transpose()<<std::endl;

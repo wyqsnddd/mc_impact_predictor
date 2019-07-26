@@ -24,7 +24,8 @@ class  mi_lcp
  */
 {
   public: 
-  mi_lcp( const mc_rbdyn::Robot & robot,
+  mi_lcp( const mc_rbdyn::Robot & simRobot,
+	  const mc_rbdyn::Robot & realRobot,
 		const std::shared_ptr<mi_osd> & osdPtr,
 		int dim,
 	  	const std::string & solverName,
@@ -34,9 +35,13 @@ class  mi_lcp
   ~mi_lcp(){}
   void update();
   void update(std::map<std::string, Eigen::Vector3d> contactSurfaceNormals);
-  inline const mc_rbdyn::Robot & getRobot()
+  inline const mc_rbdyn::Robot & getRealRobot()
   {
-    return robot_;
+    return realRobot_;
+  }
+  inline const mc_rbdyn::Robot & getSimRobot()
+  {
+    return simRobot_;
   }
   const Eigen::VectorXd  & getPredictedContactForce(const std::string & bodyName);
   inline const int & getDim()
@@ -50,7 +55,8 @@ class  mi_lcp
   Eigen::VectorXd beta_; ///< \beta = \dot{J}\dot{q} - JM^{-1}C
   Eigen::VectorXd d_; ///< d = JM^{-1}\tau + \beta 
 
-  const mc_rbdyn::Robot & robot_;
+  const mc_rbdyn::Robot & simRobot_;
+  const mc_rbdyn::Robot & realRobot_;
   const std::shared_ptr<mi_osd> & osdPtr_;
 
   lcp_solver solver_;
