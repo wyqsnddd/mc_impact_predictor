@@ -3,6 +3,7 @@ set(mc_impact_predictor_src
   mi_impactPredictor.cpp
   mi_multiImpactPredictor.cpp
   mi_lcp.cpp
+  mi_qpEstimator.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})

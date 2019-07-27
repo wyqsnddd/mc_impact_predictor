@@ -150,7 +150,10 @@ public:
   /*!
       \return \f$ M^{-1}\f$
       */
-
+  inline const Eigen::MatrixXd & getMassMatrix() const
+  {
+    return getFD()->H();
+  }
   inline const Eigen::MatrixXd & getInvMassMatrix() const
   {
     return cache_.invMassMatrix;
