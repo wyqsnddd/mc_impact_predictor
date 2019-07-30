@@ -8,12 +8,13 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 		//int  dim,
 	  	//const std::string & solverName,
 		//double convergenceThreshold
-		): simRobot_(simRobot_), osdPtr_(osdPtr), params_(params)
+		): simRobot_(simRobot), osdPtr_(osdPtr), params_(params)
 	//impactBodyName_(impactBodyName), dim_(dim), solverName_(solverName), convergenceThreshold_(convergenceThreshold)
 {
-
+  jointVelJump_.resize(getOsd_()->getDof());
+  jointVelJump_.setZero();
   // addOptVariables_(std::string("deltaQDot"), osdPtr_->getDof());
-  std::cout<<"the QP-based impulse estimatos is created. "<<std::endl;
+  std::cout<<"the QP-based impulse estimator is created. "<<std::endl;
 }
 
 void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
@@ -29,6 +30,24 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
   deltaV_ = tempReductionProjector * getOsd_()->getJacobian(getImpactBody()) * (alpha + alphaD * getImpactDuration_());
 
   // run the QP estimator
+   
+  std::vector<double> solutionVariables = solver_.solveQP(this);
+
+  // Fill the end-effector data structure 
+  
+  jointVelJump_ = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&solutionVariables[0], getOsd_()->getDof());
+
+  int contactCounter = 0; 
+  std::vector<std::string> cEes = getOsd_()->getContactEes();
+  for ( auto idx = cEes.begin(); idx != cEes.end(); ++idx)
+  {
+   contactCounter++;
+   Eigen::VectorXd temp = Eigen::Map<Eigen::VectorXd, Eigen::Unaligned>(&solutionVariables[contactCounter*getDim()], getDim());
+   getEndeffector_(*idx).estimatedImpulse = temp;
+   getEndeffector_(*idx).estimatedAverageImpulsiveForce= temp/getImpactDuration_();
+   //predictedContactForce_[*idx] = temp; 
+ }
+
 }
 
 
@@ -40,7 +59,24 @@ void mi_qpEstimator::addOptVariables_( const std::string& name, const unsigned &
 }
 */
 
-const endEffector & mi_qpEstimator::getEndeffector_( const std::string& name) const
+endEffector & mi_qpEstimator::getEndeffector_( const std::string& name) 
+{
+  std::map<std::string, endEffector>::iterator opt = endEffectors_.find(name);
+
+  if(opt != (endEffectors_.end()))
+  {
+    return opt->second;
+  }
+  else
+  {
+    throw std::runtime_error(std::string("getEndeffector: '") +name 
+                             + std::string("' is not found."));
+  }
+
+}
+
+
+const endEffector & mi_qpEstimator::getEndeffector( const std::string& name) const
 {
   const auto opt = endEffectors_.find(name);
   if(opt != (endEffectors_.end()))
@@ -63,7 +99,7 @@ void mi_qpEstimator::addEndeffector(std::string eeName)
   tempForce.setZero();
 
   //optVariables_[name] = {dim, optVariables_.size() };
-  endEffectors_[eeName] = {endEffectors_.size(), tempForce} ;
+  endEffectors_[eeName] = {endEffectors_.size(), tempForce, tempForce} ;
 
   if(!getOsd_()->addEndeffector(eeName))
   {
@@ -74,19 +110,26 @@ void mi_qpEstimator::addEndeffector(std::string eeName)
 
 const Eigen::VectorXd  & mi_qpEstimator::getPredictedImpulse(const std::string & bodyName) const
 {
-  return getEndeffector_(bodyName).estimatedImpulse;
+  return getEndeffector(bodyName).estimatedImpulse;
 }
 
 
 void qp_solver::jsdImpulseConstraintFunction( unsigned constraintDim, double *result, unsigned stateDim, const double * x, double* grad, void * f_data)
 {
+
   const mi_qpEstimator * estimatorPtr = static_cast<mi_qpEstimator* >(f_data);
+  // Preparation: 
+  //constraintDim = static_cast<unsigned> (estimatorPtr->getDof());
+  //stateDim = static_cast<k>
+  //result = new double [];
+
 
   //const unsigned dim(constraintDataPtr->estimatorPtr->getOptVariablesInfo_("deltaQDot").dim);
   //size_t startingNumber = constraintDataPtr->estimatorPtr->getOptVariablesInfo_("deltaQDot").startingNumber;
 
   Eigen::Map<const Eigen::VectorXd> state(x, stateDim);
   int dim = estimatorPtr->getDim();
+  //std::cout<<"jsd: the dim is: "<<dim<<std::endl;
   int dof = estimatorPtr->getDof();
 
   Eigen::VectorXd temp;
@@ -97,7 +140,6 @@ void qp_solver::jsdImpulseConstraintFunction( unsigned constraintDim, double *re
     temp += estimatorPtr->getOsd_()->getJacobian(idx->first)*state.segment(dof + dim*idx->second.startingNumber, dim);
   }
 
-  // Evaluate the result: 
   Eigen::Map<Eigen::VectorXd> value(result, constraintDim);
   value = estimatorPtr->getOsd_()->getMassMatrix()*state.segment(0, dof) - temp;
   // Evaluate the gradient: leave the gradient vacant for now. 
@@ -131,7 +173,19 @@ void qp_solver::osdImpulseConstraintFunction( unsigned constraintDim, double *re
 }
 
 
-
+void qp_solver::testEq( unsigned constraintDim, double *result, unsigned stateDim, const double * x, double* grad, void * f_data)
+{
+ 
+  const mi_qpEstimator* estimatorPtr =  static_cast<mi_qpEstimator* >(f_data);
+  result = new double [2];
+  *result = x[0] - 1.0;
+  *(result+1) = x[1];
+  //*(result+2) = x[2];
+  grad = new double [2];
+  grad[0] = 1; 
+  grad[1] = 1; 
+  //grad[2] = 1; 
+}
 void qp_solver::iniConstraintFunction( unsigned constraintDim, double *result, unsigned stateDim, const double * x, double* grad, void * f_data)
 {
   const mi_qpEstimator* estimatorPtr =  static_cast<mi_qpEstimator* >(f_data);
@@ -139,10 +193,19 @@ void qp_solver::iniConstraintFunction( unsigned constraintDim, double *result, u
   Eigen::Map<const Eigen::VectorXd> state(x, stateDim);
   //int dim = estimatorPtr->getDim();
   int dof = estimatorPtr->getDof();
-   
+  //std::cout<<"ConstraintDim is: "<< constraintDim <<std::endl; 
   // Evaluate the result: 
+  result = new double [constraintDim];
   Eigen::Map<Eigen::VectorXd> value(result, constraintDim);
-  value = estimatorPtr->getOsd_()->getJacobian(estimatorPtr->getImpactBody())*state.segment(0, dof) - estimatorPtr->getEeVelocityJump();
+  //value = estimatorPtr->getOsd_()->getJacobian(estimatorPtr->getImpactBody())*state.segment(0, dof) - estimatorPtr->getEeVelocityJump();
+  //value = state.segment(0, 3) - estimatorPtr->getEeVelocityJump(); 
+  //value = state.segment(0, 3) - Eigen::Vector3d::Ones(); 
+
+  value.setZero();
+  //value = state.segment(0, 3) - Eigen::Vector3d::Ones(); 
+  grad = new double [constraintDim];
+  Eigen::Map<Eigen::VectorXd> valueGrad(grad, constraintDim);
+  valueGrad.setZero();
 
 }
 
@@ -150,7 +213,7 @@ void qp_solver::iniConstraintFunction( unsigned constraintDim, double *result, u
 
 double qp_solver::objFunction(const std::vector<double> &x, std::vector<double> &grad, void *obj_data)
 {
-  quadraticObjData* objDataPtr = static_cast<quadraticObjData*> (obj_data);
+  qpObjData* objDataPtr = static_cast<qpObjData*> (obj_data);
 
   Eigen::Map<const Eigen::VectorXd> q( x.data(), x.size());
 
@@ -166,39 +229,61 @@ double qp_solver::objFunction(const std::vector<double> &x, std::vector<double> 
 
 }
 
-std::vector<double> & qp_solver::solveQP(const mi_qpEstimator* estimatorPtr)
+std::vector<double> & qp_solver::solveQP(mi_qpEstimator* estimatorPtr)
 {
   // (0) Init
-  int numVar = static_cast<int>(estimatorPtr->getDof() + estimatorPtr->endEffectors_.size() );
-  //std::cout<<"LCP:: The number of variables is: "<<numVar<<std::endl;
-  //nlopt::opt opt(estimatorPtr->getSolver_().c_str(), numVar);
+  //int numVar = estimatorPtr->getDof() + static_cast<int>(estimatorPtr->getDim()*estimatorPtr->endEffectors_.size() );
+  //int numVar =  static_cast<int>(estimatorPtr->getDim()*estimatorPtr->endEffectors_.size() );
+  int numVar = 3; 
+  std::cout<<"QP:: The number of variables is: "<<numVar<<std::endl;
 
+  //nlopt::opt opt(nlopt::LD_SLSQP, static_cast<unsigned int>(numVar));
+  // Round-off: 
+  //nlopt::opt opt(nlopt::LD_SLSQP, static_cast<unsigned int>(numVar));
+  
   nlopt::opt opt(nlopt::LD_CCSAQ, numVar);
-
+  // Never returns: 
+  //nlopt::opt opt(nlopt::LN_COBYLA, static_cast<unsigned int>(numVar));
+  //nlopt::opt opt(nlopt::LD_AUGLAG, static_cast<unsigned int>(numVar));
+  //nlopt::opt opt(nlopt::LD_AUGLAG_EQ, static_cast<unsigned int>(numVar));
+  
+  // invalid argument
+  // nlopt::opt opt(nlopt::GN_ISRES, static_cast<unsigned int>(numVar));
+  //nlopt::opt opt(nlopt::LN_SBPLX, static_cast<unsigned int>(numVar));
+  // nlopt::opt opt(nlopt::LD_LBFGS, static_cast<unsigned int>(numVar));
+  // nlopt::opt opt(nlopt::LD_MMA, static_cast<unsigned int>(numVar));
+  
   // (1) set the objective: 
-  quadraticObjData objData = {Eigen::MatrixXd::Identity(numVar, numVar) };
+  qpObjData objData = {Eigen::MatrixXd::Identity(numVar, numVar) };
   void * objDataPtr  = &objData;
   opt.set_min_objective(qp_solver::objFunction, objDataPtr);
   opt.set_xtol_rel(estimatorPtr->getThreshold_());
   // (2) Add the constraints:  
-  std::vector<double> jsdTolerance, osdTolerance, iniTolerance;
-  jsdTolerance.resize(estimatorPtr->getDof());
-  jsdTolerance.assign(estimatorPtr->getDof(), estimatorPtr->getThreshold_());
-  void * jsdDataPtr  = &estimatorPtr;
-  opt.add_equality_mconstraint(qp_solver::jsdImpulseConstraintFunction, jsdDataPtr, jsdTolerance);
-   
-  osdTolerance.resize(estimatorPtr->getDim()*estimatorPtr->endEffectors_.size());
-  osdTolerance.assign(estimatorPtr->getDim()*estimatorPtr->endEffectors_.size(), estimatorPtr->getThreshold_());
-  void * osdDataPtr = &estimatorPtr; 
-  opt.add_equality_mconstraint(qp_solver::osdImpulseConstraintFunction, osdDataPtr, osdTolerance);
- 
-  iniTolerance.resize(estimatorPtr->getDof());
-  iniTolerance.assign(estimatorPtr->getDof(), estimatorPtr->getThreshold_());
-  void * iniDataPtr = &estimatorPtr; 
-  opt.add_equality_mconstraint(qp_solver::iniConstraintFunction, iniDataPtr, iniTolerance);
+  
+  void * conDataPtr  = static_cast<void*>(estimatorPtr);
+  std::vector<double> jsdTolerance, osdTolerance, iniTolerance, testTolerance;
+  testTolerance.resize(2);
+  testTolerance.assign(2, 0.01);
+  opt.add_inequality_mconstraint(qp_solver::testEq, conDataPtr, testTolerance);
+  
 
+  jsdTolerance.resize(static_cast<size_t>(estimatorPtr->getDof()));
+  jsdTolerance.assign(static_cast<size_t>(estimatorPtr->getDof()), estimatorPtr->getThreshold_());
+  //std::cout<<"Tolerance size is: "<<jsdTolerance.size()<<", it stated with: "<<jsdTolerance[0]<<std::endl;
+
+  //std::cout<<"about to add the jsd equality constraint"<<std::endl;
+  //opt.add_equality_mconstraint(qp_solver::jsdImpulseConstraintFunction, conDataPtr, jsdTolerance);
+  //std::cout<<"added the jsd equality constraint"<<std::endl;
+  //opt.add
+  osdTolerance.resize(static_cast<size_t>(estimatorPtr->getDim())*estimatorPtr->endEffectors_.size());
+  osdTolerance.assign(static_cast<size_t>(estimatorPtr->getDim())*estimatorPtr->endEffectors_.size(), estimatorPtr->getThreshold_());
+  //opt.add_equality_mconstraint(qp_solver::osdImpulseConstraintFunction, conDataPtr, osdTolerance);
+ 
+  iniTolerance.resize(static_cast<size_t>(estimatorPtr->getDim()));
+  iniTolerance.assign(static_cast<size_t>(estimatorPtr->getDim()), 10*estimatorPtr->getThreshold_());
+  //opt.add_equality_mconstraint(qp_solver::iniConstraintFunction, conDataPtr, iniTolerance);
   // (*)Set the initial values
-  solution.resize(numVar);
+  solution.resize(static_cast<unsigned long>(numVar));
   std::fill(solution.begin(), solution.end(), 0.0);
   
   double minf;
@@ -208,13 +293,13 @@ std::vector<double> & qp_solver::solveQP(const mi_qpEstimator* estimatorPtr)
 
     //std::cout<<"LCP::solved"<<std::endl; 
     Eigen::Map<const Eigen::VectorXd> q_opt( solution.data(), solution.size());
-    /*
+    
      std::cout << "found minimum at f(" << q_opt.transpose()<< ") = "
         << minf << std::endl;
-  */
+  
   }
   catch(std::exception &e) {
-    std::cout << "lcp_solver::nlopt failed: " << e.what() << std::endl;
+    std::cout << "qp_solver::nlopt failed: " << e.what() << std::endl;
   }
   // If the result is not in this range, then it failed
   if ( !(nlopt::SUCCESS <= result && result <= nlopt::XTOL_REACHED) )
@@ -222,4 +307,8 @@ std::vector<double> & qp_solver::solveQP(const mi_qpEstimator* estimatorPtr)
 
   return solution;
 }
+void mi_qpEstimator::print()
+{
+  std::cout<<"The QP estimator params are: "<<std::endl<<"Dim: " <<getDim() <<", Dof: "<<getDof()<<", coeR: "<<getCoeRes_()<<", coeF: "<<getCoeFricDe_()<<", soverName: "<<getSolver_()<<", impact duration: "<<getImpactDuration_()<<", convergence threshold: "<<getThreshold_()<<std::endl;
 
+}
