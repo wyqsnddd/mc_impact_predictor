@@ -80,13 +80,19 @@ public:
   {
     return cache_.lambdaMatrix;
   }
+  
+  inline const  std::vector<std::string> & getEes()
+  {
+    return endEffectors_; 
+  }
+  
   inline const std::vector<std::string> & getContactEes()
   {
-    return contactEndeffectors;
+    return contactEndeffectors_;
   }
   inline std::size_t getContactNum()
   {
-    return contactEndeffectors.size(); 
+    return contactEndeffectors_.size(); 
   }
   /*!
       \return the inverse of the Operational space inertia matrix: \f$ \Lambda^{-1} = JM^{-1}J^\top \f$
@@ -102,7 +108,7 @@ public:
   {
     return cache_.lambdaMatrix.block(rowInt * getEeNum(), columnInt * getEeNum(), 6, 6);
   }
-  const int nameToIndex_(const std::string & eeName) const;
+  const int & nameToIndex_(const std::string & eeName) const;
 
   const Eigen::MatrixXd getLambdaMatrix(const std::string & eeOne, const std::string & eeTwo) const
   {
@@ -164,11 +170,11 @@ public:
    */
   void update();
 
-  inline int getDof() const
+  inline const int &  getDof() const
   {
     return robotDof_;
   }
-  inline int getEeNum() const
+  inline const int & getEeNum() const
   {
     return eeNum_;
   }
@@ -184,15 +190,15 @@ public:
   /*!
    * \return number of rows of the Jacobian
    */
-  inline const int getJacobianDim() const
+  inline const int & getJacobianDim() const
   {
     return jacobianDim_;
   }
-
+  
 private:
   int robotDof_;
   bool linearJacobian_;
-  const bool useLinearJacobian_()
+  const bool & useLinearJacobian_()
   {
     return linearJacobian_;
   }
@@ -202,7 +208,8 @@ private:
   mc_rbdyn::Robot & robot_;
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
 
-  std::vector<std::string> contactEndeffectors; ///< end-effectors with established contact.
+  std::vector<std::string> contactEndeffectors_; ///< end-effectors with established contact.
+  std::vector<std::string> endEffectors_; ///< end-effectors 
 
   bool addEndeffector_(std::string eeName);
   void updateCache_();

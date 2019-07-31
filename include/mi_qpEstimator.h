@@ -1,52 +1,33 @@
 # pragma once 
-#include <iomanip>
+# include <iomanip>
 # include "mi_osd.h" 
-# include <nlopt.hpp>
 # include <math.h>
-#include <iostream>
-#include <Eigen/StdVector>
+# include <iostream>
+# include <Eigen/StdVector>
 
+# include "mi_osd.h"
+# include <mc_rbdyn/Robots.h>
+# include <eigen-lssol/LSSOL_QP.h>
+# include "mi_jsdEquality.h"
+# include "mi_osdEquality.h"
+# include "mi_iniEquality.h"
+# include "mi_impactModel.h"
+# include <limits>
 
-
-#include "mi_osd.h"
-#include <mc_rbdyn/Robots.h>
-
-//struct constraintObjData{
-// const Eigen::MatrixXd H;
-// const Eigen::VectorXd d;
-//};
 class mi_qpEstimator;
-
 struct qpEstimatorParameter{
-  std::string impactBodyName = "r_wrist";
-  double impactDuration;
+  double Qweight = 20;
+  std::string impactBodyName="r_wrist";
+  double impactDuration = 0.005;
   double coeFrictionDeduction = 0.2;
   double coeRes = 0.8;
   int dim = 3;
-  std::string solverName = "nlopt::LD_CCSAQ";
-  double convergenceThreshold = 0.01;
-};
-
-
-struct quadraticObjData{
- const Eigen::MatrixXd H;
 };
 
 struct endEffector{
- //std::string name;
- //unsigned dim; // dimension 
  size_t startingNumber; // Starting number in the vector
  Eigen::VectorXd estimatedImpulse;
-};
-
-struct qp_solver{
-  static void jsdImpulseConstraintFunction( unsigned constraintDim, double *result, unsigned stateDim, const double * x, double* grad, void * f_data);
-  static void osdImpulseConstraintFunction( unsigned constraintDim, double *result, unsigned stateDim, const double * x, double* grad, void * f_data);
-  static void iniConstraintFunction( unsigned constraintDim, double *result, unsigned stateDim, const double * x, double* grad, void * f_data);
-  static double objFunction(const std::vector<double> &x, std::vector<double> &grad, void *obj_data);
-  std::vector<double>& solveQP( const mi_qpEstimator* estimatorPtr);
- nlopt::result result;
- std::vector<double> solution;
+ Eigen::Vector3d estimatedAverageImpulsiveForce;
 };
 
 class mi_qpEstimator{
@@ -54,38 +35,39 @@ class mi_qpEstimator{
   mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 		const std::shared_ptr<mi_osd> & osdPtr,
 		const struct qpEstimatorParameter params
-		//const std::string & impactBodyName,
-		//int  dim,
-	  	//const std::string & solverName,
-		//double convergenceThreshold
 		);
-  ~mi_qpEstimator(){}
+  ~mi_qpEstimator(){
+ 
+  }
   void update(const Eigen::Vector3d & surfaceNormal);
   inline const mc_rbdyn::Robot & getSimRobot()
   {
     return simRobot_;
   }
   
-  const Eigen::VectorXd  & getPredictedImpulse(const std::string & bodyName) const;
+  const Eigen::VectorXd  & getPredictedImpulse(const std::string & bodyName);
 
   
   void addEndeffector(std::string eeName);
 
-  inline const int & getDim() const
-  {
-   return params_.dim; 
-  }
-  inline const int & getDof() const
+ 
+  inline int getDof() const
   {
    return getOsd_()->getDof(); 
   }
-  inline const std::string & getImpactBody() const
+
+  inline double getQweight() const
   {
-   return params_.impactBodyName; 
+   return params_.Qweight; 
   }
-  inline const Eigen::VectorXd & getEeVelocityJump() const
+  
+  
+  
+  const endEffector & getEndeffector( const std::string& name);
+  void print();
+  inline const std::unique_ptr<mi_impactModel> & getImpactModel() const
   {
-    return deltaV_;
+    return impactModelPtr_; 
   }
   private: 
   const mc_rbdyn::Robot & simRobot_;
@@ -94,43 +76,41 @@ class mi_qpEstimator{
   {
     return osdPtr_;
   }
+  endEffector & getEndeffector_( const std::string& name);
   qpEstimatorParameter params_;
+  std::unique_ptr<mi_impactModel>  impactModelPtr_;
 
-  Eigen::VectorXd deltaV_; ///< End-effector velocity jump \f$ \delta \v_k \f$
-  /*
-  std::string impactBodyName_;
-  double coeFrictionDeduction_;
-  double coeRes_;
-  int dim_;
-*/
+  void initializeQP_();
 
-  qp_solver solver_;
+
+  Eigen::MatrixXd Q_;
+
+  Eigen::MatrixXd C_;
+
+  Eigen::VectorXd cl_, cu_;
+
+  Eigen::VectorXd p_;
+
+  Eigen::VectorXd xl_, xu_;
+  Eigen::LSSOL_QP solver_;
+
+  std::vector<std::shared_ptr<mi_equality> > eqConstraints_;
+
+
+
+  inline int getNumVar_() const
+  {
+    return numVar_; 
+  }
+  int numVar_;
+
+  inline int getNumEq_() const 
+  {
+    return numEq_; 
+  }
+  int numEq_;
+
   std::map<std::string, endEffector> endEffectors_;
-
-  //void addOptVariables_( const std::string& name, const unsigned & dim);
-
-  const endEffector & getEndeffector_( const std::string& name) const;
-  inline const double & getImpactDuration_() const
-  {
-    return params_.impactDuration;
-  }
-  inline const double & getCoeRes_() const
-  {
-    return params_.coeRes;
-  }
-  inline const double & getCoeFricDe_() const
-  {
-    return params_.coeFrictionDeduction;
-  }
-
-  inline const std::string & getSolver_() const
-  {
-    return params_.solverName; 
-  }
-  inline const double & getThreshold_() const
-  {
-    return params_.convergenceThreshold; 
-  }
-  friend struct qp_solver; 
-  friend struct impactDynamicsConstraintData; 
+  Eigen::VectorXd jointVelJump_; 
+  
 };

@@ -107,7 +107,7 @@ void mi_osd::update()
   // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
   updateCache_();
 }
-const int mi_osd::nameToIndex_(const std::string & eeName) const
+const int & mi_osd::nameToIndex_(const std::string & eeName) const
 {
   auto tempEe = cache_.jacobians.find(eeName);
   if(tempEe != cache_.jacobians.end())
@@ -204,13 +204,13 @@ void mi_osd::updateCache_()
 }
 bool mi_osd::addEndeffector(std::string eeName)
 {
-auto tempEe = cache_.jacobians.find(eeName);
-if(tempEe == cache_.jacobians.end()){
-  return addEndeffector_(eeName);
-}else{
-  std::cout<<"end-effector: "<<eeName<<" already exists in the OSD. "<<std::endl;
+  auto tempEe = cache_.jacobians.find(eeName);
+  if(tempEe == cache_.jacobians.end()){
+    return addEndeffector_(eeName);
+  }else{
+    std::cout<<"end-effector: "<<eeName<<" already exists in the OSD. "<<std::endl;
   return true; 
-}
+  }
 }
 bool mi_osd::addEndeffector_(std::string eeName)
 {
@@ -223,6 +223,7 @@ bool mi_osd::addEndeffector_(std::string eeName)
 
   cache_.jacobians[eeName] = {cache_.jacobians.size(), // index in the container
                               std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName)};
+  endEffectors_.push_back(eeName);
 
   if(cache_.jacobians.size() == (eeNum + 1))
   {
@@ -238,7 +239,7 @@ bool mi_osd::addEndeffector_(std::string eeName)
 
 void mi_osd::setContact(std::vector<std::string> & ees)
 {
-  contactEndeffectors = ees;
+  contactEndeffectors_ = ees;
 }
 
 
