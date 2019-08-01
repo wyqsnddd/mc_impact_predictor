@@ -14,8 +14,8 @@
 # include "mi_iniEquality.h"
 # include "mi_impactModel.h"
 # include <limits>
+# include <Eigen/QR>
 
-class mi_qpEstimator;
 struct qpEstimatorParameter{
   double Qweight = 20;
   std::string impactBodyName="r_wrist";
@@ -23,6 +23,7 @@ struct qpEstimatorParameter{
   double coeFrictionDeduction = 0.2;
   double coeRes = 0.8;
   int dim = 3;
+  bool useLagrangeMultiplier = false;
 };
 
 struct endEffector{
@@ -103,6 +104,7 @@ class mi_qpEstimator{
 
   std::vector<std::shared_ptr<mi_equality> > eqConstraints_;
 
+  void solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorXd & p_, const Eigen::MatrixXd & C_, const Eigen::VectorXd & cu_, Eigen::VectorXd &solution); 
 
 
   inline int getNumVar_() const

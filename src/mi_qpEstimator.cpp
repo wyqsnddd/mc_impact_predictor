@@ -52,6 +52,28 @@ void mi_qpEstimator::initializeQP_()
   std::cout<<"Reset LSSOL QP estimator variables. "<<std::endl;
 }
 
+void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorXd & p_, const Eigen::MatrixXd & C_, const Eigen::VectorXd & cu_,  Eigen::VectorXd &solution)
+{
+ Eigen::MatrixXd kkt;
+ int kktDim =  getNumVar_() + C_.rows();
+
+ kkt.resize(kktDim, kktDim); 
+ kkt.setZero();
+
+ kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(),getNumVar_());
+ kkt.block(getNumVar_(), 0, C_.rows(), C_.cols()) = C_;
+ kkt.block(0, getNumVar_(), C_.cols(), C_.rows()) = -C_.transpose();
+
+ Eigen::VectorXd b; 
+ b.resize(kktDim); b.setZero();
+ b.segment(getNumVar_(), cu_.rows() ) = cu_;
+
+ // solve the least squares problem: 
+ //Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_kkt(kkt);
+ //solution.resize(kktDim);
+ //solution = lu_decomp_kkt.inverse()*cu_;
+ solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
+}
 void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
 {
   impactModelPtr_->update(surfaceNormal);
@@ -68,9 +90,18 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
     count +=  (*idx)->nrEq();
   }
 
-  solver_.solve(xl_, xu_, Q_, p_, C_, cl_, cu_ );
+  Eigen::VectorXd solutionVariables; 
+
+  if(params_.useLagrangeMultiplier){
+    //solutionVariables.resize(getNumVar_());
+    //solutionVariables.setZero();
+    solveEqQp_(Q_, p_, C_, cu_, solutionVariables); 
+  }else{
+    solver_.solve(xl_, xu_, Q_, p_, C_, cl_, cu_ );
+    solutionVariables = solver_.result();
+  }
+  //
   
-  Eigen::VectorXd solutionVariables = solver_.result();
 
   jointVelJump_ = solutionVariables.segment(0, getDof());
 
