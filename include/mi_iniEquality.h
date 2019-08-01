@@ -12,7 +12,8 @@ class mi_iniEquality: public mi_equality
   public: 
   mi_iniEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
-		const mi_impactModel * impactPtr 
+		const mi_impactModel * impactPtr,
+		bool dcJacobian
 	       );
   ~mi_iniEquality(){}
   
@@ -23,6 +24,8 @@ class mi_iniEquality: public mi_equality
   void update() override;
   protected: 
   void reset_() override;
-   
+  void updateJacobian_();  
+  void updateDcJacobian_();  
+  bool dcJacobian_;
   const mi_impactModel* impactPtr_;
    };

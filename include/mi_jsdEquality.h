@@ -8,7 +8,8 @@ class mi_jsdEquality: public mi_equality
 {
   public: 
   mi_jsdEquality(
-		const std::shared_ptr<mi_osd> & osdPtr
+		const std::shared_ptr<mi_osd> & osdPtr,
+		const std::string & impactBody
 	       );
   ~mi_jsdEquality(){}
   
@@ -23,5 +24,6 @@ class mi_jsdEquality: public mi_equality
   void update() override;
   protected: 
   void reset_() override;
+  const std::string impactBodyName_;
 };
 

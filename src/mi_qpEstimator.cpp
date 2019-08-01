@@ -7,9 +7,13 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 		): simRobot_(simRobot), osdPtr_(osdPtr), params_(params)
 {
   impactModelPtr_.reset(new mi_impactModel(getSimRobot(), getOsd_(), params_.impactBodyName, params_.impactDuration, params_.coeFrictionDeduction, params_.coeRes, params_.dim));
-  eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd_(), getImpactModel().get()));
-  eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd_()));
-  eqConstraints_.push_back(std::make_shared<mi_osdEquality>(getOsd_()));
+
+  eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd_(), getImpactModel().get(), false));
+
+  eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd_(), getImpactModel()->getImpactBody()));
+
+  //eqConstraints_.push_back(std::make_shared<mi_osdEquality>(getOsd_(), getImpactModel().get()));
+  eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd_(), getImpactModel().get()));
 
   std::cout<<"Created QP estimator constraint. "<<std::endl;
 
@@ -52,6 +56,7 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
 {
   impactModelPtr_->update(surfaceNormal);
   int count = 0;
+  // Update the constraints
   for(auto idx = eqConstraints_.begin(); idx != eqConstraints_.end(); ++idx)
   {
     (*idx)->update();
@@ -77,7 +82,10 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
 	    
     getEndeffector_(*idx).estimatedAverageImpulsiveForce= 
 	   getEndeffector(*idx).estimatedImpulse/getImpactModel()->getImpactDuration();
-      
+
+    getEndeffector_(*idx).eeVJump = getOsd_()->getJacobian(*idx)*jointVelJump_; 
+	 
+
   }
 }
 
@@ -111,7 +119,7 @@ void mi_qpEstimator::addEndeffector(std::string eeName)
   tempForce.setZero();
 
   //optVariables_[name] = {dim, optVariables_.size() };
-  endEffectors_[eeName] = {endEffectors_.size(), tempForce, tempForce} ;
+  endEffectors_[eeName] = {tempForce, tempForce, tempForce} ;
   //endEffectorNames_.push_back(eeName);
 
   if(!getOsd_()->addEndeffector(eeName))

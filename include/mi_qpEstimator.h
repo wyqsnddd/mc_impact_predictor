@@ -10,6 +10,7 @@
 # include <eigen-lssol/LSSOL_QP.h>
 # include "mi_jsdEquality.h"
 # include "mi_osdEquality.h"
+# include "mi_invOsdEquality.h"
 # include "mi_iniEquality.h"
 # include "mi_impactModel.h"
 # include <limits>
@@ -25,7 +26,8 @@ struct qpEstimatorParameter{
 };
 
 struct endEffector{
- size_t startingNumber; // Starting number in the vector
+ //size_t startingNumber; // Starting number in the vector
+ Eigen::VectorXd eeVJump; 
  Eigen::VectorXd estimatedImpulse;
  Eigen::Vector3d estimatedAverageImpulsiveForce;
 };
@@ -63,6 +65,11 @@ class mi_qpEstimator{
   
   
   
+  inline const Eigen::VectorXd & getJointVelJump() 
+  {
+    return jointVelJump_; 
+  }
+
   const endEffector & getEndeffector( const std::string& name);
   void print();
   inline const std::unique_ptr<mi_impactModel> & getImpactModel() const

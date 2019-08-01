@@ -3,21 +3,18 @@
 # include "mi_impactModel.h"
 # include "mi_equality.h" 
 
-class mi_osdEquality: public mi_equality
-/** \brief Specify the operation space impuplse equation: [\sum lambda_ki * J_i, 0,..., -I, ..] [\delta_q_dot, I_1,\ldots, I_m]^T.
- * for all the m end-effectors.
- */
+class mi_invOsdEquality: public mi_equality
 {
   public: 
-  mi_osdEquality(
+  mi_invOsdEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
 		const mi_impactModel * impactPtr 
 	       );
-  ~mi_osdEquality(){}
+  ~mi_invOsdEquality(){}
   
   inline std::string nameEq() const override
   {
-    return "OperationSpaceDynamicsImpulseEqualityConstraint";
+    return "InverseOperationSpaceDynamicsImpulseEqualityConstraint";
   }
   void update() override;
   protected: 
