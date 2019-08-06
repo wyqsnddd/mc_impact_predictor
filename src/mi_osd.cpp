@@ -236,6 +236,14 @@ bool mi_osd::addEndeffector_(std::string eeName)
   }
 }
 
+void mi_osd::printInfo() 
+{
+   std::cout<<"mi_osd model has endeffectors: "<<std::endl;
+   for (auto idx = endEffectors_.begin(); idx!=endEffectors_.end(); ++idx)
+       std::cout<<" "<<*idx<<", ";
+
+   std::cout<<std::endl;
+}
 
 void mi_osd::setContact(std::vector<std::string> & ees)
 {

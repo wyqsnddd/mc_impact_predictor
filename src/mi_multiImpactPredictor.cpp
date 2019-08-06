@@ -86,7 +86,8 @@ bool mi_multiImpactPredictor::addEndeffectors(const std::vector<std::string> & i
   else
   {
     // Initialize the data structure:
-    pi->second->initializeDataStructure(static_cast<int>(ees.size()));
+    //pi->second->initializeDataStructure(static_cast<int>(ees.size()));
+    pi->second->initializeDataStructure();
 
     pi->second->resetDataStructure();
 
@@ -115,11 +116,20 @@ bool mi_multiImpactPredictor::addEndeffectors(const std::vector<std::string> & i
 
 const std::shared_ptr<mi_impactPredictor> & mi_multiImpactPredictor::getPredictor(const std::string & impactName)
 {
-  const auto & pi = predictorContainer.find(impactName);
+  auto pi = predictorContainer.find(impactName);
   if(pi == predictorContainer.end())
   {
     throw std::runtime_error("Predictors-add-ee: Impact body does not exists! ");
   }
   else
     return pi->second;
+}
+ 
+void mi_multiImpactPredictor::printInfo() const
+{
+ for (auto idx = predictorContainer.begin(); idx!=predictorContainer.end(); ++idx )
+ {
+    idx->second->printInfo(); 
+ }
+
 }

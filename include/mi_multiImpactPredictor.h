@@ -39,9 +39,9 @@ public:
 
     osdPtr_->initializeDataStructure(numEE);
     for(auto ii = predictorContainer.begin(); ii != predictorContainer.end(); ii++)
-      ii->second->initializeDataStructure(numEE);
+      ii->second->initializeDataStructure();
   }
-  inline int getContactNum()
+  inline int  getContactNum()
   {
     return osdPtr_->getContactNum();
   }
@@ -90,9 +90,11 @@ public:
    */
   const std::shared_ptr<mi_impactPredictor> & getPredictor(const std::string & impactName);
 
+
+  void printInfo() const;
 protected:
   mc_rbdyn::Robot & robot_;
-  std::map<std::string, std::shared_ptr<mi_impactPredictor>> predictorContainer;
+  std::map<std::string, std::shared_ptr<mi_impactPredictor> > predictorContainer;
   double impactDuration_;
   double coeFrictionDeduction_;
   double coeRes_;

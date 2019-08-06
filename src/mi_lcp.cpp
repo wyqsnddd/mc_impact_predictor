@@ -47,7 +47,7 @@ void mi_lcp::update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & J
  // (3) solve the lcp problem 
  std::vector<double>solutionForce = solver_.solveLCP(tempLambdaInv, d_, getSolver_(), getThreshold_());
 //std::vector<std::string> cEes = osdPtr_->getContactEes();
-int contactCounter = 0; 
+ int contactCounter = 0; 
  std::vector<std::string> cEes = osdPtr_->getContactEes();
  for ( auto idx = cEes.begin(); idx != cEes.end(); ++idx)
  {

@@ -38,7 +38,7 @@ struct impulseValues
   {
     inContact = true;
   }
-  const bool contact()
+  const bool & contact()
   {
     return inContact;
   }
@@ -64,6 +64,7 @@ struct impulseValues
     deltaQDot.setZero();
   }
 };
+
 struct impactDataCache
 /** \brief Impulsive values associated with the robot
  */
@@ -216,7 +217,7 @@ public:
     // getOsd_()->resetDataStructure();
     cache_.reset();
   }
-  inline void initializeDataStructure(int numEE)
+  inline void initializeDataStructure()
   {
 
     cache_.ini(getOsd_()->getJacobianDim(), getOsd_()->getDof());
@@ -305,7 +306,7 @@ public:
   {
     return impactBodyName_;
   }
-
+  void printInfo(); 
 protected:
   mc_rbdyn::Robot & robot_;
   const std::shared_ptr<mi_osd> & osdPtr_;

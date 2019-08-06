@@ -22,6 +22,7 @@ add_definitions(-o2)
 # Use jrl-cmakemoduels to get mc_rtc depency
 set(PKG_CONFIG_ADDITIONAL_VARIABLES "${PKG_CONFIG_ADDITIONAL_VARIABLES} libdir")
 add_required_dependency(mc_rtc)
+add_required_dependency(eigen-lssol)
 add_required_dependency(nlopt)
 
 #find_package(DART 6.8.0 REQUIRED COMPONENTS utils-urdf gui-osg collision-bullet CONFIG)

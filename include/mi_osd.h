@@ -194,7 +194,7 @@ public:
   {
     return jacobianDim_;
   }
-  
+  void printInfo();  
 private:
   int robotDof_;
   bool linearJacobian_;

@@ -86,7 +86,8 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
                                    sva::ForceVecd(Eigen::Vector6d::Zero()),
                                    sva::ForceVecd(Eigen::Vector6d::Zero()),
                                    Eigen::VectorXd::Zero(getOsd_()->getDof()),
-                                   Eigen::VectorXd::Zero(getOsd_()->getDof())};
+                                   Eigen::VectorXd::Zero(getOsd_()->getDof()),
+                                   Eigen::MatrixXd::Zero(3, getOsd_()->getDof())};
   }
   else
   {
@@ -96,7 +97,8 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
                                    sva::ForceVecd(Eigen::Vector6d::Zero()),
                                    sva::ForceVecd(Eigen::Vector6d::Zero()),
                                    Eigen::VectorXd::Zero(getOsd_()->getDof()),
-                                   Eigen::VectorXd::Zero(getOsd_()->getDof())};
+                                   Eigen::VectorXd::Zero(getOsd_()->getDof()),
+                                   Eigen::MatrixXd::Zero(6, getOsd_()->getDof())};
   }
 
   if(!getOsd_()->addEndeffector(eeName))
@@ -192,7 +194,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
       continue;
     }
 
-    int dim = getOsd_()->getJacobianDim();
+    //int dim = getOsd_()->getJacobianDim();
     // End-effector velocity jump:
 
     //(1.0) update impact body-velocity induced end-effector velocity jump and joint velocity jump
@@ -377,4 +379,12 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
       (getOsd_()->getJacobian(getImpactBody()).transpose() + (1 / getImpactDuration_()) * tempJDeltaTau)
       * getOsd_()->getEffectiveLambdaMatrix(getImpactBody()) * getOsd_()->getDcJacobianInv(getImpactBody())
       * tempReductionProjector * getOsd_()->getJacobian(getImpactBody());
+}
+void mi_impactPredictor::printInfo() 
+{
+
+  std::cout<<"mi_impactPredictor with impactBody: "<<getImpactBody()<<", with OSD model: "<<std::endl;
+  getOsd_()->printInfo();
+	  
+
 }
