@@ -76,10 +76,12 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
  //solution.resize(kktDim);
  //solution = lu_decomp_kkt.inverse()*cu_;
  
- //solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
+ solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
+ /*
  Eigen::MatrixXd kktInverse;
  pseudoInverse_(kkt, kktInverse);
  solution = kktInverse*b; 
+ */
 }
 
 void mi_qpEstimator::pseudoInverse_(const Eigen::MatrixXd & input, Eigen::MatrixXd & output, double tolerance)
@@ -121,16 +123,16 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
   }
 
   Eigen::VectorXd solutionVariables; 
+  solutionVariables.resize(getNumVar_());
+  solutionVariables.setZero();
 
   if(params_.useLagrangeMultiplier){
-    //solutionVariables.resize(getNumVar_());
-    //solutionVariables.setZero();
     solveEqQp_(Q_, p_, C_, cu_, solutionVariables); 
   }else{
     solver_.solve(xl_, xu_, Q_, p_, C_, cl_, cu_ );
     solutionVariables = solver_.result();
   }
-  //
+  
   
 
   jointVelJump_ = solutionVariables.segment(0, getDof());
