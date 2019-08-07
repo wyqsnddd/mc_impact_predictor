@@ -72,7 +72,34 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
  //Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_kkt(kkt);
  //solution.resize(kktDim);
  //solution = lu_decomp_kkt.inverse()*cu_;
- solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
+ 
+ //solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
+ Eigen::MatrixXd kktInverse;
+ pseudoInverse_(kkt, kktInverse);
+ solution = kktInverse*b; 
+}
+
+void mi_qpEstimator::pseudoInverse_(const Eigen::MatrixXd & input, Eigen::MatrixXd & output, double tolerance)
+{
+  auto svd = input.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+  const auto &singularValues = svd.singularValues();
+  Eigen::MatrixXd singularValuesInv(input.cols(), input.rows());
+
+  singularValuesInv.setZero();
+
+  for (unsigned int i = 0; i < singularValues.size(); ++i) {
+	  if (singularValues(i) > tolerance)
+	  {
+		  singularValuesInv(i, i) = 1.0 / singularValues(i);
+	  }
+	  else
+	  {
+		  singularValuesInv(i, i) = 0.0;
+	  }
+  }
+
+  output = svd.matrixV() * singularValuesInv * svd.matrixU().adjoint();
 }
 void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
 {
