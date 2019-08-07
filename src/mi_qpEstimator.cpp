@@ -61,8 +61,11 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
  kkt.setZero();
 
  kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(),getNumVar_());
+ kkt.block(0, 0, getNumVar_(), getNumVar_())=  kkt.block(0, 0, getNumVar_(), getNumVar_())*2;
+
+
  kkt.block(getNumVar_(), 0, C_.rows(), C_.cols()) = C_;
- kkt.block(0, getNumVar_(), C_.cols(), C_.rows()) = -C_.transpose();
+ kkt.block(0, getNumVar_(), C_.cols(), C_.rows()) = C_.transpose();
 
  Eigen::VectorXd b; 
  b.resize(kktDim); b.setZero();
