@@ -14,7 +14,8 @@
 # include "mi_iniEquality.h"
 # include "mi_impactModel.h"
 # include <limits>
-# include <Eigen/QR>
+//# include <Eigen/QR>
+# include <Eigen/Dense>
 
 struct qpEstimatorParameter{
   double Qweight = 20;
@@ -89,7 +90,7 @@ class mi_qpEstimator{
   std::unique_ptr<mi_impactModel>  impactModelPtr_;
 
   void initializeQP_();
-
+  void pseudoInverse_(const Eigen::MatrixXd & input, Eigen::MatrixXd & output, double tolerance =1e-4 );
 
   Eigen::MatrixXd Q_;
 
