@@ -10,10 +10,11 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd_(), getImpactModel().get(), false));
 
-  eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd_(), getImpactModel()->getImpactBody()));
+  if(params_.useJsd)
+    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd_(), getImpactModel()->getImpactBody())); 
 
-  //eqConstraints_.push_back(std::make_shared<mi_osdEquality>(getOsd_(), getImpactModel().get()));
-  eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd_(), getImpactModel().get()));
+  if(params_.useOsd)
+    eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd_(), getImpactModel().get()));
 
   std::cout<<"Created QP estimator constraint. "<<std::endl;
 
@@ -49,19 +50,31 @@ void mi_qpEstimator::initializeQP_()
   cu_.setZero();
   cl_.resize(getNumEq_());
   cl_.setZero();
+
+
+  jacobianDeltaAlpha_.resize(getDof(), getDof());
+  jacobianDeltaAlpha_.setZero();
+  jacobianDeltaTau_.resize(getDof(), getDof());
+  jacobianDeltaTau_.setZero();
+
+  A_dagger_.resize(
+		  getDof() + getEstimatorParams().dim*(static_cast<int>(getOsd_()->getContactEes().size()) + 1), 
+		  3);
+  A_dagger_.setZero();
+
   std::cout<<"Reset LSSOL QP estimator variables. "<<std::endl;
 }
 
 void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorXd & p_, const Eigen::MatrixXd & C_, const Eigen::VectorXd & cu_,  Eigen::VectorXd &solution)
 {
  Eigen::MatrixXd kkt;
- int kktDim =  getNumVar_() + C_.rows();
+ int kktDim =  getNumVar_() + static_cast<int>(C_.rows());
 
  kkt.resize(kktDim, kktDim); 
  kkt.setZero();
 
  kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(),getNumVar_());
- kkt.block(0, 0, getNumVar_(), getNumVar_())=  kkt.block(0, 0, getNumVar_(), getNumVar_())*2;
+ //kkt.block(0, 0, getNumVar_(), getNumVar_())=  kkt.block(0, 0, getNumVar_(), getNumVar_())*2;
 
 
  kkt.block(getNumVar_(), 0, C_.rows(), C_.cols()) = C_;
@@ -75,8 +88,10 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
  //Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_kkt(kkt);
  //solution.resize(kktDim);
  //solution = lu_decomp_kkt.inverse()*cu_;
- 
- solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
+ auto tempInverse =  kkt.completeOrthogonalDecomposition().pseudoInverse();
+ solution = tempInverse*b;
+
+ A_dagger_ = tempInverse.block(0, A_dagger_.cols() - 3, A_dagger_.rows(), A_dagger_.cols());
  /*
  Eigen::MatrixXd kktInverse;
  pseudoInverse_(kkt, kktInverse);
@@ -126,30 +141,48 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
   solutionVariables.resize(getNumVar_());
   solutionVariables.setZero();
 
+  
   if(params_.useLagrangeMultiplier){
+
+    Eigen::VectorXd b_temp = cu_.segment(getNumVar_(), C_.rows());
+    Eigen::MatrixXd A_temp = C_;
     solveEqQp_(Q_, p_, C_, cu_, solutionVariables); 
+    //solutionVariables = A_temp.completeOrthogonalDecomposition().pseudoInverse()*b_temp;
+
   }else{
     solver_.solve(xl_, xu_, Q_, p_, C_, cl_, cu_ );
     solutionVariables = solver_.result();
   }
   
   
-
+  auto tempJac = getImpactModel()->getProjector()*getOsd_()->getJacobian(getImpactModel()->getImpactBody());
   jointVelJump_ = solutionVariables.segment(0, getDof());
 
+  jacobianDeltaTau_.resize(getDof(),3);
+  jacobianDeltaTau_.setZero();
   for(auto idx = getOsd_()->getEes().begin(); idx!=getOsd_()->getEes().end(); ++idx)
   {
     int eeIndex = getOsd_()->nameToIndex_(*idx);
     int location =  getOsd_()->getJacobianDim()*eeIndex;
-    getEndeffector_(*idx).estimatedImpulse =  solutionVariables.segment(getDof() + location, getOsd_()->getJacobianDim());
+    auto tempEe =  getEndeffector_(*idx);
+
+    tempEe.estimatedImpulse =  solutionVariables.segment(getDof() + location, getOsd_()->getJacobianDim());
 	    
-    getEndeffector_(*idx).estimatedAverageImpulsiveForce= 
-	   getEndeffector(*idx).estimatedImpulse/getImpactModel()->getImpactDuration();
+    tempEe.estimatedAverageImpulsiveForce= 
+	   tempEe.estimatedImpulse/getImpactModel()->getImpactDuration();
 
-    getEndeffector_(*idx).eeVJump = getOsd_()->getJacobian(*idx)*jointVelJump_; 
-	 
+    tempEe.eeVJump = getOsd_()->getJacobian(*idx)*jointVelJump_; 
 
+
+    auto tempA_dagger_ee = A_dagger_.block(getDof() + location, 0 ,3 ,3);
+
+    tempEe.jacobianDeltaF = tempA_dagger_ee*tempJac;
+
+    jacobianDeltaTau_ +=  getOsd_()->getJacobian(*idx).transpose()*tempA_dagger_ee;
   }
+
+  jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3)*tempJac;
+  jacobianDeltaTau_ = jacobianDeltaTau_*tempJac;
 }
 
 
@@ -181,8 +214,12 @@ void mi_qpEstimator::addEndeffector(std::string eeName)
   tempForce.resize(getImpactModel()->getDim());
   tempForce.setZero();
 
+  Eigen::VectorXd tempJ;
+  tempJ.resize(getEstimatorParams().dim, getDof());
+  tempJ.setZero();
+
   //optVariables_[name] = {dim, optVariables_.size() };
-  endEffectors_[eeName] = {tempForce, tempForce, tempForce} ;
+  endEffectors_[eeName] = {tempForce, tempForce, tempForce, tempJ} ;
   //endEffectorNames_.push_back(eeName);
 
   if(!getOsd_()->addEndeffector(eeName))
@@ -197,8 +234,22 @@ const Eigen::VectorXd  & mi_qpEstimator::getPredictedImpulse(const std::string &
   return getEndeffector(bodyName).estimatedImpulse;
 }
 
-void mi_qpEstimator::print()
+void mi_qpEstimator::print() const
 {
   std::cout<<"The QP estimator params are: "<<std::endl<<"Dim: " <<getImpactModel()->getDim() <<", Dof: "<<getDof()<<", coeR: "<<getImpactModel()->getCoeRes()<<", coeF: "<<getImpactModel()->getCoeFricDe()<<", impact duration: "<<getImpactModel()->getImpactDuration()<<". "<<std::endl;
+
+ std::cout<<"The QP estimator has end-effectors: "; 
+ for (auto idx = getOsd_()->getEes().begin(); idx!=getOsd_()->getEes().end(); ++idx)
+ {
+   std::cout<<*idx<<" "; 
+ }
+ std::cout<<std::endl;
+
+ std::cout<<"The QP estimator has end-effectors with established contact : ";
+ for (auto idx = getOsd_()->getContactEes().begin(); idx!=getOsd_()->getContactEes().end(); ++idx)
+ {
+   std::cout<<*idx<<" "; 
+ }
+ std::cout<<std::endl;
 
 }

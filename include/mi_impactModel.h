@@ -47,7 +47,10 @@ class mi_impactModel
   {
     return deltaV_;
   }
-
+  inline const Eigen::MatrixXd & getProjector() const 
+  {
+    return reductionProjector_;
+  }
   void update(const Eigen::Vector3d & surfaceNormal); 
 
   private:
@@ -59,5 +62,7 @@ class mi_impactModel
   double coeRes_;
   int dim_;
 
-  Eigen::VectorXd deltaV_;
+  Eigen::VectorXd deltaV_ = Eigen::VectorXd::Zero(3);
+  Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3,3);
+
 };
