@@ -13,10 +13,11 @@ class mi_impactModel
 		   const std::shared_ptr<mi_osd> & osdPtr,
 		   std::string iBodyName="r_wrist",
 		   double iDuration = 0.005,
+		   double timeStep = 0.005,
 		   double coeF = 0.2,
 		   double coeR = 0.8,
 		   int dim = 3
-		 ): simRobot_(simRobot), osdPtr_(osdPtr), impactBodyName_(iBodyName), impactDuration_(iDuration), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
+		 ): simRobot_(simRobot), osdPtr_(osdPtr), impactBodyName_(iBodyName), impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
    {
    }
 
@@ -29,6 +30,10 @@ class mi_impactModel
   inline const std::string & getImpactBody() const
   {
    return impactBodyName_; 
+  }
+  inline double getTimeStep() const
+  {
+    return timeStep_;
   }
   inline double getImpactDuration() const
   {
@@ -58,6 +63,7 @@ class mi_impactModel
   const std::shared_ptr<mi_osd> & osdPtr_;
   std::string impactBodyName_;
   double impactDuration_;
+  double timeStep_;
   double coeFrictionDeduction_;
   double coeRes_;
   int dim_;

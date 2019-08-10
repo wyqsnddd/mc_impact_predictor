@@ -21,6 +21,7 @@ struct qpEstimatorParameter{
   double Qweight = 20;
   std::string impactBodyName="r_wrist";
   double impactDuration = 0.005;
+  double timeStep = 0.005;
   double coeFrictionDeduction = 0.2;
   double coeRes = 0.8;
   int dim = 3;
@@ -31,8 +32,8 @@ struct qpEstimatorParameter{
 
 struct endEffector{
  //size_t startingNumber; // Starting number in the vector
- Eigen::VectorXd eeVJump; 
- Eigen::VectorXd estimatedImpulse;
+ Eigen::Vector3d eeVJump; 
+ Eigen::Vector3d estimatedImpulse;
  Eigen::Vector3d estimatedAverageImpulsiveForce;
  Eigen::MatrixXd jacobianDeltaF;
 };
@@ -51,9 +52,6 @@ class mi_qpEstimator{
   {
     return simRobot_;
   }
-  
-  const Eigen::VectorXd  & getPredictedImpulse(const std::string & bodyName);
-
   
   void addEndeffector(std::string eeName);
 
@@ -80,7 +78,10 @@ class mi_qpEstimator{
   {
      return getEndeffector(eeName).jacobianDeltaF;
   }
-    
+  inline const Eigen::VectorXd & getTauJump() const
+  {
+    return tauJump_;
+  } 
   inline const Eigen::VectorXd & getJointVelJump() 
   {
     return jointVelJump_; 
@@ -88,6 +89,7 @@ class mi_qpEstimator{
 
   const endEffector & getEndeffector( const std::string& name);
   void print() const;
+  void print(const std::string & eeName);
   inline const std::unique_ptr<mi_impactModel> & getImpactModel() const
   {
     return impactModelPtr_; 
@@ -140,7 +142,7 @@ class mi_qpEstimator{
   int numEq_;
 
   std::map<std::string, endEffector> endEffectors_;
-  Eigen::VectorXd jointVelJump_; 
+  Eigen::VectorXd jointVelJump_, tauJump_;
   
   Eigen::MatrixXd jacobianDeltaAlpha_;
   Eigen::MatrixXd jacobianDeltaTau_;
