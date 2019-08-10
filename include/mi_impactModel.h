@@ -56,6 +56,10 @@ class mi_impactModel
   {
     return reductionProjector_;
   }
+  inline const Eigen::VectorXd& getJointVel() const 
+  {
+    return temp_q_vel_;
+  }
   void update(const Eigen::Vector3d & surfaceNormal); 
 
   private:
@@ -70,5 +74,6 @@ class mi_impactModel
 
   Eigen::VectorXd deltaV_ = Eigen::VectorXd::Zero(3);
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3,3);
+  Eigen::VectorXd temp_q_vel_;
 
 };

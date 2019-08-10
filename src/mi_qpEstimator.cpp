@@ -173,6 +173,9 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
 
   //std::cout<<"jacobianDeltaTau_ size is: "<<jacobianDeltaTau_.rows() <<", "<<jacobianDeltaTau_.cols()<<std::endl;
   jacobianDeltaTau_.setZero();
+
+  
+
   for(auto idx = getOsd_()->getEes().begin(); idx!=getOsd_()->getEes().end(); ++idx)
   {
     int eeIndex = getOsd_()->nameToIndex_(*idx);
@@ -212,27 +215,40 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
       tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() - 3, 3, 3)*getImpactModel()->getEeVelocityJump();
       //tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() , 3, tempInv_.cols())*b;
       //tempEe.checkForce(0) = (b.segment(0, b.rows()-3)).norm();
-      std::cout<<"b is: " <<std::endl<<b.transpose()<<std::endl;
-
-
-      std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -  tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
+      //std::cout<<"b is: " <<std::endl<<b.transpose()<<std::endl;
+/*
+      tempEe.checkForce(0) = (
+		      //jointVelJump_  -  tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)* getImpactModel()->getEeVelocityJump()
+		      //jointVelJump_  -  tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)* tempJac* getImpactModel()->getJointVel()
+		      jointVelJump_  -  A_dagger_.block(0, 0, getDof(), 3)* tempJac* getImpactModel()->getJointVel()
+		      ).norm();
+*/
+      tempEe.jacobianDeltaF = tempA_dagger_ee*tempJac;
+      
+      jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3)*tempJac;
+      //std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -  tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
     }
-    //tempEe.jacobianDeltaF = tempA_dagger_ee*tempJac;
-    tempEe.jacobianDeltaF = tempA_dagger_ee;
+    //tempEe.jacobianDeltaF = tempA_dagger_ee;
 
     //std::cout<<"test "<<std::endl;
     Eigen::MatrixXd tempJ_T = getOsd_()->getJacobian(*idx).transpose();
     //std::cout<<"test "<<std::endl;
 
     //std::cout<<"tempJ_T size is: "<<tempJ_T.rows() <<", "<<tempJ_T.cols()<<std::endl;
+    
     jacobianDeltaTau_ +=  tempJ_T*tempA_dagger_ee;
     //std::cout<<"test "<<std::endl;
     tauJump_ += tempJ_T*tempEe.estimatedAverageImpulsiveForce; 
 
     //std::cout<<"test "<<std::endl;
+    
   }
 
-  jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3)*tempJac;
+  if(getEstimatorParams().useLagrangeMultiplier)
+    //jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3)*tempJac;
+    jacobianDeltaAlpha_ = tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)*tempJac;
+
+    //jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3);
   jacobianDeltaTau_ = jacobianDeltaTau_*tempJac;
 }
 

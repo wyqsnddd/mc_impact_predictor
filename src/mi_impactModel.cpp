@@ -10,8 +10,8 @@ void mi_impactModel::update(const Eigen::Vector3d & surfaceNormal)
   reductionProjector_ = -((1 + getCoeRes()) * tempProjector )*osdPtr_->getJacobian(getImpactBody());
   Eigen::VectorXd alpha = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
   Eigen::VectorXd alphaD = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alphaD);
-
-  deltaV_ = reductionProjector_ *  (alpha + alphaD * getTimeStep());
+  temp_q_vel_ = (alpha + alphaD * getTimeStep());
+  deltaV_ = reductionProjector_ * temp_q_vel_ ;
 
 }
 
