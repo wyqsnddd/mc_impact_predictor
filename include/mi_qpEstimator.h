@@ -35,6 +35,7 @@ struct endEffector{
  Eigen::Vector3d eeVJump; 
  Eigen::Vector3d estimatedImpulse;
  Eigen::Vector3d estimatedAverageImpulsiveForce;
+ Eigen::Vector3d checkForce;
  Eigen::MatrixXd jacobianDeltaF;
 };
 
@@ -147,5 +148,5 @@ class mi_qpEstimator{
   Eigen::MatrixXd jacobianDeltaAlpha_;
   Eigen::MatrixXd jacobianDeltaTau_;
   Eigen::MatrixXd A_dagger_;
-
+  Eigen::MatrixXd tempInv_;
 };
