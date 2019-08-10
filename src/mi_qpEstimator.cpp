@@ -212,7 +212,12 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
       //tempEe.checkForce = inv_dt*solution.segment(getDof() + location, 3);
 
 
-      tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() - 3, 3, 3)*getImpactModel()->getEeVelocityJump();
+      tempEe.jacobianDeltaF = tempA_dagger_ee*tempJac;
+
+
+      tempEe.checkForce = inv_dt*tempEe.jacobianDeltaF*getImpactModel()->getJointVel();
+      //tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() - 3, 3, 3)*getImpactModel()->getEeVelocityJump();
+
       //tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() , 3, tempInv_.cols())*b;
       //tempEe.checkForce(0) = (b.segment(0, b.rows()-3)).norm();
       //std::cout<<"b is: " <<std::endl<<b.transpose()<<std::endl;
@@ -223,7 +228,6 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
 		      jointVelJump_  -  A_dagger_.block(0, 0, getDof(), 3)* tempJac* getImpactModel()->getJointVel()
 		      ).norm();
 */
-      tempEe.jacobianDeltaF = tempA_dagger_ee*tempJac;
       
       jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3)*tempJac;
       //std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -  tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
