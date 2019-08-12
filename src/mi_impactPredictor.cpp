@@ -5,9 +5,10 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
                                        std::string impactBodyName,
                                        bool linearJacobian,
                                        double impactDuration,
+                                       double timeStep,
                                        double coeFrictionDeduction,
                                        double coeRes)
-: robot_(robot), osdPtr_(osdPtr), linearJacobian_(linearJacobian), impactDuration_(impactDuration),
+: robot_(robot), osdPtr_(osdPtr), linearJacobian_(linearJacobian), impactDuration_(impactDuration), timeStep_(timeStep),
   coeFrictionDeduction_(coeFrictionDeduction), coeRes_(coeRes)
 {
 
@@ -18,7 +19,7 @@ mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
   // osdPtr_ = std::make_shared<mi_osd>(getRobot(), useLinearJacobian_());
 
   std::cout << "The impact predictor constuctor is finished." << std::endl;
-  std::cout << "The impact duration is: " << getImpactDuration_() << ", the coeres is: " << getCoeRes_() << std::endl;
+  std::cout << "The impact duration is: " << getImpactDuration() << ", the coeres is: " << getCoeRes_() << std::endl;
 }
 void mi_impactPredictor::setContact(std::string contactBodyName)
 {
@@ -131,9 +132,10 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   // osdPtr_->update();
   // std::cout << "OSD updated. " << std::endl;
   Eigen::Matrix3d tempProjector = surfaceNormal * surfaceNormal.transpose();
-  Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - surfaceNormal * surfaceNormal.transpose();
+  Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - tempProjector ;
 
-  Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes_()) * tempProjector + getCoeFricDe_() * tempNullProjector);
+  //Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes_()) * tempProjector + getCoeFricDe_() * tempNullProjector);
+  Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes_()) * tempProjector );
   Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
   Eigen::VectorXd alphaD = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
   const auto & impactBodyValuesPtr = cache_.grfContainer.find(getImpactBody());
@@ -143,9 +145,9 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   // impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector * getOsd_()->getJacobian(getImpactBody())
 
   impactBodyValuesPtr->second.deltaV =
-      tempReductionProjector * getOsd_()->getJacobian(getImpactBody()) * (alpha + alphaD * getImpactDuration_());
+      tempReductionProjector * getOsd_()->getJacobian(getImpactBody()) * (alpha + alphaD *getTimeStep());
   //(0.1) update impact body-velocity impulsive force
-  impactBodyValuesPtr->second.impulseForce = (1 / getImpactDuration_())
+  impactBodyValuesPtr->second.impulseForce = (1 / getImpactDuration())
                                              * getOsd_()->getEffectiveLambdaMatrix(getImpactBody())
                                              * getOsd_()->getDcJacobianInv(getImpactBody()) * getEeVelocityJump();
 
@@ -247,7 +249,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
             ].linear();
         */
       } // end of row calculation
-      it->second.impulseForce = (1 / getImpactDuration_()) * it->second.impulseForce;
+      it->second.impulseForce = (1 / getImpactDuration()) * it->second.impulseForce;
       it->second.deltaTau = getOsd_()->getJacobian(it->first).transpose() * it->second.impulseForce;
 
       // calculate the equivalent wrench at the COM
@@ -319,7 +321,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
 
   cache_.jacobianDeltaAlpha =
       (getOsd_()->getDcJacobianInv(getImpactBody())
-       + (1 / getImpactDuration_()) * tempJDeltaAlpha * getOsd_()->getEffectiveLambdaMatrix(getImpactBody())
+       + (1 / getImpactDuration()) * tempJDeltaAlpha * getOsd_()->getEffectiveLambdaMatrix(getImpactBody())
              * getOsd_()->getDcJacobianInv(getImpactBody()))
       * tempReductionProjector * getOsd_()->getJacobian(getImpactBody());
   // ----------------------------------- Jacobian Tau
@@ -358,7 +360,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
         // std::cout<<"temp is: "<<getOsd_()->getLambdaMatrix( it->first, idx->first) *
         // getOsd_()->getLambdaMatrixInv(idx->first, getImpactBody())<<std::endl;
       } // end of inner loop
-      it->second.jacobianDeltaF = (1 / getImpactDuration_()) * temp
+      it->second.jacobianDeltaF = (1 / getImpactDuration()) * temp
                                   * getOsd_()->getEffectiveLambdaMatrix(getImpactBody())
                                   * getOsd_()->getDcJacobianInv(getImpactBody()) * tempReductionProjector
                                   * getOsd_()->getJacobian(getImpactBody());
@@ -369,14 +371,14 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   } // end of temp J delta tau
 
   /*
-  cache_.jacobianDeltaTau = -(1 + getCoeRes_()) * (1 / getImpactDuration_()) * tempJDeltaTau
+  cache_.jacobianDeltaTau = -(1 + getCoeRes_()) * (1 / getImpactDuration()) * tempJDeltaTau
                             * getOsd_()->getEffectiveLambdaMatrix(getImpactBody())
                             * getOsd_()->getDcJacobianInv(getImpactBody()) * tempProjector
                             * getOsd_()->getJacobian(getImpactBody());
   */
 
   cache_.jacobianDeltaTau =
-      (getOsd_()->getJacobian(getImpactBody()).transpose() + (1 / getImpactDuration_()) * tempJDeltaTau)
+      (getOsd_()->getJacobian(getImpactBody()).transpose() + (1 / getImpactDuration()) * tempJDeltaTau)
       * getOsd_()->getEffectiveLambdaMatrix(getImpactBody()) * getOsd_()->getDcJacobianInv(getImpactBody())
       * tempReductionProjector * getOsd_()->getJacobian(getImpactBody());
 }

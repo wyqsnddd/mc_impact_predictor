@@ -2,8 +2,8 @@
 
 mi_jsdEquality::mi_jsdEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
-		const std::string & impactBody
-		) :  mi_equality(osdPtr), impactBodyName_(impactBody)
+		const std::vector<std::string> & impactBodies
+		) :  mi_equality(osdPtr), impactBodyNames_(impactBodies)
 {
   reset_();
 }
@@ -39,7 +39,9 @@ void mi_jsdEquality::update()
   }
   
   // (2) Fill the impact bodies
-  int eeIndex = getOsd_()->nameToIndex_(impactBodyName_);
-  A_.block(0, nRow + eeIndex*dim, nRow, dim) = - getOsd_()->getJacobian(impactBodyName_).transpose();
- 
-}
+  for (auto idx = impactBodyNames_.begin(); idx!= impactBodyNames_.end(); ++idx  )
+  {
+     int eeIndex = getOsd_()->nameToIndex_(*idx);
+     A_.block(0, nRow + eeIndex*dim, nRow, dim) = - getOsd_()->getJacobian(*idx).transpose();
+  }
+ }

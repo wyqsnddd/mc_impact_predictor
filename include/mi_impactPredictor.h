@@ -137,6 +137,7 @@ public:
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
+                     double timeStep,
                      double coeFrictionDeduction,
                      double coeRes = 0.8);
 
@@ -297,11 +298,14 @@ public:
     const auto & ee = cache_.grfContainer.find(eeName);
     return ee->second.jacobianDeltaF;
   }
-  inline const double & getImpactDuration_() const
+  inline const double & getImpactDuration() const
   {
     return impactDuration_;
   }
-
+  inline const double & getTimeStep() const
+  {
+    return timeStep_;
+  }
   inline const std::string & getImpactBody()
   {
     return impactBodyName_;
@@ -315,6 +319,7 @@ protected:
 
   bool linearJacobian_;
   double impactDuration_;
+  double timeStep_;
 
   double coeFrictionDeduction_;
   double coeRes_;

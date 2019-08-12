@@ -6,24 +6,32 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 		const struct qpEstimatorParameter params
 		): simRobot_(simRobot), osdPtr_(osdPtr), params_(params)
 {
-  impactModelPtr_.reset(new mi_impactModel(getSimRobot(), getOsd_(), params_.impactBodyName, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim));
-
-
+  
   if(params_.useJsd)
-    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd_(), getImpactModel()->getImpactBody())); 
+    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd_(), getEstimatorParams().impactBodyNames )); 
 
   if(params_.useOsd)
-    eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd_(), getImpactModel().get()));
+    eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd_()));
 
-  eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd_(), getImpactModel().get(), false));
+
+  for (std::vector<std::string>::const_iterator idx = params.impactBodyNames.begin(); idx!=params.impactBodyNames.end(); ++idx)
+  {
+   impactModels_[*idx] = std::make_shared<mi_impactModel>(getSimRobot(), getOsd_(), *idx, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
+
+  //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd_(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
+  eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd_(), getImpactModel(*idx).get(), false));
+  }
+  vector_A_dagger_.resize(params.impactBodyNames.size());
+
   std::cout<<"Created QP estimator constraint. "<<std::endl;
 
   initializeQP_(); 
   std::cout<<"the QP-based impulse estimator is created. "<<std::endl;
 }
+
 void mi_qpEstimator::initializeQP_()
 {
-  numVar_  = getDof() + getImpactModel()->getDim()*getOsd_()->getEeNum();
+  numVar_  = getDof() + 3*getOsd_()->getEeNum();
 
   numEq_ = 0;
   for (auto idx = eqConstraints_.begin(); idx != eqConstraints_.end(); ++idx)
@@ -61,11 +69,14 @@ void mi_qpEstimator::initializeQP_()
   jacobianDeltaTau_.resize(getDof(), getDof());
   jacobianDeltaTau_.setZero();
 
-  A_dagger_.resize(
-		  getDof() + getEstimatorParams().dim*(getOsd_()->getEeNum()), 
-		  3);
-  A_dagger_.setZero();
-
+  for (size_t idx = 0; idx< vector_A_dagger_.size(); ++idx)
+  {
+    vector_A_dagger_[idx].resize(
+		    
+		  getDof() + getEstimatorParams().dim*(getOsd_()->getEeNum()), 3
+		    );
+    vector_A_dagger_[idx].setZero();
+  }
   std::cout<<"Reset LSSOL QP estimator variables. "<<std::endl;
 }
 
@@ -98,8 +109,16 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
  //solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
 
  //std::cout<<"tempInverse size is: "<<tempInverse.rows() <<", "<<tempInverse.cols()<<std::endl;
- A_dagger_ = tempInverse.block(0, tempInverse.cols() - 3, A_dagger_.rows(), 3);
- //tempInv_= tempInverse.block(0, tempInverse.cols() - 3, tempInverse.rows(), 3);
+ 
+  //std::cout<<"test 2" <<std::endl;
+ for (size_t idx =0; idx< impactModels_.size(); ++idx)
+ {
+   vector_A_dagger_[idx] = tempInverse.block(0, tempInverse.cols() - 3*static_cast<int>(idx + 1), vector_A_dagger_[idx].rows(), 3);
+ 
+ }
+
+  //std::cout<<"test 3" <<std::endl;
+ //A_dagger_ =  //tempInv_= tempInverse.block(0, tempInverse.cols() - 3, tempInverse.rows(), 3);
  tempInv_= tempInverse;
  /*
  Eigen::MatrixXd kktInverse;
@@ -130,9 +149,28 @@ void mi_qpEstimator::pseudoInverse_(const Eigen::MatrixXd & input, Eigen::Matrix
 
   output = svd.matrixV() * singularValuesInv * svd.matrixU().adjoint();
 }
-void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
+
+void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
 {
-  impactModelPtr_->update(surfaceNormal);
+  for (std::map<std::string, Eigen::Vector3d>::const_iterator idx = surfaceNormals.begin(); idx!= surfaceNormals.end(); ++idx)
+  {
+    //(getImpactModel(const_cast<std::string & >(idx->first)))->update(idx->second);
+    (getImpactModel(idx->first))->update(idx->second);
+  }
+}
+void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
+{
+  if(surfaceNormals.size()!=impactModels_.size() ){
+    throw std::runtime_error(
+		    std::string("mi_qpEstimator-update: surfaceNormals size(") 
+		    + std::to_string(static_cast<int>(surfaceNormals.size()))
+		    + std::string(") does not match impact predictor impact number (") 
+		    + std::to_string(impactModels_.size())
+		    + std::string(").")
+		    );
+  }
+
+  updateImpactModels_(surfaceNormals);
 
   int count = 0;
   // Update the constraints
@@ -151,7 +189,7 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
   solutionVariables.resize(getNumVar_());
   solutionVariables.setZero();
 
-  
+  //std::cout<<"test 0" <<std::endl;
   if(params_.useLagrangeMultiplier){
 
     //Eigen::VectorXd b_temp = cu_.segment(getNumVar_(), C_.rows());
@@ -165,7 +203,8 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
   }
   
   
-  Eigen::MatrixXd tempJac = getImpactModel()->getProjector();
+  //std::cout<<"test 1" <<std::endl;
+  //Eigen::MatrixXd tempJac = getImpactModel()->getProjector();
   jointVelJump_ = solutionVariables.segment(0, getDof());
   tauJump_.setZero();
 
@@ -181,7 +220,8 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
     int eeIndex = getOsd_()->nameToIndex_(*idx);
     int location =  getOsd_()->getJacobianDim()*eeIndex;
     auto & tempEe =  getEndeffector_(*idx);
-    double inv_dt = 1.0/getImpactModel()->getImpactDuration();
+    //double inv_dt = 1.0/getImpactModel(const_cast<std::string&>(getOsd_()->getContactEes()[0]))->getImpactDuration();
+    double inv_dt = 1.0/(getImpactModels().begin()->second->getImpactDuration());
 
     tempEe.estimatedImpulse =  solutionVariables.segment(getDof() + location, getOsd_()->getJacobianDim());
     
@@ -195,27 +235,44 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
     //std::cout<<"Dof is: "<<getDof()<<std::endl;
     //std::cout<<"location is: "<<location<<std::endl;
 
-    Eigen::Matrix3d tempA_dagger_ee = A_dagger_.block(getDof() + location, 0 ,3 ,3);
 
     //std::cout<<"tempA_dagger_ee is: "<<std::endl<<tempA_dagger_ee<<std::endl;
     if(getEstimatorParams().useLagrangeMultiplier){
-      int kktDim =  getNumVar_() + static_cast<int>(C_.rows());
-      Eigen::VectorXd b; 
-      b.resize(kktDim); b.setZero();
-      b.segment(getNumVar_(), cu_.rows() ) = cu_;
 
-      auto solution = tempInv_*b; 
+      //int kktDim =  getNumVar_() + static_cast<int>(C_.rows());
+      //Eigen::VectorXd b; 
+      //b.resize(kktDim); b.setZero();
+      //b.segment(getNumVar_(), cu_.rows() ) = cu_;
 
-      double inv_dt = 1.0/getImpactModel()->getImpactDuration();
+      //auto solution = tempInv_*b; 
+
+      //double inv_dt = 1.0/getImpactModel()->getImpactDuration();
       //Eigen::MatrixXd test_A = tempInv_.block(getDof() + location, 0, 3, 3)  ;
       //tempEe.checkForce = test_A*getImpactModel()->getEeVelocityJump()*inv_dt;
       //tempEe.checkForce = inv_dt*solution.segment(getDof() + location, 3);
 
+      tempEe.jacobianDeltaF.resize(3, getDof());
+      tempEe.jacobianDeltaF.setZero();
+      tempEe.checkForce.setZero();
 
-      tempEe.jacobianDeltaF = tempA_dagger_ee*tempJac;
+      //for (int i?i = 0; ii< static_cast<int>(impactModels_.size()); ++ii )
+      unsigned int iiA = 0;
+      Eigen::MatrixXd tempJ_T = getOsd_()->getJacobian(*idx).transpose();
+      for (auto impactIdx = impactModels_.begin(); impactIdx != impactModels_.end(); ++impactIdx, ++iiA)
+      {
+      
+        Eigen::Matrix3d tempA_dagger_ee = vector_A_dagger_[iiA].block(getDof() + location, 0 ,3 ,3);
+      
+        tempEe.jacobianDeltaF += tempA_dagger_ee*impactIdx->second->getProjector();
+	
+        tempEe.checkForce += inv_dt*tempEe.jacobianDeltaF*impactIdx->second->getJointVel();
+
+	jacobianDeltaTau_ +=  tempJ_T*tempA_dagger_ee*impactIdx->second->getProjector();
+      }
+
+      tauJump_ += tempJ_T*tempEe.estimatedAverageImpulsiveForce; 
 
 
-      tempEe.checkForce = inv_dt*tempEe.jacobianDeltaF*getImpactModel()->getJointVel();
       //tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() - 3, 3, 3)*getImpactModel()->getEeVelocityJump();
 
       //tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() , 3, tempInv_.cols())*b;
@@ -229,31 +286,38 @@ void mi_qpEstimator::update(const Eigen::Vector3d & surfaceNormal)
 		      ).norm();
 */
       
-      jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3)*tempJac;
       //std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -  tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
-    }
+    } // end of Lagrange Multipliers
+
     //tempEe.jacobianDeltaF = tempA_dagger_ee;
 
     //std::cout<<"test "<<std::endl;
-    Eigen::MatrixXd tempJ_T = getOsd_()->getJacobian(*idx).transpose();
     //std::cout<<"test "<<std::endl;
 
     //std::cout<<"tempJ_T size is: "<<tempJ_T.rows() <<", "<<tempJ_T.cols()<<std::endl;
     
-    jacobianDeltaTau_ +=  tempJ_T*tempA_dagger_ee;
-    //std::cout<<"test "<<std::endl;
-    tauJump_ += tempJ_T*tempEe.estimatedAverageImpulsiveForce; 
+        //std::cout<<"test "<<std::endl;
 
     //std::cout<<"test "<<std::endl;
-    
+   
+  }// end of the for end-effector loop. 
+
+   
+  if(getEstimatorParams().useLagrangeMultiplier){
+  unsigned int iiA = 0;
+  for (auto impactIdx = impactModels_.begin(); impactIdx != impactModels_.end(); ++impactIdx, ++iiA)
+  {
+    jacobianDeltaAlpha_ = vector_A_dagger_[iiA].block(0, 0, getDof(), 3)*impactIdx->second->getProjector();
+  }
   }
 
+/*
   if(getEstimatorParams().useLagrangeMultiplier)
     //jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3)*tempJac;
     jacobianDeltaAlpha_ = tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)*tempJac;
-
+*/
     //jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3);
-  jacobianDeltaTau_ = jacobianDeltaTau_*tempJac;
+  //jacobianDeltaTau_ = jacobianDeltaTau_*tempJac;
 }
 
 
@@ -278,6 +342,19 @@ endEffector & mi_qpEstimator::getEndeffector_( const std::string& name)
 
 }
 
+const std::shared_ptr<mi_impactModel> & mi_qpEstimator::getImpactModel(const std::string & eeName) 
+{
+  auto idx = impactModels_.find(eeName);
+  if(idx!= (impactModels_.end()))
+  {
+    return idx->second;
+  }
+  else
+  {
+    throw std::runtime_error(std::string("getImpactModel: '") +eeName 
+                             + std::string("' is not found."));
+  }
+}
 void mi_qpEstimator::addEndeffector(std::string eeName)
 {
   //addOptVariables_(eeName, getDim());
@@ -307,8 +384,9 @@ void mi_qpEstimator::print(const std::string & eeName)
 }
 void mi_qpEstimator::print() const
 {
+	/*
   std::cout<<"The QP estimator params are: "<<std::endl<<"Dim: " <<getImpactModel()->getDim() <<", Dof: "<<getDof()<<", coeR: "<<getImpactModel()->getCoeRes()<<", coeF: "<<getImpactModel()->getCoeFricDe()<<", impact duration: "<<getImpactModel()->getImpactDuration()<<". "<<std::endl;
-
+*/
  std::cout<<"The QP estimator has end-effectors: "; 
  for (auto idx = getOsd_()->getEes().begin(); idx!=getOsd_()->getEes().end(); ++idx)
  {

@@ -19,7 +19,7 @@
 
 struct qpEstimatorParameter{
   double Qweight = 20;
-  std::string impactBodyName="r_wrist";
+  std::vector<std::string> impactBodyNames={"r_wrist"};
   double impactDuration = 0.005;
   double timeStep = 0.005;
   double coeFrictionDeduction = 0.2;
@@ -48,7 +48,7 @@ class mi_qpEstimator{
   ~mi_qpEstimator(){
  
   }
-  void update(const Eigen::Vector3d & surfaceNormal);
+  void update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
   inline const mc_rbdyn::Robot & getSimRobot()
   {
     return simRobot_;
@@ -91,9 +91,10 @@ class mi_qpEstimator{
   const endEffector & getEndeffector( const std::string& name);
   void print() const;
   void print(const std::string & eeName);
-  inline const std::unique_ptr<mi_impactModel> & getImpactModel() const
+  const std::shared_ptr<mi_impactModel> & getImpactModel(const std::string & eeName);
+  inline const std::map<std::string, std::shared_ptr<mi_impactModel> > & getImpactModels()
   {
-    return impactModelPtr_; 
+    return impactModels_; 
   }
   inline const qpEstimatorParameter & getEstimatorParams()
   {
@@ -109,7 +110,9 @@ class mi_qpEstimator{
   }
   endEffector & getEndeffector_( const std::string& name);
   qpEstimatorParameter params_;
-  std::unique_ptr<mi_impactModel>  impactModelPtr_;
+
+  void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
+  std::map<std::string, std::shared_ptr<mi_impactModel> > impactModels_;
 
   void initializeQP_();
   void pseudoInverse_(const Eigen::MatrixXd & input, Eigen::MatrixXd & output, double tolerance =1e-4 );
@@ -147,6 +150,6 @@ class mi_qpEstimator{
   
   Eigen::MatrixXd jacobianDeltaAlpha_;
   Eigen::MatrixXd jacobianDeltaTau_;
-  Eigen::MatrixXd A_dagger_;
+  std::vector<Eigen::MatrixXd> vector_A_dagger_;
   Eigen::MatrixXd tempInv_;
 };

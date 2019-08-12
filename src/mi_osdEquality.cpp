@@ -2,9 +2,8 @@
 
 
 mi_osdEquality::mi_osdEquality(
-		const std::shared_ptr<mi_osd> & osdPtr,
-		const mi_impactModel * impactPtr 
-		) :  mi_equality(osdPtr), impactPtr_(impactPtr)
+		const std::shared_ptr<mi_osd> & osdPtr
+		) :  mi_equality(osdPtr)
 {
   reset_();
 }

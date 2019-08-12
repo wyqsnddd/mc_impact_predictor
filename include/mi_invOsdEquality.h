@@ -7,8 +7,7 @@ class mi_invOsdEquality: public mi_equality
 {
   public: 
   mi_invOsdEquality(
-		const std::shared_ptr<mi_osd> & osdPtr,
-		const mi_impactModel * impactPtr 
+		const std::shared_ptr<mi_osd> & osdPtr
 	       );
   ~mi_invOsdEquality(){}
   
@@ -19,6 +18,5 @@ class mi_invOsdEquality: public mi_equality
   void update() override;
   protected: 
   void reset_() override;
-  const mi_impactModel * impactPtr_;
 };
 

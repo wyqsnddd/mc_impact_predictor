@@ -4,9 +4,10 @@ mi_multiImpactPredictor::mi_multiImpactPredictor(mc_rbdyn::Robot & robot,
                                                  std::vector<std::string> & impactBodies,
                                                  int maxNumEe,
                                                  double impactDuration,
+                                                 double timeStep,
                                                  double coeFrictionDeduction,
                                                  double coeRes)
-: robot_(robot), impactDuration_(impactDuration), coeFrictionDeduction_(coeFrictionDeduction), coeRes_(coeRes)
+: robot_(robot), impactDuration_(impactDuration), timeStep_(timeStep), coeFrictionDeduction_(coeFrictionDeduction), coeRes_(coeRes)
 {
 
   osdPtr_ = std::make_shared<mi_osd>(getRobot(), true);
@@ -57,11 +58,11 @@ void mi_multiImpactPredictor::addImpactBody_(const std::string & impactBodyName)
   {
     // create and add
     predictorContainer[impactBodyName] = std::make_shared<mi_impactPredictor>(
-        getRobot(), getOsd_(), impactBodyName, true, getImpactDuration(), getCoeFricDe(), getCoeRes());
+        getRobot(), getOsd_(), impactBodyName, true, getImpactDuration(), getTimeStep(), getCoeFricDe(), getCoeRes());
   }
   else
   {
-    throw std::runtime_error("Predictors: Impact body already exists! ");
+    throw std::runtime_error(std::string("Predictors: Impact body already exists! ") + impactBodyName );
   }
 }
 
@@ -81,7 +82,7 @@ bool mi_multiImpactPredictor::addEndeffectors(const std::vector<std::string> & i
   const auto & pi = predictorContainer.find(*impactIdx);
   if(pi == predictorContainer.end())
   {
-    throw std::runtime_error("Predictors-add-ee: Impact body does not exists! ");
+    throw std::runtime_error(std::string("Predictors-add-ee: Impact body does not exists! ") + *impactIdx);
   }
   else
   {
@@ -119,7 +120,7 @@ const std::shared_ptr<mi_impactPredictor> & mi_multiImpactPredictor::getPredicto
   auto pi = predictorContainer.find(impactName);
   if(pi == predictorContainer.end())
   {
-    throw std::runtime_error("Predictors-add-ee: Impact body does not exists! ");
+    throw std::runtime_error(std::string("Predictors-add-ee: Impact body does not exists! ") + impactName);
   }
   else
     return pi->second;

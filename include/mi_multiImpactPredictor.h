@@ -22,6 +22,7 @@ public:
                           std::vector<std::string> & impactBodies,
                           int maxNumEe,
                           double impactDuration,
+                          double timeStep,
                           double coeFrictionDeduction,
                           double coeRes = 0.8);
 
@@ -52,6 +53,10 @@ public:
   inline const double & getImpactDuration() const
   {
     return impactDuration_;
+  }
+  inline const double & getTimeStep() const
+  {
+    return timeStep_;
   }
   inline const double & getCoeRes() const
   {
@@ -96,6 +101,7 @@ protected:
   mc_rbdyn::Robot & robot_;
   std::map<std::string, std::shared_ptr<mi_impactPredictor> > predictorContainer;
   double impactDuration_;
+  double timeStep_;
   double coeFrictionDeduction_;
   double coeRes_;
 
