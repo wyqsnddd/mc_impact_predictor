@@ -13,6 +13,7 @@ set(mc_impact_predictor_src
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
 target_link_libraries(mc_impact_predictor mc_rtc::mc_control)
+target_link_libraries(mc_impact_predictor eigen-lssol)
 pkg_config_use_dependency(mc_impact_predictor nlopt)
 
 install(

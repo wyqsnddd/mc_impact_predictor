@@ -103,7 +103,13 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
  //Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_kkt(kkt);
  //solution.resize(kktDim);
  //solution = lu_decomp_kkt.inverse()*cu_;
- Eigen::MatrixXd tempInverse =  kkt.completeOrthogonalDecomposition().pseudoInverse();
+ 
+
+ //Eigen::MatrixXd tempInverse =  kkt.completeOrthogonalDecomposition().pseudoInverse();
+
+ //Suppose kkt has full column rank, we perform cholesky decomposition to compute pinv = (A^*A)^{-1}A^*
+ Eigen::MatrixXd tempInverse =  (kkt.transpose()*kkt).inverse()*kkt.transpose();
+
 
  solution = tempInverse*b;
  //solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;

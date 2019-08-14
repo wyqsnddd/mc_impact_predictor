@@ -2,7 +2,8 @@
 
 void mi_impactModel::update(const Eigen::Vector3d & surfaceNormal)
 {
-  Eigen::Matrix3d tempProjector = surfaceNormal * surfaceNormal.transpose();
+  surfaceNormal_ = surfaceNormal;
+  Eigen::Matrix3d tempProjector = surfaceNormal_ * surfaceNormal_.transpose();
   //Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - tempProjector;
 
 
