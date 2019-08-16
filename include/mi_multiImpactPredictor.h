@@ -85,7 +85,7 @@ public:
   {
     return jacobianDeltaTau_;
   }
-  inline const std::shared_ptr<mi_osd> & getOsd_() const
+  inline const std::shared_ptr<mi_osd> & getOsd() const
   {
     return osdPtr_;
   }

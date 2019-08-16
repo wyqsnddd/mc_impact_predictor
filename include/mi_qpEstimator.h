@@ -59,7 +59,7 @@ class mi_qpEstimator{
  
   inline int getDof() const
   {
-   return getOsd_()->getDof(); 
+   return getOsd()->getDof(); 
   }
 
   inline double getQweight() const
@@ -75,6 +75,7 @@ class mi_qpEstimator{
   {
     return jacobianDeltaTau_;
   }
+
   inline const Eigen::MatrixXd & getJacobianDeltaF(const std::string & eeName)
   {
      return getEndeffector(eeName).jacobianDeltaF;
@@ -100,14 +101,14 @@ class mi_qpEstimator{
   {
     return params_; 
   }
+  inline const std::shared_ptr<mi_osd> & getOsd() const
+  {
+    return osdPtr_;
+  }
 
   private: 
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> & osdPtr_;
-  inline const std::shared_ptr<mi_osd> & getOsd_() const
-  {
-    return osdPtr_;
-  }
   endEffector & getEndeffector_( const std::string& name);
   qpEstimatorParameter params_;
 
