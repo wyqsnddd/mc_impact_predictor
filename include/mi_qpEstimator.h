@@ -115,7 +115,6 @@ class mi_qpEstimator{
   std::map<std::string, std::shared_ptr<mi_impactModel> > impactModels_;
 
   void initializeQP_();
-  void pseudoInverse_(const Eigen::MatrixXd & input, Eigen::MatrixXd & output, double tolerance =1e-4 );
 
   Eigen::MatrixXd Q_;
 

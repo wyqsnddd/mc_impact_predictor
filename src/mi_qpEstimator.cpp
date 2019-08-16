@@ -126,34 +126,6 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
   //std::cout<<"test 3" <<std::endl;
  //A_dagger_ =  //tempInv_= tempInverse.block(0, tempInverse.cols() - 3, tempInverse.rows(), 3);
  tempInv_= tempInverse;
- /*
- Eigen::MatrixXd kktInverse;
- pseudoInverse_(kkt, kktInverse);
- solution = kktInverse*b; 
- */
-}
-
-void mi_qpEstimator::pseudoInverse_(const Eigen::MatrixXd & input, Eigen::MatrixXd & output, double tolerance)
-{
-  auto svd = input.jacobiSvd(Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-  const auto &singularValues = svd.singularValues();
-  Eigen::MatrixXd singularValuesInv(input.cols(), input.rows());
-
-  singularValuesInv.setZero();
-
-  for (unsigned int i = 0; i < singularValues.size(); ++i) {
-	  if (singularValues(i) > tolerance)
-	  {
-		  singularValuesInv(i, i) = 1.0 / singularValues(i);
-	  }
-	  else
-	  {
-		  singularValuesInv(i, i) = 0.0;
-	  }
-  }
-
-  output = svd.matrixV() * singularValuesInv * svd.matrixU().adjoint();
 }
 
 void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
