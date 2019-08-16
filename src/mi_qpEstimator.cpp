@@ -186,7 +186,7 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
   jointVelJump_ = solutionVariables.segment(0, getDof());
   tauJump_.setZero();
 
-  jacobianDeltaTau_.resize(getDof(),3);
+  jacobianDeltaTau_.resize(getDof(), getDof());
 
   //std::cout<<"jacobianDeltaTau_ size is: "<<jacobianDeltaTau_.rows() <<", "<<jacobianDeltaTau_.cols()<<std::endl;
   jacobianDeltaTau_.setZero();
