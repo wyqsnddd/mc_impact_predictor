@@ -42,7 +42,7 @@ struct endEffector{
 class mi_qpEstimator{
   public: 
   mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
-		const std::shared_ptr<mi_osd> & osdPtr,
+		const std::shared_ptr<mi_osd> osdPtr,
 		const struct qpEstimatorParameter params
 		);
   ~mi_qpEstimator(){
@@ -108,7 +108,7 @@ class mi_qpEstimator{
 
   private: 
   const mc_rbdyn::Robot & simRobot_;
-  const std::shared_ptr<mi_osd> & osdPtr_;
+  const std::shared_ptr<mi_osd> osdPtr_;
   endEffector & getEndeffector_( const std::string& name);
   qpEstimatorParameter params_;
 

@@ -1,7 +1,7 @@
 #include "mi_impactPredictor.h"
 
 mi_impactPredictor::mi_impactPredictor(mc_rbdyn::Robot & robot,
-                                       const std::shared_ptr<mi_osd> & osdPtr,
+                                       const std::shared_ptr<mi_osd> osdPtr,
                                        std::string impactBodyName,
                                        bool linearJacobian,
                                        double impactDuration,
@@ -132,10 +132,12 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   // osdPtr_->update();
   // std::cout << "OSD updated. " << std::endl;
   Eigen::Matrix3d tempProjector = surfaceNormal * surfaceNormal.transpose();
+  //std::cout<<"old predictor surface normal"<<surfaceNormal.transpose()<<std::endl;
   Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - tempProjector ;
 
   //Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes_()) * tempProjector + getCoeFricDe_() * tempNullProjector);
   Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes_()) * tempProjector );
+  //std::cout<<"old predictor: temp projector is: "<<std::endl<<tempReductionProjector<<std::endl;
   Eigen::VectorXd alpha = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alpha);
   Eigen::VectorXd alphaD = rbd::dofToVector(getRobot().mb(), getRobot().mbc().alphaD);
   const auto & impactBodyValuesPtr = cache_.grfContainer.find(getImpactBody());
@@ -143,9 +145,20 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   //(0.0) update impact body-velocity jump
 
   // impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector * getOsd_()->getJacobian(getImpactBody())
+  Eigen::VectorXd qpVel = getOsd_()->getJacobian("r_wrist") * (alpha + alphaD *getTimeStep());
+/*
+  std::cout<<"old predictor: q_vel is: "<<std::endl<<alpha.transpose()<<std::endl;
+  std::cout<<"old predictor: q_acc is: "<<std::endl<<alphaD.transpose()<<std::endl;
+  
+  std::cout<<"old predictor time step is: "<<getTimeStep()<<std::endl;
 
+  std::cout<<"old predictor: jacobian test is: "<<std::endl<<getOsd_()->getJacobian("r_wrist")* getOsd_()->getJacobian("r_wrist").transpose()<<std::endl;
+
+  std::cout<<"old predictor qp velocity is: "<<qpVel.transpose()<<std::endl;
+  */
   impactBodyValuesPtr->second.deltaV =
       tempReductionProjector * getOsd_()->getJacobian(getImpactBody()) * (alpha + alphaD *getTimeStep());
+  //std::cout<<"old predictor deltaV is: "<<impactBodyValuesPtr->second.deltaV.transpose()<<std::endl;
   //(0.1) update impact body-velocity impulsive force
   impactBodyValuesPtr->second.impulseForce = (1 / getImpactDuration())
                                              * getOsd_()->getEffectiveLambdaMatrix(getImpactBody())

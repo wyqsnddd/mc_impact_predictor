@@ -133,7 +133,7 @@ public:
       \param coeRes coefficient of restitution
       */
   mi_impactPredictor(mc_rbdyn::Robot & robot,
-                     const std::shared_ptr<mi_osd> & osdPtr,
+                     const std::shared_ptr<mi_osd> osdPtr,
                      std::string impactBodyName,
                      bool linearJacobian,
                      double impactDuration,
@@ -313,7 +313,7 @@ public:
   void printInfo(); 
 protected:
   mc_rbdyn::Robot & robot_;
-  const std::shared_ptr<mi_osd> & osdPtr_;
+  const std::shared_ptr<mi_osd> osdPtr_;
 
   std::string impactBodyName_;
 

@@ -47,7 +47,10 @@ class mi_impactModel
   {
     return coeFrictionDeduction_;
   }
-
+  inline const Eigen::VectorXd & getEeVelocity() const
+  {
+    return eeV_;
+  }
   inline const Eigen::VectorXd & getEeVelocityJump() const
   {
     return deltaV_;
@@ -77,6 +80,7 @@ class mi_impactModel
   int dim_;
 
   Eigen::VectorXd deltaV_ = Eigen::VectorXd::Zero(3);
+  Eigen::VectorXd eeV_ = Eigen::VectorXd::Zero(3);
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3,3);
   Eigen::VectorXd temp_q_vel_;
   Eigen::Vector3d surfaceNormal_;

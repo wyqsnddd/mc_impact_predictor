@@ -2,7 +2,7 @@
 
 
 mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
-		const std::shared_ptr<mi_osd> & osdPtr,
+		const std::shared_ptr<mi_osd> osdPtr,
 		const struct qpEstimatorParameter params
 		): simRobot_(simRobot), osdPtr_(osdPtr), params_(params)
 {
