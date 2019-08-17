@@ -145,7 +145,7 @@ void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
   //(0.0) update impact body-velocity jump
 
   // impactBodyValuesPtr->second.deltaV = -(getCoeRes_() + 1) * tempProjector * getOsd_()->getJacobian(getImpactBody())
-  Eigen::VectorXd qpVel = getOsd_()->getJacobian("r_wrist") * (alpha + alphaD *getTimeStep());
+  //Eigen::VectorXd qpVel = getOsd_()->getJacobian(getImpactBody()) * (alpha + alphaD *getTimeStep());
 /*
   std::cout<<"old predictor: q_vel is: "<<std::endl<<alpha.transpose()<<std::endl;
   std::cout<<"old predictor: q_acc is: "<<std::endl<<alphaD.transpose()<<std::endl;
