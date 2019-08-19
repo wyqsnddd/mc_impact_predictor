@@ -8,12 +8,20 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 {
   
   if(params_.useJsd)
-    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd(), getEstimatorParams().impactBodyNames )); 
+    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd(), getEstimatorParams().impactNameAndNormals)); 
 
   if(params_.useOsd)
     eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd()));
 
+  for (std::map<std::string, Eigen::Vector3d>::const_iterator  idx = params.impactNameAndNormals.begin(); idx!= params.impactNameAndNormals.end(); ++idx)
+  {
 
+   impactModels_[idx->first] = std::make_shared<mi_impactModel>(getSimRobot(), getOsd(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
+
+  //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
+  eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(idx->first).get(), false));
+  }
+/*
   for (std::vector<std::string>::const_iterator idx = params.impactBodyNames.begin(); idx!=params.impactBodyNames.end(); ++idx)
   {
    impactModels_[*idx] = std::make_shared<mi_impactModel>(getSimRobot(), getOsd(), *idx, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
@@ -21,7 +29,8 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
   eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(*idx).get(), false));
   }
-  vector_A_dagger_.resize(params.impactBodyNames.size());
+*/
+  vector_A_dagger_.resize(params.impactNameAndNormals.size());
 
   std::cout<<"Created QP estimator constraint. "<<std::endl;
 
@@ -127,7 +136,15 @@ void  mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,const Eigen::VectorX
  //A_dagger_ =  //tempInv_= tempInverse.block(0, tempInverse.cols() - 3, tempInverse.rows(), 3);
  tempInv_= tempInverse;
 }
-
+void mi_qpEstimator::updateImpactModels_()
+{
+  for(auto idx = getImpactModels().begin(); idx!=getImpactModels().end(); ++idx)
+  {
+    //(getImpactModel(const_cast<std::string & >(idx->first)))->update(idx->second);
+    //(getImpactModel(idx->first))->update();
+    idx->second->update();
+  }
+}
 void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
 {
   for (std::map<std::string, Eigen::Vector3d>::const_iterator idx = surfaceNormals.begin(); idx!= surfaceNormals.end(); ++idx)
@@ -135,6 +152,12 @@ void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vect
     //(getImpactModel(const_cast<std::string & >(idx->first)))->update(idx->second);
     (getImpactModel(idx->first))->update(idx->second);
   }
+}
+ void mi_qpEstimator::update()
+{
+
+  updateImpactModels_();
+  update_();
 }
 void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
 {
@@ -149,6 +172,11 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
   }
 
   updateImpactModels_(surfaceNormals);
+  update_();
+}
+void mi_qpEstimator::update_()
+{
+
 
   int count = 0;
   // Update the constraints

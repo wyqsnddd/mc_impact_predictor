@@ -11,13 +11,14 @@ class mi_impactModel
    mi_impactModel(
 		   const mc_rbdyn::Robot & simRobot,
 		   const std::shared_ptr<mi_osd> & osdPtr,
-		   std::string iBodyName="r_wrist",
+		   const std::string & iBodyName,
+		   const Eigen::Vector3d & inertial_surfaceNormal,
 		   double iDuration = 0.005,
 		   double timeStep = 0.005,
 		   double coeF = 0.2,
 		   double coeR = 0.8,
 		   int dim = 3
-		 ): simRobot_(simRobot), osdPtr_(osdPtr), impactBodyName_(iBodyName), impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
+		 ): simRobot_(simRobot), osdPtr_(osdPtr), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal), impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
    {
    }
 
@@ -63,25 +64,42 @@ class mi_impactModel
   {
     return temp_q_vel_;
   }
+ 
+  /** Predict the impact-induced state jumps based on the internal update.
+   *
+   */
+  void update(); 
+  
+  /** Predict the impact-induced state jumps based on given impact normal direction 
+   *
+   * @param surfaceNormal the given impact normal direction
+   */
   void update(const Eigen::Vector3d & surfaceNormal); 
   inline const Eigen::Vector3d & getSurfaceNormal()
   {
-    return surfaceNormal_; 
+    return local_surfaceNormal_; 
   }
 
   private:
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> & osdPtr_;
+
   std::string impactBodyName_;
+
+  ///< This is the impact normal direction in the inertial frame
+  Eigen::Vector3d inertial_surfaceNormal_;
+
   double impactDuration_;
   double timeStep_;
   double coeFrictionDeduction_;
   double coeRes_;
   int dim_;
 
+  void update_(); 
+ 
   Eigen::VectorXd deltaV_ = Eigen::VectorXd::Zero(3);
   Eigen::VectorXd eeV_ = Eigen::VectorXd::Zero(3);
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3,3);
   Eigen::VectorXd temp_q_vel_;
-  Eigen::Vector3d surfaceNormal_;
+  Eigen::Vector3d local_surfaceNormal_;
 };

@@ -1,21 +1,38 @@
 # include "mi_impactModel.h"
 
+
 void mi_impactModel::update(const Eigen::Vector3d & surfaceNormal)
 {
+  local_surfaceNormal_ = surfaceNormal ;
+  update_(); 
+}
 
-  surfaceNormal_ = surfaceNormal;
-  //surfaceNormal_.setOnes(); 
+void mi_impactModel::update()
+{
+
+  sva::PTransformd X_0_ee = simRobot_.bodyPosW(getImpactBody());
+  local_surfaceNormal_ = X_0_ee.rotation() * inertial_surfaceNormal_;
+  local_surfaceNormal_.normalize();
+  update_(); 
+}
+
+
+
+
+void mi_impactModel::update_()
+{
 
   //std::cout<<"impactModel: surfaceNormal is: "<<surfaceNormal.transpose()<<std::endl;
-  Eigen::Matrix3d tempProjector = surfaceNormal_ * surfaceNormal_.transpose();
+  Eigen::Matrix3d tempProjector = local_surfaceNormal_ * local_surfaceNormal_.transpose();
   //Eigen::Matrix3d tempProjector;
   //tempProjector.setIdentity();
-  Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - tempProjector;
+  //Eigen::Matrix3d tempNullProjector = Eigen::Matrix3d::Identity() - tempProjector;
 
   //Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes()) * tempProjector );
 
   //std::cout<<"impactModel: temp projector is: "<<std::endl<<tempReductionProjector<<std::endl;
-  Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes()) * tempProjector + getCoeFricDe() * tempNullProjector);
+  //Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes()) * tempProjector + getCoeFricDe() * tempNullProjector);
+  Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes()) * tempProjector) ;
   //reductionProjector_ = -((1 + getCoeRes()) * tempProjector + getCoeFricDe() * tempNullProjector)*osdPtr_->getJacobian(getImpactBody());
   reductionProjector_ = tempReductionProjector*osdPtr_->getJacobian(getImpactBody());
 

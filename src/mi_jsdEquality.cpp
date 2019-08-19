@@ -2,9 +2,15 @@
 
 mi_jsdEquality::mi_jsdEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
-		const std::vector<std::string> & impactBodies
-		) :  mi_equality(osdPtr), impactBodyNames_(impactBodies)
+		const std::map<std::string, Eigen::Vector3d> & impactNameAndNormals
+		//const std::vector<std::string> & impactBodies
+		) :  mi_equality(osdPtr)
+		    // , impactBodyNames_(impactBodies)
 {
+  for (auto idx = impactNameAndNormals.begin(); idx!= impactNameAndNormals.end();++idx)
+  {
+   impactBodyNames_.push_back(idx->first); 
+  }
   reset_();
 }
 

@@ -19,7 +19,8 @@
 
 struct qpEstimatorParameter{
   double Qweight = 20;
-  std::vector<std::string> impactBodyNames={"r_wrist"};
+  //std::vector<std::string> impactBodyNames={"r_wrist"};
+  std::map<std::string, Eigen::Vector3d> impactNameAndNormals;
   double impactDuration = 0.005;
   double timeStep = 0.005;
   double coeFrictionDeduction = 0.2;
@@ -49,6 +50,8 @@ class mi_qpEstimator{
  
   }
   void update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
+  void update();
+
   inline const mc_rbdyn::Robot & getSimRobot()
   {
     return simRobot_;
@@ -111,8 +114,10 @@ class mi_qpEstimator{
   const std::shared_ptr<mi_osd> osdPtr_;
   endEffector & getEndeffector_( const std::string& name);
   qpEstimatorParameter params_;
+  void update_();
 
   void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
+  void updateImpactModels_();
   std::map<std::string, std::shared_ptr<mi_impactModel> > impactModels_;
 
   void initializeQP_();

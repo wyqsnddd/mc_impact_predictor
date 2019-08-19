@@ -9,7 +9,8 @@ class mi_jsdEquality: public mi_equality
   public: 
   mi_jsdEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
-		const std::vector<std::string> & impactBodies
+		const std::map<std::string, Eigen::Vector3d> & impactNameAndNormals
+		//const std::vector<std::string> & impactBodies
 	       );
   ~mi_jsdEquality(){}
   
