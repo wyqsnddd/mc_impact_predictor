@@ -19,7 +19,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
    impactModels_[idx->first] = std::make_shared<mi_impactModel>(getSimRobot(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
 
   //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
-  eqConstraints_.push_back(std::make_shared<mi_iniEquality>( getOsd(), getImpactModel(idx->first)));
+   eqConstraints_.push_back(std::make_shared<mi_iniEquality>( getOsd(), getImpactModel(idx->first)));
   }
 /*
   for (std::vector<std::string>::const_iterator idx = params.impactBodyNames.begin(); idx!=params.impactBodyNames.end(); ++idx)
@@ -40,7 +40,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
 void mi_qpEstimator::initializeQP_()
 {
-  numVar_  = getDof() + 3*getOsd()->getEeNum();
+  numVar_  = getDof() + 3*getEeNum();
 
   numEq_ = 0;
   for (auto idx = eqConstraints_.begin(); idx != eqConstraints_.end(); ++idx)
@@ -82,7 +82,7 @@ void mi_qpEstimator::initializeQP_()
   {
     vector_A_dagger_[idx].resize(
 		    
-		  getDof() + getEstimatorParams().dim*(getOsd()->getEeNum()), 3
+		  getDof() + getEstimatorParams().dim*getEeNum(), 3
 		    );
     vector_A_dagger_[idx].setZero();
   }
@@ -376,11 +376,12 @@ void mi_qpEstimator::addEndeffector(std::string eeName)
   endEffectors_[eeName] = {tempForce, tempForce, tempForce, tempForce, tempJ} ;
   //endEffectorNames_.push_back(eeName);
 
+  /*
   if(!getOsd()->addEndeffector(eeName))
   {
     throw std::runtime_error(std::string("OSD failed to add endeffector! ") + eeName);
   }
-
+*/
 }
 
 void mi_qpEstimator::print(const std::string & eeName)
@@ -393,14 +394,14 @@ void mi_qpEstimator::print() const
 	/*
   std::cout<<"The QP estimator params are: "<<std::endl<<"Dim: " <<getImpactModel()->getDim() <<", Dof: "<<getDof()<<", coeR: "<<getImpactModel()->getCoeRes()<<", coeF: "<<getImpactModel()->getCoeFricDe()<<", impact duration: "<<getImpactModel()->getImpactDuration()<<". "<<std::endl;
 */
- std::cout<<"The QP estimator has end-effectors: "; 
+ std::cout<<"The QP estimator OSD has end-effectors: "; 
  for (auto idx = getOsd()->getEes().begin(); idx!=getOsd()->getEes().end(); ++idx)
  {
    std::cout<<*idx<<" "; 
  }
  std::cout<<std::endl;
 
- std::cout<<"The QP estimator has end-effectors with established contact : ";
+ std::cout<<"The QP estimator OSD has end-effectors with established contact : ";
  for (auto idx = getOsd()->getContactEes().begin(); idx!=getOsd()->getContactEes().end(); ++idx)
  {
    std::cout<<*idx<<" "; 

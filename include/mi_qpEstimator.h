@@ -5,7 +5,6 @@
 # include <iostream>
 # include <Eigen/StdVector>
 
-# include "mi_osd.h"
 # include <mc_rbdyn/Robots.h>
 # include <eigen-lssol/LSSOL_QP.h>
 # include "mi_jsdEquality.h"
@@ -108,7 +107,10 @@ class mi_qpEstimator{
   {
     return osdPtr_;
   }
-
+  inline int getEeNum()
+  {
+    return static_cast<int>(endEffectors_.size());
+  }
   private: 
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
