@@ -10,7 +10,8 @@ class mi_iniEquality: public mi_equality
   public: 
   mi_iniEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
-		const std::shared_ptr<mi_impactModel> & impactPtr
+		const std::shared_ptr<mi_impactModel> & impactPtr,
+		const int & numEe
 	       );
   ~mi_iniEquality(){}
   
@@ -27,4 +28,6 @@ class mi_iniEquality: public mi_equality
   void reset_() override;
 
   const std::shared_ptr<mi_impactModel> & impactPtr_;
+
+  const int numEe_;
 };

@@ -2,8 +2,9 @@
 
 
 mi_invOsdEquality::mi_invOsdEquality(
-		const std::shared_ptr<mi_osd> & osdPtr
-		) :  mi_equality(osdPtr)
+		const std::shared_ptr<mi_osd> & osdPtr,
+		const int & numEe
+		) :  mi_equality(osdPtr), numEe_(numEe)
 {
   reset_();
 }
@@ -11,14 +12,16 @@ mi_invOsdEquality::mi_invOsdEquality(
 void mi_invOsdEquality::reset_()
 {
   int dof = getOsd_()->getDof();
-  int nEe = static_cast<int>(getOsd_()->getEeNum());
+  int nOsdEe= static_cast<int>(getOsd_()->getEeNum());
   int dim = getOsd_()->getJacobianDim(); 
 
-  A_.resize(nEe*dim, dof + nEe*dim);
+  assert(nOsdEe<=numEe_);
+
+  A_.resize(nOsdEe*dim, dof + dim*(numEe_));
   A_.setZero();
 
   // b_ will stay zero
-  b_.resize(nEe*dim);
+  b_.resize(nOsdEe*dim);
   b_.setZero();
 }
 
@@ -26,7 +29,7 @@ void mi_invOsdEquality::reset_()
 void mi_invOsdEquality::update()
 {
   int dof = getOsd_()->getDof();
-  int nEe = static_cast<int>(getOsd_()->getEeNum());
+  int nOsdEe = static_cast<int>(getOsd_()->getEeNum());
   int dim = getOsd_()->getJacobianDim(); 
 /*
   Eigen::VectorXd tempId;
@@ -45,7 +48,7 @@ void mi_invOsdEquality::update()
   //A_.block(location, dof + location, dim, dim) = -tempId; 
   }
 
-  A_.block(0, dof, dim*nEe, dim*nEe) = - getOsd_()->getLambdaMatrixInv();
+  A_.block(0, dof, dim*nOsdEe, dim*nOsdEe) = - getOsd_()->getLambdaMatrixInv();
 
 
 }

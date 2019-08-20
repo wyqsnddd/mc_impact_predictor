@@ -199,6 +199,15 @@ void mi_osd::updateCache_()
     //	    cache_.dcJacobianInvs[ii].transpose()*tempOsdJointTorque;
   }
 }
+bool mi_osd::hasEndeffector(const std::string & eeName)
+{
+  auto tempEe = cache_.jacobians.find(eeName);
+  if(tempEe == cache_.jacobians.end()){
+    return false; 
+  }else{
+    return true; 
+  }
+}
 bool mi_osd::addEndeffector(std::string eeName)
 {
   auto tempEe = cache_.jacobians.find(eeName);

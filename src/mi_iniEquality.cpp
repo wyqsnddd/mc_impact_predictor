@@ -3,8 +3,9 @@
 
 mi_iniEquality::mi_iniEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
-		const std::shared_ptr<mi_impactModel> & impactPtr
-		) :  mi_equality(osdPtr), impactPtr_(impactPtr)
+		const std::shared_ptr<mi_impactModel> & impactPtr,
+		const int & numEe
+		) :  mi_equality(osdPtr), impactPtr_(impactPtr), numEe_(numEe)
 {
   reset_();
 }
@@ -12,10 +13,10 @@ mi_iniEquality::mi_iniEquality(
 void mi_iniEquality::reset_()
 {
   int dof = getOsd_()->getDof();
-  int nEe = static_cast<int>(getOsd_()->getEeNum());
+  //int nContactEe = static_cast<int>(getOsd_()->getContactNum());
   int dim = getOsd_()->getJacobianDim(); 
 
-  A_.resize(dim, dof + nEe*dim);
+  A_.resize(dim, dof + dim*(numEe_) );
   A_.setZero();
   b_.resize(dim);
   b_.setZero();

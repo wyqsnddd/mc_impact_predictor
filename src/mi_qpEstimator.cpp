@@ -6,20 +6,35 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 		const struct qpEstimatorParameter params
 		): simRobot_(simRobot), osdPtr_(osdPtr), params_(params)
 {
-  
+  // (1) initilize the Impact models
+  for (std::map<std::string, Eigen::Vector3d>::const_iterator  idx = params.impactNameAndNormals.begin(); idx!= params.impactNameAndNormals.end(); ++idx)
+  {
+    impactModels_[idx->first] = std::make_shared<mi_impactModel>(getSimRobot(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
+  }
+  // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
+  for (auto idx = getOsd()->getContactEes().begin(); idx!= getOsd()->getContactEes().end(); ++idx)
+  {
+    bool isOsdEe = true;
+    addEndeffector_(*idx, isOsdEe) ;
+  }
+  for (auto idx = getImpactModels().begin(); idx!= getImpactModels().end(); ++idx)
+  {
+
+    bool isOsdEe = false;
+    addEndeffector_(idx->first, isOsdEe); 
+  }
+
   if(params_.useJsd)
-    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd(), getEstimatorParams().impactNameAndNormals)); 
+    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_)); 
 
   if(params_.useOsd)
-    eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd()));
+    eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd(), static_cast<int>(getImpactModels().size()) ));
+
 
   for (std::map<std::string, Eigen::Vector3d>::const_iterator  idx = params.impactNameAndNormals.begin(); idx!= params.impactNameAndNormals.end(); ++idx)
   {
-
-   impactModels_[idx->first] = std::make_shared<mi_impactModel>(getSimRobot(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
-
-  //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
-   eqConstraints_.push_back(std::make_shared<mi_iniEquality>( getOsd(), getImpactModel(idx->first)));
+    //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
+    eqConstraints_.push_back(std::make_shared<mi_iniEquality>( getOsd(), getImpactModel(idx->first), getEeNum()));
   }
 /*
   for (std::vector<std::string>::const_iterator idx = params.impactBodyNames.begin(); idx!=params.impactBodyNames.end(); ++idx)
@@ -219,22 +234,28 @@ void mi_qpEstimator::update_()
   //std::cout<<"jacobianDeltaTau_ size is: "<<jacobianDeltaTau_.rows() <<", "<<jacobianDeltaTau_.cols()<<std::endl;
   jacobianDeltaTau_.setZero();
 
-  
-
-  for(auto idx = getOsd()->getEes().begin(); idx!=getOsd()->getEes().end(); ++idx)
+   
+  //for(auto idx = getOsd()->getEes().begin(); idx!=getOsd()->getEes().end(); ++idx)
+  for(auto idx = endEffectors_.begin(); idx!=endEffectors_.end(); ++idx)
   {
-    int eeIndex = getOsd()->nameToIndex_(*idx);
-    int location =  getOsd()->getJacobianDim()*eeIndex;
-    auto & tempEe =  getEndeffector_(*idx);
-    //double inv_dt = 1.0/getImpactModel(const_cast<std::string&>(getOsd()->getContactEes()[0]))->getImpactDuration();
+    int eeIndex = nameToIndex_(idx->first);
+    int location =  getEstimatorParams().dim*eeIndex;
+
+    //auto & tempEe =  getEndeffector_(*idx);
     double inv_dt = 1.0/(getImpactModels().begin()->second->getImpactDuration());
 
-    tempEe.estimatedImpulse =  solutionVariables.segment(getDof() + location, getOsd()->getJacobianDim());
+    idx->second.estimatedImpulse =  solutionVariables.segment(getDof() + location, getEstimatorParams().dim);
     
-    tempEe.estimatedAverageImpulsiveForce= 
-	   tempEe.estimatedImpulse*inv_dt;
+    idx->second.estimatedAverageImpulsiveForce= 
+	   idx->second.estimatedImpulse*inv_dt;
 
-    tempEe.eeVJump = getOsd()->getJacobian(*idx)*jointVelJump_; 
+    Eigen::MatrixXd tempJ;
+    if(osdContactEe_(idx->first))
+      tempJ = getOsd()->getJacobian(idx->first);
+    else 
+      tempJ = getImpactModel(idx->first)->getJacobian();
+   
+    idx->second.eeVJump = tempJ*jointVelJump_; 
 
 
     //std::cout<<"A_dagger_ size is: "<<A_dagger_.rows() <<", "<<A_dagger_.cols()<<std::endl;
@@ -257,26 +278,26 @@ void mi_qpEstimator::update_()
       //tempEe.checkForce = test_A*getImpactModel()->getEeVelocityJump()*inv_dt;
       //tempEe.checkForce = inv_dt*solution.segment(getDof() + location, 3);
 
-      tempEe.jacobianDeltaF.resize(3, getDof());
-      tempEe.jacobianDeltaF.setZero();
-      tempEe.checkForce.setZero();
+      idx->second.jacobianDeltaF.resize(3, getDof());
+      idx->second.jacobianDeltaF.setZero();
+      idx->second.checkForce.setZero();
 
       //for (int i?i = 0; ii< static_cast<int>(impactModels_.size()); ++ii )
       unsigned int iiA = 0;
-      Eigen::MatrixXd tempJ_T = getOsd()->getJacobian(*idx).transpose();
+      Eigen::MatrixXd tempJ_T = tempJ.transpose(); 
       for (auto impactIdx = impactModels_.begin(); impactIdx != impactModels_.end(); ++impactIdx, ++iiA)
       {
       
         Eigen::Matrix3d tempA_dagger_ee = vector_A_dagger_[iiA].block(getDof() + location, 0 ,3 ,3);
       
-        tempEe.jacobianDeltaF += tempA_dagger_ee*impactIdx->second->getProjector();
+        idx->second.jacobianDeltaF += tempA_dagger_ee*impactIdx->second->getProjector();
 	
-        tempEe.checkForce += inv_dt*tempEe.jacobianDeltaF*impactIdx->second->getJointVel();
+        idx->second.checkForce += inv_dt*idx->second.jacobianDeltaF*impactIdx->second->getJointVel();
 
 	jacobianDeltaTau_ +=  tempJ_T*tempA_dagger_ee*impactIdx->second->getProjector();
       }
 
-      tauJump_ += tempJ_T*tempEe.estimatedAverageImpulsiveForce; 
+      tauJump_ += tempJ_T*idx->second.estimatedAverageImpulsiveForce; 
 
 
       //tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() - 3, 3, 3)*getImpactModel()->getEeVelocityJump();
@@ -333,6 +354,11 @@ const endEffector & mi_qpEstimator::getEndeffector( const std::string& name)
    return getEndeffector_(name);
 }
 
+bool mi_qpEstimator::osdContactEe_(const std::string& eeName)
+{
+  return getOsd()->hasEndeffector(eeName);
+}
+
 endEffector & mi_qpEstimator::getEndeffector_( const std::string& name) 
 {
   auto opt = endEffectors_.find(name);
@@ -361,8 +387,30 @@ const std::shared_ptr<mi_impactModel> & mi_qpEstimator::getImpactModel(const std
                              + std::string("' is not found."));
   }
 }
-void mi_qpEstimator::addEndeffector(std::string eeName)
+
+int mi_qpEstimator::nameToIndex_(const std::string & eeName) 
 {
+  auto tempEe = endEffectors_.find(eeName);
+  if(tempEe != endEffectors_.end())
+    return tempEe->second.uniqueIndex;
+  else
+  {
+    std::string error_msg = std::string("qpEstimator::nameToIndex_: ee-") + eeName + std::string(": does not exist.");
+    throw std::runtime_error(error_msg);
+  }
+}
+
+
+bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fromOsdModel)
+{
+
+  auto opt = endEffectors_.find(eeName);
+  if(opt != (endEffectors_.end()))
+  {
+    std::cout<<"Endeffector "<<eeName<<" already exists."<<std::endl;
+    return false; 
+  }
+
   //addOptVariables_(eeName, getDim());
   Eigen::Vector3d tempForce;
   //tempForce.resize(getImpactModel()->getDim());
@@ -371,17 +419,25 @@ void mi_qpEstimator::addEndeffector(std::string eeName)
   Eigen::VectorXd tempJ;
   tempJ.resize(getEstimatorParams().dim, getDof());
   tempJ.setZero();
+  int eeIndex = 0; 
+
+  if (fromOsdModel)
+    eeIndex = getOsd()->nameToIndex_(eeName);
+  else
+    eeIndex =  static_cast<int>(endEffectors_.size());
+
 
   //optVariables_[name] = {dim, optVariables_.size() };
-  endEffectors_[eeName] = {tempForce, tempForce, tempForce, tempForce, tempJ} ;
+  endEffectors_[eeName] = {eeIndex, tempForce, tempForce, tempForce, tempForce, tempJ} ;
   //endEffectorNames_.push_back(eeName);
-
+  std::cout<<"Qp Estimator: Adding end-effector: "<< eeName<<", with index: "<<eeIndex<<std::endl;
   /*
   if(!getOsd()->addEndeffector(eeName))
   {
     throw std::runtime_error(std::string("OSD failed to add endeffector! ") + eeName);
   }
 */
+  return true;
 }
 
 void mi_qpEstimator::print(const std::string & eeName)

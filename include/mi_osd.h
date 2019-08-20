@@ -64,6 +64,7 @@ public:
 
   void setContact(std::vector<std::string> & ees);
 
+  bool hasEndeffector(const std::string & eeName);
   
   bool addEndeffector(std::string eeName);
   /*!

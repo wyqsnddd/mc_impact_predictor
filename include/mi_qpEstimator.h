@@ -7,14 +7,6 @@
 
 # include <mc_rbdyn/Robots.h>
 # include <eigen-lssol/LSSOL_QP.h>
-# include "mi_jsdEquality.h"
-# include "mi_osdEquality.h"
-# include "mi_invOsdEquality.h"
-# include "mi_iniEquality.h"
-# include "mi_impactModel.h"
-# include <limits>
-//# include <Eigen/QR>
-# include <Eigen/Dense>
 
 struct qpEstimatorParameter{
   double Qweight = 20;
@@ -32,12 +24,23 @@ struct qpEstimatorParameter{
 
 struct endEffector{
  //size_t startingNumber; // Starting number in the vector
+ int uniqueIndex;
  Eigen::Vector3d eeVJump; 
  Eigen::Vector3d estimatedImpulse;
  Eigen::Vector3d estimatedAverageImpulsiveForce;
  Eigen::Vector3d checkForce;
  Eigen::MatrixXd jacobianDeltaF;
 };
+
+
+
+# include "mi_jsdEquality.h"
+# include "mi_invOsdEquality.h"
+# include "mi_iniEquality.h"
+# include "mi_impactModel.h"
+# include <limits>
+//# include <Eigen/QR>
+# include <Eigen/Dense>
 
 class mi_qpEstimator{
   public: 
@@ -56,7 +59,6 @@ class mi_qpEstimator{
     return simRobot_;
   }
   
-  void addEndeffector(std::string eeName);
 
  
   inline int getDof() const
@@ -111,6 +113,7 @@ class mi_qpEstimator{
   {
     return static_cast<int>(endEffectors_.size());
   }
+  
   private: 
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
@@ -118,9 +121,15 @@ class mi_qpEstimator{
   qpEstimatorParameter params_;
   void update_();
 
+  bool osdContactEe_(const std::string& eeName);
   void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
   void updateImpactModels_();
+
   std::map<std::string, std::shared_ptr<mi_impactModel> > impactModels_;
+
+  int nameToIndex_(const std::string& eeName);
+  bool addEndeffector_(const std::string & eeName, const bool & fromOsd = false );
+
 
   void initializeQP_();
 

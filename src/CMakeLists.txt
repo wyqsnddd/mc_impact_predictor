@@ -3,7 +3,6 @@ set(mc_impact_predictor_src
   mi_lcp.cpp
   mi_qpEstimator.cpp
   mi_jsdEquality.cpp
-  mi_osdEquality.cpp
   mi_invOsdEquality.cpp
   mi_iniEquality.cpp
   mi_impactModel.cpp
