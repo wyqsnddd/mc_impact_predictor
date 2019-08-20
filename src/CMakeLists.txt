@@ -1,7 +1,5 @@
 set(mc_impact_predictor_src
   mi_osd.cpp
-  mi_impactPredictor.cpp
-  mi_multiImpactPredictor.cpp
   mi_lcp.cpp
   mi_qpEstimator.cpp
   mi_jsdEquality.cpp
