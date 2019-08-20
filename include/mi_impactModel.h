@@ -3,14 +3,15 @@
 # include <iostream>
 # include <Eigen/StdVector>
 
-# include "mi_osd.h"
+# include <mc_rbdyn/Robot.h>
+# include <RBDyn/Jacobian.h>
 
 class mi_impactModel
 {
   public: 
    mi_impactModel(
 		   const mc_rbdyn::Robot & simRobot,
-		   const std::shared_ptr<mi_osd> & osdPtr,
+		   //const std::shared_ptr<mi_osd> & osdPtr,
 		   const std::string & iBodyName,
 		   const Eigen::Vector3d & inertial_surfaceNormal,
 		   double iDuration = 0.005,
@@ -18,8 +19,9 @@ class mi_impactModel
 		   double coeF = 0.2,
 		   double coeR = 0.8,
 		   int dim = 3
-		 ): simRobot_(simRobot), osdPtr_(osdPtr), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal), impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
+		 ): simRobot_(simRobot), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal), impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
    {
+     jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getImpactBody());
    }
 
    ~mi_impactModel(){}
@@ -80,9 +82,17 @@ class mi_impactModel
     return local_surfaceNormal_; 
   }
 
+  inline const Eigen::MatrixXd & getJacobian()
+  {
+    return jacobian_; 
+  }
   private:
   const mc_rbdyn::Robot & simRobot_;
-  const std::shared_ptr<mi_osd> & osdPtr_;
+  //const std::shared_ptr<mi_osd> & osdPtr_;
+
+  std::shared_ptr<rbd::Jacobian> jacPtr_;
+  void updateJacobian_();
+  Eigen::MatrixXd jacobian_;
 
   std::string impactBodyName_;
 
@@ -102,4 +112,5 @@ class mi_impactModel
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3,3);
   Eigen::VectorXd temp_q_vel_;
   Eigen::Vector3d local_surfaceNormal_;
+
 };

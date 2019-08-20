@@ -89,10 +89,7 @@ void mi_osd::initializeDataStructure(const int EeNum)
 
 void mi_osd::update()
 {
-  if(getEeNum() < 3)
-  {
-    throw std::runtime_error("OSD: Too less end-effectors are defined for the OSD. ");
-  }
+
   // mc_rtc components
   // std::cout << "Updating OSD FD..." << std::endl;
 

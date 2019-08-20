@@ -16,10 +16,10 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   for (std::map<std::string, Eigen::Vector3d>::const_iterator  idx = params.impactNameAndNormals.begin(); idx!= params.impactNameAndNormals.end(); ++idx)
   {
 
-   impactModels_[idx->first] = std::make_shared<mi_impactModel>(getSimRobot(), getOsd(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
+   impactModels_[idx->first] = std::make_shared<mi_impactModel>(getSimRobot(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
 
   //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
-  eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(idx->first).get(), false));
+  eqConstraints_.push_back(std::make_shared<mi_iniEquality>( getOsd(), getImpactModel(idx->first)));
   }
 /*
   for (std::vector<std::string>::const_iterator idx = params.impactBodyNames.begin(); idx!=params.impactBodyNames.end(); ++idx)

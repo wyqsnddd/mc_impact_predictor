@@ -122,10 +122,7 @@ bool mi_impactPredictor::addEndeffector(std::string eeName)
 
 void mi_impactPredictor::run(const Eigen::Vector3d & surfaceNormal)
 {
-  if(cache_.grfContainer.size() < 3)
-  {
-    throw std::runtime_error("Impact-predictor: There are too less end-effector defined");
-  }
+  
   assert(cache_.grfContainer.size() == getOsd_()->getEeNum());
 
   // Update the equations of motions

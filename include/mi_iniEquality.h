@@ -1,5 +1,4 @@
 # pragma once 
-# include "mi_osd.h" 
 # include "mi_equality.h"
 # include "mi_impactModel.h"
 
@@ -11,8 +10,7 @@ class mi_iniEquality: public mi_equality
   public: 
   mi_iniEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
-		const mi_impactModel * impactPtr,
-		bool dcJacobian
+		const std::shared_ptr<mi_impactModel> & impactPtr
 	       );
   ~mi_iniEquality(){}
   
@@ -21,10 +19,12 @@ class mi_iniEquality: public mi_equality
     return "InitialConditionEqualityConstraint";
   }
   void update() override;
+  inline const std::shared_ptr<mi_impactModel> & getImpactModel()
+  {
+    return impactPtr_; 
+  }
   protected: 
   void reset_() override;
-  void updateJacobian_();  
-  void updateDcJacobian_();  
-  bool dcJacobian_;
-  const mi_impactModel* impactPtr_;
-   };
+
+  const std::shared_ptr<mi_impactModel> & impactPtr_;
+};
