@@ -22,6 +22,7 @@ class mi_impactModel
 		 ): simRobot_(simRobot), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal), impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
    {
      jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getImpactBody());
+     jacobian_.resize(getDim(), simRobot_.mb().nrDof());
    }
 
    ~mi_impactModel(){}

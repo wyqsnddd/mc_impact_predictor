@@ -21,12 +21,10 @@ void mi_impactModel::updateJacobian_()
 
   Eigen::MatrixXd tempJacobian = jacPtr_->bodyJacobian(simRobot_.mb(), simRobot_.mbc());
 
-  Eigen::MatrixXd tempFullJacobian;
-
-  tempFullJacobian.resize(getDim(), simRobot_.mb().nrDof());
 
   jacPtr_->fullJacobian(simRobot_.mb(), tempJacobian.block(3, 0, 3, tempJacobian.cols()),
-		  tempFullJacobian);
+		  jacobian_);
+
 }
 
 
