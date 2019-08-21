@@ -2,6 +2,9 @@
 # include "mi_equality.h"
 # include "mi_impactModel.h"
 
+namespace mi_impact{
+
+
 class mi_iniEquality: public mi_equality
 /** \brief initial condition given the predicted impact 
  * J_k \delta q_dot = kth end-effector velocity jump.
@@ -31,3 +34,4 @@ class mi_iniEquality: public mi_equality
 
   const int numEe_;
 };
+}

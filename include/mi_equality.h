@@ -1,6 +1,8 @@
 # pragma once
 # include "mi_osd.h" 
 
+namespace mi_impact{
+
 class mi_equality
 /** \brief base class for the equality constraints 
  */
@@ -49,3 +51,4 @@ class mi_equality
   Eigen::MatrixXd A_;
   Eigen::VectorXd b_;
 };
+}

@@ -1,5 +1,6 @@
 # include "mi_iniEquality.h"
 
+namespace mi_impact{
 
 mi_iniEquality::mi_iniEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
@@ -31,3 +32,4 @@ void mi_iniEquality::update()
 
 }
 
+}

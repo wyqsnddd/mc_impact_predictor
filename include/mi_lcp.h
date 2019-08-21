@@ -6,6 +6,9 @@
 #include <iostream>
 #include <Eigen/StdVector>
 
+
+namespace mi_impact{
+
 struct quadraticObjData{
  const Eigen::MatrixXd H;
  const Eigen::VectorXd d;
@@ -74,3 +77,4 @@ class  mi_lcp
   }
   double convergenceThreshold_;
 };
+}

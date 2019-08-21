@@ -1,5 +1,6 @@
 # include "mi_lcp.h"
 
+namespace mi_impact{
 
 void print_vector(const std::vector<double> & input)
 {
@@ -192,4 +193,4 @@ double lcp_solver::objFunction(const std::vector<double> &x, std::vector<double>
 }
 
 
-
+}

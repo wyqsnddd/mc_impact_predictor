@@ -1,5 +1,6 @@
 # include "mi_impactModel.h"
 
+namespace mi_impact{
 
 void mi_impactModel::update(const Eigen::Vector3d & surfaceNormal)
 {
@@ -68,4 +69,4 @@ void mi_impactModel::update_()
   //std::cout<<"impactModel: deltaV is: "<<deltaV_.transpose()<<std::endl;
 }
 
-
+}

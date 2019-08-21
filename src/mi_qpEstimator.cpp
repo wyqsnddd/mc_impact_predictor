@@ -1,5 +1,6 @@
 # include "mi_qpEstimator.h"
 
+namespace mi_impact {
 
 mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 		const std::shared_ptr<mi_osd> osdPtr,
@@ -9,7 +10,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   // (1) initilize the Impact models
   for (std::map<std::string, Eigen::Vector3d>::const_iterator  idx = params.impactNameAndNormals.begin(); idx!= params.impactNameAndNormals.end(); ++idx)
   {
-    impactModels_[idx->first] = std::make_shared<mi_impactModel>(getSimRobot(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
+    impactModels_[idx->first] = std::make_shared<mi_impact::mi_impactModel>(getSimRobot(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction, params_.coeRes, params_.dim);
   }
   // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
   for (auto idx = getOsd()->getContactEes().begin(); idx!= getOsd()->getContactEes().end(); ++idx)
@@ -25,16 +26,16 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   }
 
   if(params_.useJsd)
-    eqConstraints_.push_back(std::make_shared<mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_)); 
+    eqConstraints_.push_back(std::make_shared<mi_impact::mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_)); 
 
   if(params_.useOsd)
-    eqConstraints_.push_back(std::make_shared<mi_invOsdEquality>(getOsd(), static_cast<int>(getImpactModels().size()) ));
+    eqConstraints_.push_back(std::make_shared<mi_impact::mi_invOsdEquality>(getOsd(), static_cast<int>(getImpactModels().size()) ));
 
 
   for (std::map<std::string, Eigen::Vector3d>::const_iterator  idx = params.impactNameAndNormals.begin(); idx!= params.impactNameAndNormals.end(); ++idx)
   {
     //eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(), getImpactModel(const_cast<std::string&>(*idx)).get(), false));
-    eqConstraints_.push_back(std::make_shared<mi_iniEquality>( getOsd(), getImpactModel(idx->first), getEeNum()));
+    eqConstraints_.push_back(std::make_shared<mi_impact::mi_iniEquality>( getOsd(), getImpactModel(idx->first), getEeNum()));
   }
 /*
   for (std::vector<std::string>::const_iterator idx = params.impactBodyNames.begin(); idx!=params.impactBodyNames.end(); ++idx)
@@ -374,7 +375,7 @@ endEffector & mi_qpEstimator::getEndeffector_( const std::string& name)
 
 }
 
-const std::shared_ptr<mi_impactModel> & mi_qpEstimator::getImpactModel(const std::string & eeName) 
+const std::shared_ptr<mi_impact::mi_impactModel> & mi_qpEstimator::getImpactModel(const std::string & eeName) 
 {
   auto idx = impactModels_.find(eeName);
   if(idx!= (impactModels_.end()))
@@ -464,4 +465,5 @@ void mi_qpEstimator::print() const
  }
  std::cout<<std::endl;
 
+}
 }

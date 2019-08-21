@@ -2,7 +2,9 @@
 # include "mi_osd.h" 
 # include "mi_impactModel.h"
 # include "mi_equality.h"
-# include "mi_qpEstimator.h"
+# include "mi_utils.h"
+
+namespace mi_impact{
 
 class mi_jsdEquality: public mi_equality
 /** \brief Specify the joint space impulse equation: [M, 0, -J_i^T, ...] [\delta q_dot, I_1,\ldots, I_m ]^T
@@ -33,3 +35,4 @@ class mi_jsdEquality: public mi_equality
 
 };
 
+}

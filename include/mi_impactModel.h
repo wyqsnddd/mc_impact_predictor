@@ -6,6 +6,8 @@
 # include <mc_rbdyn/Robot.h>
 # include <RBDyn/Jacobian.h>
 
+namespace mi_impact {
+
 class mi_impactModel
 {
   public: 
@@ -115,3 +117,4 @@ class mi_impactModel
   Eigen::Vector3d local_surfaceNormal_;
 
 };
+}

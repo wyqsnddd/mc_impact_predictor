@@ -1,5 +1,7 @@
 # include "mi_jsdEquality.h" 
 
+namespace mi_impact {
+
 mi_jsdEquality::mi_jsdEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
 		const std::map<std::string, std::shared_ptr<mi_impactModel> > & impactModels,
@@ -74,4 +76,6 @@ void mi_jsdEquality::update()
   }
 
   
- }
+}
+
+}

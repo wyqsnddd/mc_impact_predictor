@@ -1,5 +1,7 @@
 #include "mi_osd.h"
 
+namespace mi_impact {
+
 mi_osd::mi_osd(mc_rbdyn::Robot & robot,
                //    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
                bool linearJacobian)
@@ -257,3 +259,4 @@ void mi_osd::setContact(std::vector<std::string> & ees)
 }
 
 
+}

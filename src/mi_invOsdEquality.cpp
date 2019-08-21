@@ -1,5 +1,6 @@
 # include "mi_invOsdEquality.h"
 
+namespace mi_impact {
 
 mi_invOsdEquality::mi_invOsdEquality(
 		const std::shared_ptr<mi_osd> & osdPtr,
@@ -50,5 +51,7 @@ void mi_invOsdEquality::update()
 
   A_.block(0, dof, dim*nOsdEe, dim*nOsdEe) = - getOsd_()->getLambdaMatrixInv();
 
+
+}
 
 }

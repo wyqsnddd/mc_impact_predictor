@@ -12,6 +12,8 @@
 #include <assert.h>
 #include <map>
 
+namespace mi_impact{
+
 struct objJac
 {
   int containerIndex;
@@ -215,3 +217,4 @@ private:
   bool addEndeffector_(std::string eeName);
   void updateCache_();
 };
+}

@@ -3,6 +3,8 @@
 # include "mi_impactModel.h"
 # include "mi_equality.h" 
 
+namespace mi_impact{
+
 class mi_invOsdEquality: public mi_equality
 {
   public: 
@@ -21,4 +23,4 @@ class mi_invOsdEquality: public mi_equality
   void reset_() override;
   const int numEe_;
 };
-
+}
