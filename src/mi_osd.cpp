@@ -264,4 +264,4 @@ void mi_osd::setContact(std::vector<std::string> & ees)
   contactEndeffectors_ = ees;
 }
 
-} // namespace mi_impact
+} // namespace mc_impact

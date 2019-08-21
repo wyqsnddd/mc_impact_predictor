@@ -34,4 +34,4 @@ protected:
   int nameToIndex_(const std::string & eeName);
 };
 
-} // namespace mi_impact
+} // namespace mc_impact

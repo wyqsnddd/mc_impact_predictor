@@ -33,4 +33,4 @@ struct endEffector
   Eigen::MatrixXd jacobianDeltaF;
 };
 
-} // namespace mi_impact
+} // namespace mc_impact

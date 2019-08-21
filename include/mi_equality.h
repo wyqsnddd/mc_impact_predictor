@@ -50,4 +50,4 @@ protected:
   Eigen::MatrixXd A_;
   Eigen::VectorXd b_;
 };
-} // namespace mi_impact
+} // namespace mc_impact

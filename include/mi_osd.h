@@ -219,4 +219,4 @@ private:
   bool addEndeffector_(std::string eeName);
   void updateCache_();
 };
-} // namespace mi_impact
+} // namespace mc_impact

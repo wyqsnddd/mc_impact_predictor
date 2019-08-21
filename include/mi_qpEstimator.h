@@ -144,4 +144,4 @@ private:
   std::vector<Eigen::MatrixXd> vector_A_dagger_;
   Eigen::MatrixXd tempInv_;
 };
-} // namespace mi_impact
+} // namespace mc_impact

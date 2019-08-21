@@ -31,4 +31,4 @@ void mi_iniEquality::update()
   b_ = getImpactModel()->getEeVelocityJump();
 }
 
-} // namespace mi_impact
+} // namespace mc_impact

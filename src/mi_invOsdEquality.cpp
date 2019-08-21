@@ -50,4 +50,4 @@ void mi_invOsdEquality::update()
   A_.block(0, dof, dim * nOsdEe, dim * nOsdEe) = -getOsd_()->getLambdaMatrixInv();
 }
 
-} // namespace mi_impact
+} // namespace mc_impact

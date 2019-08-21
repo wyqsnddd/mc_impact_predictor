@@ -68,4 +68,4 @@ void mi_impactModel::update_()
   // std::cout<<"impactModel: deltaV is: "<<deltaV_.transpose()<<std::endl;
 }
 
-} // namespace mi_impact
+} // namespace mc_impact

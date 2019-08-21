@@ -33,4 +33,4 @@ protected:
 
   const int numEe_;
 };
-} // namespace mi_impact
+} // namespace mc_impact

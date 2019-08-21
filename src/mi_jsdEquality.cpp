@@ -76,4 +76,4 @@ void mi_jsdEquality::update()
   }
 }
 
-} // namespace mi_impact
+} // namespace mc_impact

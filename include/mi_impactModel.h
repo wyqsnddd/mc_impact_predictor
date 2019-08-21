@@ -119,4 +119,4 @@ private:
   Eigen::VectorXd temp_q_vel_;
   Eigen::Vector3d local_surfaceNormal_;
 };
-} // namespace mi_impact
+} // namespace mc_impact

@@ -22,4 +22,4 @@ protected:
   void reset_() override;
   const int numEe_;
 };
-} // namespace mi_impact
+} // namespace mc_impact

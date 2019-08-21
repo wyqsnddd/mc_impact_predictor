@@ -189,4 +189,4 @@ double lcp_solver::objFunction(const std::vector<double> & x, std::vector<double
   return (double)(0.5 * q.transpose() * objDataPtr->H * q) + objDataPtr->d.transpose() * q;
 }
 
-} // namespace mi_impact
+} // namespace mc_impact
