@@ -1,26 +1,25 @@
-# pragma once 
-# include "mi_osd.h" 
-# include "mi_impactModel.h"
-# include "mi_equality.h" 
+#pragma once
+#include "mi_equality.h"
+#include "mi_impactModel.h"
+#include "mi_osd.h"
 
-namespace mi_impact{
-
-class mi_invOsdEquality: public mi_equality
+namespace mc_impact
 {
-  public: 
-  mi_invOsdEquality(
-		const std::shared_ptr<mi_osd> & osdPtr,
-		const int & numEe
-	       );
-  ~mi_invOsdEquality(){}
-  
+
+class mi_invOsdEquality : public mi_equality
+{
+public:
+  mi_invOsdEquality(const std::shared_ptr<mi_osd> & osdPtr, const int & numEe);
+  ~mi_invOsdEquality() {}
+
   inline std::string nameEq() const override
   {
     return "InverseOperationSpaceDynamicsImpulseEqualityConstraint";
   }
   void update() override;
-  protected: 
+
+protected:
   void reset_() override;
   const int numEe_;
 };
-}
+} // namespace mi_impact

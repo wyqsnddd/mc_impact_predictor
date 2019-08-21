@@ -1,6 +1,7 @@
 #include "mi_osd.h"
 
-namespace mi_impact {
+namespace mc_impact
+{
 
 mi_osd::mi_osd(mc_rbdyn::Robot & robot,
                //    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
@@ -204,20 +205,26 @@ void mi_osd::updateCache_()
 bool mi_osd::hasEndeffector(const std::string & eeName)
 {
   auto tempEe = cache_.jacobians.find(eeName);
-  if(tempEe == cache_.jacobians.end()){
-    return false; 
-  }else{
-    return true; 
+  if(tempEe == cache_.jacobians.end())
+  {
+    return false;
+  }
+  else
+  {
+    return true;
   }
 }
 bool mi_osd::addEndeffector(std::string eeName)
 {
   auto tempEe = cache_.jacobians.find(eeName);
-  if(tempEe == cache_.jacobians.end()){
+  if(tempEe == cache_.jacobians.end())
+  {
     return addEndeffector_(eeName);
-  }else{
-    std::cout<<"end-effector: "<<eeName<<" already exists in the OSD. "<<std::endl;
-  return true; 
+  }
+  else
+  {
+    std::cout << "end-effector: " << eeName << " already exists in the OSD. " << std::endl;
+    return true;
   }
 }
 bool mi_osd::addEndeffector_(std::string eeName)
@@ -244,13 +251,12 @@ bool mi_osd::addEndeffector_(std::string eeName)
   }
 }
 
-void mi_osd::printInfo() 
+void mi_osd::printInfo()
 {
-   std::cout<<"mi_osd model has endeffectors: "<<std::endl;
-   for (auto idx = endEffectors_.begin(); idx!=endEffectors_.end(); ++idx)
-       std::cout<<" "<<*idx<<", ";
+  std::cout << "mi_osd model has endeffectors: " << std::endl;
+  for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx) std::cout << " " << *idx << ", ";
 
-   std::cout<<std::endl;
+  std::cout << std::endl;
 }
 
 void mi_osd::setContact(std::vector<std::string> & ees)
@@ -258,5 +264,4 @@ void mi_osd::setContact(std::vector<std::string> & ees)
   contactEndeffectors_ = ees;
 }
 
-
-}
+} // namespace mi_impact

@@ -12,7 +12,8 @@
 #include <assert.h>
 #include <map>
 
-namespace mi_impact{
+namespace mc_impact
+{
 
 struct objJac
 {
@@ -67,7 +68,7 @@ public:
   void setContact(std::vector<std::string> & ees);
 
   bool hasEndeffector(const std::string & eeName);
-  
+
   bool addEndeffector(std::string eeName);
   /*!
     \param EeNum the number of end-effectors to be used in the OSD.
@@ -83,19 +84,19 @@ public:
   {
     return cache_.lambdaMatrix;
   }
-  
-  inline const  std::vector<std::string> & getEes()
+
+  inline const std::vector<std::string> & getEes()
   {
-    return endEffectors_; 
+    return endEffectors_;
   }
-  
+
   inline const std::vector<std::string> & getContactEes()
   {
     return contactEndeffectors_;
   }
   inline std::size_t getContactNum()
   {
-    return contactEndeffectors_.size(); 
+    return contactEndeffectors_.size();
   }
   /*!
       \return the inverse of the Operational space inertia matrix: \f$ \Lambda^{-1} = JM^{-1}J^\top \f$
@@ -173,7 +174,7 @@ public:
    */
   void update();
 
-  inline const int &  getDof() const
+  inline const int & getDof() const
   {
     return robotDof_;
   }
@@ -197,7 +198,8 @@ public:
   {
     return jacobianDim_;
   }
-  void printInfo();  
+  void printInfo();
+
 private:
   int robotDof_;
   bool linearJacobian_;
@@ -212,9 +214,9 @@ private:
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
 
   std::vector<std::string> contactEndeffectors_; ///< end-effectors with established contact.
-  std::vector<std::string> endEffectors_; ///< end-effectors 
+  std::vector<std::string> endEffectors_; ///< end-effectors
 
   bool addEndeffector_(std::string eeName);
   void updateCache_();
 };
-}
+} // namespace mi_impact
