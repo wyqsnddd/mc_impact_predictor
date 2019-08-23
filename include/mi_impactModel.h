@@ -94,8 +94,9 @@ public:
   }
   inline const Eigen::Vector3d & getContactVel()
   {
-    return contactVel_; 
+    return contactVel_;
   }
+
 private:
   const mc_rbdyn::Robot & simRobot_;
   // const std::shared_ptr<mi_osd> & osdPtr_;

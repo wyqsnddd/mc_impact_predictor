@@ -13,7 +13,6 @@
 #include "mi_jsdEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
-
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
 

@@ -356,9 +356,6 @@ void mi_qpEstimator::update_()
   */
   // jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3);
   // jacobianDeltaTau_ = jacobianDeltaTau_*tempJac;
-  
-
-
 
   /*
   for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
@@ -367,12 +364,12 @@ void mi_qpEstimator::update_()
 
     for(auto ii = endEffectors_.begin(); ii != endEffectors_.end(); ++ii)
     {
-      if(ii==idx) 
-	continue; 
+      if(ii==idx)
+  continue;
       sva::PTransformd X_0_ii = getSimRobot().bodyPosW(ii->first);
       sva::PTransformd X_0_idx = getSimRobot().bodyPosW(idx->first);
       sva::PTransformd X_ii_idx = X_0_idx*X_0_ii.inv();
-      sva::ForceVecd tempWrench; 
+      sva::ForceVecd tempWrench;
       tempWrench.force().setZero();
       tempWrench.force() = ii->second.estimatedAverageImpulsiveForce;
       tempWrench.couple().setZero();
@@ -380,12 +377,10 @@ void mi_qpEstimator::update_()
       idx->second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
 
     }
-  
-  
+
+
   }
  */
-
-
 }
 
 const endEffector & mi_qpEstimator::getEndeffector(const std::string & name)
@@ -456,7 +451,7 @@ bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fr
   tempJ.setZero();
 
   /*
-  sva::ForceVecd tempWrench; 
+  sva::ForceVecd tempWrench;
   tempWrench.force().setZero();
   tempWrench.couple().setZero();
   */

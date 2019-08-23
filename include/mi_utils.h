@@ -1,9 +1,10 @@
 #pragma once
 
+#include <mc_rbdyn/Robots.h>
+
 #include <Eigen/Dense>
 #include <iostream>
 #include <map>
-#include <mc_rbdyn/Robots.h>
 
 namespace mc_impact
 {
@@ -34,7 +35,7 @@ struct endEffector
   Eigen::MatrixXd jacobianDeltaF;
 
   // The other impulses transformed to the local contact frame
-  //sva::ForceVecd perturbedWrench;
+  // sva::ForceVecd perturbedWrench;
 };
 
 } // namespace mc_impact
