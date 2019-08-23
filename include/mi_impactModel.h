@@ -27,6 +27,7 @@ public:
   {
     jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getImpactBody());
     jacobian_.resize(getDim(), simRobot_.mb().nrDof());
+    inertial_surfaceNormal_.normalize();
   }
 
   ~mi_impactModel() {}
@@ -91,7 +92,10 @@ public:
   {
     return jacobian_;
   }
-
+  inline const Eigen::Vector3d & getContactVel()
+  {
+    return contactVel_; 
+  }
 private:
   const mc_rbdyn::Robot & simRobot_;
   // const std::shared_ptr<mi_osd> & osdPtr_;
@@ -118,5 +122,6 @@ private:
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3, 3);
   Eigen::VectorXd temp_q_vel_;
   Eigen::Vector3d local_surfaceNormal_;
+  Eigen::Vector3d contactVel_ = Eigen::Vector3d::Zero(3);
 };
 } // namespace mc_impact

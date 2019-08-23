@@ -53,6 +53,9 @@ void mi_impactModel::update_()
   temp_q_vel_ = (alpha + alphaD * getTimeStep());
   // eeV_ = osdPtr_->getJacobian(getImpactBody()) *  temp_q_vel_;
   eeV_ = getJacobian() * temp_q_vel_;
+
+
+  contactVel_ = tempProjector*eeV_; 
   /*
     std::cout<<"impactModel: q_vel is: "<<std::endl<<alpha.transpose()<<std::endl;
     std::cout<<"impactModel: q_acc is: "<<std::endl<<alphaD.transpose()<<std::endl;
