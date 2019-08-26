@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.2)
 
 include(cmake/base.cmake)
-include(cmake/boost.cmake)
 
 set(PROJECT_NAME mc_impact_predictor)
 
@@ -20,4 +19,5 @@ include_directories(include)
 add_subdirectory(src)
 
 setup_project_finalize()
+setup_project_package_finalize()
 

@@ -10,7 +10,7 @@ set(mc_impact_predictor_src
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
 target_link_libraries(mc_impact_predictor mc_rtc::mc_control)
-target_link_libraries(mc_impact_predictor eigen-lssol)
+target_link_libraries(mc_impact_predictor eigen-lssol::eigen-lssol)
 pkg_config_use_dependency(mc_impact_predictor nlopt)
 
 install(
@@ -19,6 +19,7 @@ install(
     FILES_MATCHING PATTERN "*.h*")
 
 install(TARGETS mc_impact_predictor 
+  EXPORT "${TARGETS_EXPORT_NAME}"
   RUNTIME DESTINATION bin
   LIBRARY DESTINATION lib
   ARCHIVE DESTINATION lib

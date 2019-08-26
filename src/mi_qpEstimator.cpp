@@ -205,15 +205,15 @@ void mi_qpEstimator::update_()
 
   int count = 0;
   // Update the constraints
-  for(auto idx = eqConstraints_.begin(); idx != eqConstraints_.end(); ++idx)
+  for(auto eq : eqConstraints_)
   {
-    (*idx)->update();
+    eq->update();
 
-    C_.block(count, 0, (*idx)->nrEq(), getNumVar_()) = (*idx)->AEq();
-    cl_.segment(count, (*idx)->nrEq()) = (*idx)->bEq();
-    cu_.segment(count, (*idx)->nrEq()) = (*idx)->bEq();
+    C_.block(count, 0, eq->nrEq(), getNumVar_()) = eq->AEq();
+    cl_.segment(count, eq->nrEq()) = eq->bEq();
+    cu_.segment(count, eq->nrEq()) = eq->bEq();
 
-    count += (*idx)->nrEq();
+    count += eq->nrEq();
   }
 
   Eigen::VectorXd solutionVariables;
