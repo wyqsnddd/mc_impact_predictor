@@ -183,10 +183,10 @@ void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vect
 }
 void mi_qpEstimator::update()
 {
-
   updateImpactModels_();
   update_();
 }
+
 void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
 {
   if(surfaceNormals.size() != impactModels_.size())
@@ -356,8 +356,7 @@ void mi_qpEstimator::update_()
   */
   // jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3);
   // jacobianDeltaTau_ = jacobianDeltaTau_*tempJac;
-
-  /*
+/* 
   for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
   {
     idx->second.perturbedWrench.vector().setZero();
@@ -380,7 +379,35 @@ void mi_qpEstimator::update_()
 
 
   }
- */
+
+ */ 
+
+  for(auto & idx: endEffectors_)
+  {
+    idx.second.perturbedWrench.force().setZero();
+    idx.second.perturbedWrench.couple().setZero();
+
+    for(auto & ii:getImpactModels())
+    {
+      if(ii.first == idx.first )
+	      continue;
+
+      
+      sva::PTransformd X_ii_idx = getSimRobot().bodyPosW(ii.first).inv();
+
+      sva::ForceVecd tempWrench;
+      tempWrench.force().setZero();
+      tempWrench.force() = getEndeffector(ii.first).estimatedAverageImpulsiveForce;
+      tempWrench.couple().setZero();
+
+      idx.second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
+
+    }
+
+    //std::cout<<"qpEstimator: The converted wrench of "<<idx.first<<" is: "<< idx.second.perturbedWrench.vector().transpose()<<std::endl;
+
+  }
+
 }
 
 const endEffector & mi_qpEstimator::getEndeffector(const std::string & name)
@@ -450,11 +477,11 @@ bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fr
   tempJ.resize(getEstimatorParams().dim, getDof());
   tempJ.setZero();
 
-  /*
+  
   sva::ForceVecd tempWrench;
   tempWrench.force().setZero();
   tempWrench.couple().setZero();
-  */
+  
   int eeIndex = 0;
 
   if(fromOsdModel)
@@ -463,15 +490,9 @@ bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fr
     eeIndex = static_cast<int>(endEffectors_.size());
 
   // optVariables_[name] = {dim, optVariables_.size() };
-  endEffectors_[eeName] = {eeIndex, tempForce, tempForce, tempForce, tempForce, tempJ};
-  // endEffectorNames_.push_back(eeName);
+  endEffectors_[eeName] = {eeIndex, tempForce, tempForce, tempForce, tempForce, tempJ, tempWrench};
+
   std::cout << "Qp Estimator: Adding end-effector: " << eeName << ", with index: " << eeIndex << std::endl;
-  /*
-  if(!getOsd()->addEndeffector(eeName))
-  {
-    throw std::runtime_error(std::string("OSD failed to add endeffector! ") + eeName);
-  }
-*/
   return true;
 }
 
