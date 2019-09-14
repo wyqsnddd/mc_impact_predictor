@@ -41,12 +41,12 @@ public:
   }
 
 protected:
-  inline const std::shared_ptr<mi_osd> & getOsd_() const
+  inline const std::shared_ptr<mi_osd> getOsd_() const
   {
     return osdPtr_;
   }
   virtual void reset_() = 0;
-  const std::shared_ptr<mi_osd> & osdPtr_;
+  std::shared_ptr<mi_osd> osdPtr_;
   Eigen::MatrixXd A_;
   Eigen::VectorXd b_;
 };

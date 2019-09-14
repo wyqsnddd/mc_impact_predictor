@@ -174,11 +174,11 @@ public:
    */
   void update();
 
-  inline const int & getDof() const
+  inline int getDof() const
   {
     return robotDof_;
   }
-  inline const int & getEeNum() const
+  inline int getEeNum() const
   {
     return eeNum_;
   }
@@ -194,7 +194,7 @@ public:
   /*!
    * \return number of rows of the Jacobian
    */
-  inline const int & getJacobianDim() const
+  inline int getJacobianDim() const
   {
     return jacobianDim_;
   }
@@ -203,7 +203,7 @@ public:
 private:
   int robotDof_;
   bool linearJacobian_;
-  const bool & useLinearJacobian_()
+  const bool useLinearJacobian_()
   {
     return linearJacobian_;
   }

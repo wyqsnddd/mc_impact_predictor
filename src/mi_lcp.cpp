@@ -96,7 +96,7 @@ void mi_lcp::update()
   }
   update_(Jacobian, JacobianDot);
 }
-void mi_lcp::update(std::map<std::string, Eigen::Vector3d> contactSurfaceNormals)
+void mi_lcp::update(const std::map<std::string, Eigen::Vector3d> & contactSurfaceNormals)
 {
   // We restrict the calculation to the surface normal direction
   // The number of contact is:

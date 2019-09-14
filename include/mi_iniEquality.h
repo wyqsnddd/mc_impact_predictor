@@ -13,7 +13,7 @@ class mi_iniEquality : public mi_equality
 public:
   mi_iniEquality(const std::shared_ptr<mi_osd> & osdPtr,
                  const std::shared_ptr<mi_impactModel> & impactPtr,
-                 const int & numEe);
+                 const int numEe);
   ~mi_iniEquality() {}
 
   inline std::string nameEq() const override
@@ -21,7 +21,7 @@ public:
     return "InitialConditionEqualityConstraint";
   }
   void update() override;
-  inline const std::shared_ptr<mi_impactModel> & getImpactModel()
+  inline const std::shared_ptr<mi_impactModel> getImpactModel()
   {
     return impactPtr_;
   }
@@ -29,7 +29,7 @@ public:
 protected:
   void reset_() override;
 
-  const std::shared_ptr<mi_impactModel> & impactPtr_;
+  const std::shared_ptr<mi_impactModel> impactPtr_;
 
   const int numEe_;
 };

@@ -12,9 +12,10 @@ mi_invOsdEquality::mi_invOsdEquality(const std::shared_ptr<mi_osd> & osdPtr, con
 void mi_invOsdEquality::reset_()
 {
   int dof = getOsd_()->getDof();
-  int nOsdEe = static_cast<int>(getOsd_()->getEeNum());
+  int nOsdEe = getOsd_()->getEeNum();
   int dim = getOsd_()->getJacobianDim();
 
+  // Arnaud: this assert fails
   assert(nOsdEe <= numEe_);
 
   A_.resize(nOsdEe * dim, dof + dim * (numEe_));
@@ -47,6 +48,8 @@ void mi_invOsdEquality::update()
     // A_.block(location, dof + location, dim, dim) = -tempId;
   }
 
+  // Arnaud this assignement has the wrong size!
+  // (9x52) <- (9x9)
   A_.block(0, dof, dim * nOsdEe, dim * nOsdEe) = -getOsd_()->getLambdaMatrixInv();
 }
 

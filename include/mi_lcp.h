@@ -41,7 +41,7 @@ public:
 
   ~mi_lcp() {}
   void update();
-  void update(std::map<std::string, Eigen::Vector3d> contactSurfaceNormals);
+  void update(const std::map<std::string, Eigen::Vector3d> & contactSurfaceNormals);
   inline const mc_rbdyn::Robot & getRealRobot()
   {
     return realRobot_;
@@ -51,7 +51,7 @@ public:
     return simRobot_;
   }
   const Eigen::VectorXd & getPredictedContactForce(const std::string & bodyName);
-  inline const int & getDim()
+  inline int getDim()
   {
     return dim_;
   }
@@ -64,7 +64,7 @@ protected:
 
   const mc_rbdyn::Robot & simRobot_;
   const mc_rbdyn::Robot & realRobot_;
-  const std::shared_ptr<mi_osd> & osdPtr_;
+  const std::shared_ptr<mi_osd> osdPtr_;
 
   lcp_solver solver_;
 
@@ -75,7 +75,7 @@ protected:
     return solverName_;
   }
   std::string solverName_;
-  inline const double & getThreshold_()
+  inline double getThreshold_()
   {
     return convergenceThreshold_;
   }

@@ -30,10 +30,10 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   }
 
   if(params_.useJsd)
-    eqConstraints_.push_back(std::make_shared<mc_impact::mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_));
+    eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_));
 
   if(params_.useOsd)
-    eqConstraints_.push_back(
+    eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_invOsdEquality>(getOsd(), static_cast<int>(getImpactModels().size())));
 
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
@@ -41,7 +41,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   {
     // eqConstraints_.push_back(std::make_shared<mi_iniEquality>(getOsd(),
     // getImpactModel(const_cast<std::string&>(*idx)).get(), false));
-    eqConstraints_.push_back(
+    eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_iniEquality>(getOsd(), getImpactModel(idx->first), getEeNum()));
   }
   /*
@@ -205,7 +205,7 @@ void mi_qpEstimator::update_()
 
   int count = 0;
   // Update the constraints
-  for(auto eq : eqConstraints_)
+  for(auto & eq : eqConstraints_)
   {
     eq->update();
 
