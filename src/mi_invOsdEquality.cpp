@@ -16,9 +16,10 @@ void mi_invOsdEquality::reset_()
   int dim = getOsd_()->getJacobianDim();
 
   // Arnaud: this assert fails
-  assert(nOsdEe <= numEe_);
+  //std::cout<<"nOsdEe: "<< nOsdEe << ", numEe_: "<<numEe_<<std::endl;
+  //assert(nOsdEe <= numEe_);
 
-  A_.resize(nOsdEe * dim, dof + dim * (numEe_));
+  A_.resize(nOsdEe * dim, dof + dim * (nOsdEe));
   A_.setZero();
 
   // b_ will stay zero

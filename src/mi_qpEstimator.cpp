@@ -473,7 +473,7 @@ bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fr
   // tempForce.resize(getImpactModel()->getDim());
   tempForce.setZero();
 
-  Eigen::VectorXd tempJ;
+  Eigen::MatrixXd tempJ;
   tempJ.resize(getEstimatorParams().dim, getDof());
   tempJ.setZero();
 
