@@ -6,7 +6,7 @@ namespace mc_impact
 mi_osd::mi_osd(mc_rbdyn::Robot & robot,
                //    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
                bool linearJacobian)
-: robot_(robot) //, FDPtr_(fdPtr) // robotPtr_(robotPtr),
+: robot_(robot), computationTime_(0.0) //, FDPtr_(fdPtr) // robotPtr_(robotPtr),
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
   linearJacobian_ = linearJacobian;
@@ -92,7 +92,7 @@ void mi_osd::initializeDataStructure(const int EeNum)
 
 void mi_osd::update()
 {
-
+  auto startUpdate = std::chrono::high_resolution_clock::now();
   // mc_rtc components
   // std::cout << "Updating OSD FD..." << std::endl;
 
@@ -105,7 +105,20 @@ void mi_osd::update()
   // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
   // std::cout << "FD computed M ..." << std::endl;
   // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
+  
+  auto stopModelUpdate = std::chrono::high_resolution_clock::now();
+  
+  auto durationModelUpdate = std::chrono::duration_cast< std::chrono::microseconds>(stopModelUpdate - startUpdate);
+
+  modelUpdateTime_ = static_cast<double>(durationModelUpdate.count());
+
   updateCache_();
+
+  auto stopUpdate = std::chrono::high_resolution_clock::now();
+
+  auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopUpdate - startUpdate);
+  computationTime_ = static_cast<double>(durationStruct.count());
+
 }
 const int & mi_osd::nameToIndex_(const std::string & eeName) const
 {

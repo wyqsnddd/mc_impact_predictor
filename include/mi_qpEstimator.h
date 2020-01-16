@@ -4,6 +4,7 @@
 #include <iostream>
 #include <limits>
 #include <math.h>
+#include <chrono>
 //# include <Eigen/QR>
 #include <mc_rbdyn/Robots.h>
 
@@ -13,11 +14,25 @@
 #include "mi_jsdEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
+
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
 
 namespace mc_impact
 {
+
+#ifndef COLOUR_PRINT 
+#define COLOUR_PRINT 
+const std::string red("\033[0;31m");
+const std::string green("\033[1;32m");
+const std::string yellow("\033[1;33m");
+const std::string cyan("\033[0;36m");
+const std::string magenta("\033[0;35m");
+const std::string reset("\033[0m");
+# endif
+
+
+
 
 class mi_qpEstimator
 {
@@ -82,10 +97,27 @@ public:
   {
     return osdPtr_;
   }
-  inline int getEeNum()
+  inline int getEeNum() const
   {
     return static_cast<int>(endEffectors_.size());
   }
+
+  /*! \brief Time to construct the building blocks in each iteration. 
+   * \return time in microseconds. 
+   */
+  inline double structTime() const
+  {
+    return structTime_; 
+  }
+
+  /*! \brief Time to solve the optimization problem. 
+   * \return time in microseconds. 
+   */
+  inline double solverTime() const
+  {
+    return solverTime_; 
+  }
+
 
 private:
   const mc_rbdyn::Robot & simRobot_;
@@ -143,5 +175,8 @@ private:
   Eigen::MatrixXd jacobianDeltaTau_;
   std::vector<Eigen::MatrixXd> vector_A_dagger_;
   Eigen::MatrixXd tempInv_;
+
+  double  solverTime_;
+  double structTime_;
 };
 } // namespace mc_impact

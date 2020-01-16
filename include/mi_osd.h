@@ -3,6 +3,8 @@
 #include <mc_rbdyn/Robot.h>
 #include <mc_rbdyn/RobotModule.h>
 
+#include <chrono>
+
 #include <RBDyn/FA.h>
 #include <RBDyn/FD.h>
 #include <RBDyn/FK.h>
@@ -71,15 +73,15 @@ public:
 
   bool addEndeffector(std::string eeName);
   /*!
-    \param EeNum the number of end-effectors to be used in the OSD.
-    */
+   * \param EeNum the number of end-effectors to be used in the OSD.
+   */
   void initializeDataStructure(int EeNum);
 
   void resetDataStructure();
 
   /*!
-      \return the Operational space inertia matrix: \f$ \Lambda \f$
-      */
+   *  \return the Operational space inertia matrix: \f$ \Lambda \f$
+   */
   inline const Eigen::MatrixXd & getLambdaMatrix() const
   {
     return cache_.lambdaMatrix;
@@ -140,7 +142,7 @@ public:
       */
   inline const Eigen::MatrixXd & getEffectiveLambdaMatrix(const std::string & eeName) const
   {
-    return cache_.effectiveLambdaMatrices[nameToIndex_(eeName)];
+    return cache_.effectiveLambdaMatrices[static_cast<unsigned long>(nameToIndex_(eeName))];
   }
   /*
   Eigen::VectorXd getOsdForce(const std::string eeName) const
@@ -155,7 +157,7 @@ public:
       */
   inline const Eigen::MatrixXd & getDcJacobianInv(const std::string eeName) const
   {
-    return cache_.dcJacobianInvs[nameToIndex_(eeName)];
+    return cache_.dcJacobianInvs[static_cast<unsigned long>(nameToIndex_(eeName))];
   }
   /*!
       \return \f$ M^{-1}\f$
@@ -174,6 +176,20 @@ public:
    */
   void update();
 
+  /*! \brief Time to update the internal dynamics models. 
+   * \return time in microseconds. 
+   */
+  inline double modelUpdateTime() const
+  {
+    return modelUpdateTime_; 
+  }
+  /*! \brief Time to solve the optimization problem. 
+   * \return time in microseconds. 
+   */
+  inline double computationTime() const
+  {
+    return computationTime_; 
+  }
   inline int getDof() const
   {
     return robotDof_;
@@ -203,7 +219,7 @@ public:
 private:
   int robotDof_;
   bool linearJacobian_;
-  const bool useLinearJacobian_()
+  bool useLinearJacobian_() const
   {
     return linearJacobian_;
   }
@@ -218,5 +234,8 @@ private:
 
   bool addEndeffector_(std::string eeName);
   void updateCache_();
+
+  double computationTime_;
+  double modelUpdateTime_;
 };
 } // namespace mc_impact

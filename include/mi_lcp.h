@@ -3,6 +3,7 @@
 #include <Eigen/StdVector>
 #include <iomanip>
 #include <iostream>
+#include <chrono>
 #include <math.h>
 #include <nlopt.hpp>
 
@@ -15,7 +16,7 @@ struct quadraticObjData
   const Eigen::VectorXd d;
 };
 
-struct lcp_solver
+struct LcpSolver
 {
   static double objFunction(const std::vector<double> & x, std::vector<double> & grad, void * obj_data);
   // static double positiveForceConstraint( unsigned n, const double *x, double *grad, void *data);
@@ -25,6 +26,7 @@ struct lcp_solver
                                  double convergenceThreshold);
   nlopt::result result;
   std::vector<double> solution;
+  double solverTime; ///< Time to solve the LP in milliseconds.
 };
 
 class mi_lcp
@@ -55,7 +57,21 @@ public:
   {
     return dim_;
   }
+  /*! \brief Time to construct the building blocks in each iteration. 
+   * \return time in microseconds. 
+   */
+  inline double structTime() const
+  {
+    return structTime_; 
+  }
 
+  /*! \brief Time to solve the optimization problem. 
+   * \return time in microseconds. 
+   */
+  inline double solverTime() const
+  {
+    return solver_.solverTime; 
+  }
 protected:
   void update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & JacobianDot);
 
@@ -66,7 +82,7 @@ protected:
   const mc_rbdyn::Robot & realRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
 
-  lcp_solver solver_;
+  LcpSolver solver_;
 
   int dim_;
   std::map<std::string, Eigen::VectorXd> predictedContactForce_;
@@ -80,5 +96,8 @@ protected:
     return convergenceThreshold_;
   }
   double convergenceThreshold_;
+
+  double structTime_;
+
 };
 } // namespace mc_impact

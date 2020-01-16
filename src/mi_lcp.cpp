@@ -14,8 +14,9 @@ mi_lcp::mi_lcp(const mc_rbdyn::Robot & simRobot,
                int dim,
                const std::string & solverName,
                double convergenceThreshold)
-: simRobot_(simRobot), realRobot_(realRobot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName),
-  convergenceThreshold_(convergenceThreshold)
+: simRobot_(simRobot), realRobot_(realRobot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName), 
+  convergenceThreshold_(convergenceThreshold), structTime_(0.0)
+
 {
 }
 
@@ -79,6 +80,9 @@ void mi_lcp::update()
 {
   // We restrict the calculation to the surface normal direction
   // The number of contact is:
+  
+  auto startStruct = std::chrono::high_resolution_clock::now();
+
   std::size_t contactNum = osdPtr_->getContactNum();
   int dof = osdPtr_->getDof();
   Eigen::MatrixXd Jacobian = Eigen::MatrixXd::Zero(contactNum * getDim(), dof);
@@ -95,9 +99,15 @@ void mi_lcp::update()
     contactCounter++;
   }
   update_(Jacobian, JacobianDot);
+  auto stopStruct = std::chrono::high_resolution_clock::now();
+  auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopStruct - startStruct);
+
+  structTime_ = static_cast<double>(durationStruct.count()) - solver_.solverTime;
 }
 void mi_lcp::update(const std::map<std::string, Eigen::Vector3d> & contactSurfaceNormals)
 {
+
+  auto startStruct = std::chrono::high_resolution_clock::now();
   // We restrict the calculation to the surface normal direction
   // The number of contact is:
   std::size_t contactNum = osdPtr_->getContactNum();
@@ -119,13 +129,20 @@ void mi_lcp::update(const std::map<std::string, Eigen::Vector3d> & contactSurfac
     contactCounter++;
   }
   update_(Jacobian, JacobianDot);
+
+  auto stopStruct = std::chrono::high_resolution_clock::now();
+  auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopStruct - startStruct);
+
+  structTime_ = static_cast<double>(durationStruct.count()) - solver_.solverTime;;
 }
 
-std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H,
+std::vector<double> & LcpSolver::solveLCP(const Eigen::MatrixXd & H,
                                            const Eigen::VectorXd & d,
                                            const std::string & solverName,
                                            double convergenceThreshold)
 {
+  
+  auto startSolve = std::chrono::high_resolution_clock::now();
   int numVar = static_cast<int>(d.size());
   // std::cout<<"LCP:: The number of variables is: "<<numVar<<std::endl;
   nlopt::opt opt(nlopt::LD_CCSAQ, numVar);
@@ -140,7 +157,7 @@ std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H,
   opt.set_lower_bounds(lb);
   quadraticObjData objData = {H, d};
   void * objDataPtr = &objData;
-  opt.set_min_objective(lcp_solver::objFunction, objDataPtr);
+  opt.set_min_objective(LcpSolver::objFunction, objDataPtr);
   // std::cout<<"LCP::objective is set"<<std::endl;
   opt.set_xtol_rel(convergenceThreshold);
   solution.resize(numVar);
@@ -159,12 +176,18 @@ std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H,
   }
   catch(std::exception & e)
   {
-    std::cout << "lcp_solver::nlopt failed: " << e.what() << std::endl;
+    std::cout << "LcpSolver::nlopt failed: " << e.what() << std::endl;
   }
 
   // If the result is not in this range, then it failed
   if(!(nlopt::SUCCESS <= result && result <= nlopt::XTOL_REACHED))
     throw std::runtime_error("nlopt failed to solve the problem");
+
+
+  auto stopSolve = std::chrono::high_resolution_clock::now();
+  auto durationSolve = std::chrono::duration_cast<std::chrono::microseconds>(stopSolve - startSolve);
+
+  solverTime = static_cast<double>(durationSolve.count());
 
   // Eigen::Map<Eigen::VectorXd> solution_eigen( solution.data(), solution.size());
   // std::cout<<"LCP::solution mapped"<<std::endl;
@@ -172,7 +195,7 @@ std::vector<double> & lcp_solver::solveLCP(const Eigen::MatrixXd & H,
   return solution;
 }
 
-double lcp_solver::objFunction(const std::vector<double> & x, std::vector<double> & grad, void * obj_data)
+double LcpSolver::objFunction(const std::vector<double> & x, std::vector<double> & grad, void * obj_data)
 {
   quadraticObjData * objDataPtr = static_cast<quadraticObjData *>(obj_data);
 

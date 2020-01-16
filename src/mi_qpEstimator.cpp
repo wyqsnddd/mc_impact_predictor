@@ -6,7 +6,7 @@ namespace mc_impact
 mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
                                const std::shared_ptr<mi_osd> osdPtr,
                                const struct qpEstimatorParameter params)
-: simRobot_(simRobot), osdPtr_(osdPtr), params_(params)
+: simRobot_(simRobot), osdPtr_(osdPtr), params_(params), solverTime_(0), structTime_(0.0)
 {
   // (1) initilize the Impact models
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
@@ -203,6 +203,7 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
 void mi_qpEstimator::update_()
 {
 
+  auto startStruct = std::chrono::high_resolution_clock::now();
   int count = 0;
   // Update the constraints
   for(auto & eq : eqConstraints_)
@@ -220,7 +221,13 @@ void mi_qpEstimator::update_()
   solutionVariables.resize(getNumVar_());
   solutionVariables.setZero();
 
-  // std::cout<<"test 0" <<std::endl;
+  auto stopStruct = std::chrono::high_resolution_clock::now();
+  
+  auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopStruct - startStruct);
+
+  structTime_ = static_cast<double>(durationStruct.count());
+
+  auto startSolve = std::chrono::high_resolution_clock::now();
   if(params_.useLagrangeMultiplier)
   {
 
@@ -234,6 +241,11 @@ void mi_qpEstimator::update_()
     solver_.solve(xl_, xu_, Q_, p_, C_, cl_, cu_);
     solutionVariables = solver_.result();
   }
+
+  auto stopSolve = std::chrono::high_resolution_clock::now();
+  auto durationSolve = std::chrono::duration_cast<std::chrono::microseconds>(stopSolve - startSolve);
+
+  solverTime_ = static_cast<double>(durationSolve.count());
 
   // std::cout<<"test 1" <<std::endl;
   // Eigen::MatrixXd tempJac = getImpactModel()->getProjector();
