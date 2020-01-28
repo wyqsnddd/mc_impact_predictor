@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
 
 include(cmake/base.cmake)
 
@@ -13,7 +14,7 @@ set(CMAKE_CXX_STANDARD 11)
 setup_project()
 
 find_package(mc_rtc REQUIRED)
-add_required_dependency(nlopt)
+find_package(nlopt REQUIRED)
 
 include_directories(include)
 add_subdirectory(src)
