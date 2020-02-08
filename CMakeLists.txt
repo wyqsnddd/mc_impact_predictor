@@ -17,6 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${PROJECT_VERSION})
 
+add_project_dependency(eigen-lssol REQUIRED)
 add_project_dependency(mc_rtc REQUIRED)
 find_package(nlopt REQUIRED)
 
