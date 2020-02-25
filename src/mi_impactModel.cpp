@@ -48,12 +48,11 @@ void mi_impactModel::update_()
   // reductionProjector_ = tempReductionProjector*osdPtr_->getJacobian(getImpactBody());
   reductionProjector_ = tempReductionProjector * getJacobian();
 
-  Eigen::VectorXd alpha = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
-  Eigen::VectorXd alphaD = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alphaD);
   //temp_q_vel_ = (alpha + alphaD * getTimeStep());
-  temp_q_vel_ = alpha;
+  robotJointVel_ = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
+  Eigen::VectorXd alphaD = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alphaD);
   // eeV_ = osdPtr_->getJacobian(getImpactBody()) *  temp_q_vel_;
-  eeV_ = getJacobian() * temp_q_vel_;
+  eeV_ = getJacobian() * getJointVel();
 
   contactVel_ = tempProjector * eeV_;
   /*

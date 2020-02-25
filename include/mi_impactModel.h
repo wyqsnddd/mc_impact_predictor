@@ -25,9 +25,11 @@ public:
   : simRobot_(simRobot), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal),
     impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
   {
+    int dof = simRobot_.mb().nrDof();
     jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getImpactBody());
-    jacobian_.resize(getDim(), simRobot_.mb().nrDof());
+    jacobian_.resize(getDim(), dof);
     inertial_surfaceNormal_.normalize();
+    robotJointVel_.resize(dof);
   }
 
   ~mi_impactModel() {}
@@ -70,7 +72,7 @@ public:
   }
   inline const Eigen::VectorXd & getJointVel() const
   {
-    return temp_q_vel_;
+    return robotJointVel_;
   }
 
   /** Predict the impact-induced state jumps based on the internal update.
@@ -121,7 +123,7 @@ private:
   Eigen::VectorXd deltaV_ = Eigen::VectorXd::Zero(3);
   Eigen::VectorXd eeV_ = Eigen::VectorXd::Zero(3);
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3, 3);
-  Eigen::VectorXd temp_q_vel_;
+  Eigen::VectorXd robotJointVel_;
   Eigen::Vector3d local_surfaceNormal_;
   Eigen::Vector3d contactVel_ = Eigen::Vector3d::Zero(3);
 };
