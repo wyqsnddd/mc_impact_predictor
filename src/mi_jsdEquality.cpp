@@ -15,6 +15,8 @@ mi_jsdEquality::mi_jsdEquality(const std::shared_ptr<mi_osd> & osdPtr,
   }
   */
   reset_();
+
+  std::cout<<red<<"Initialized the joint space dynamics equality constraint"<<reset<<std::endl;
 }
 
 void mi_jsdEquality::reset_()

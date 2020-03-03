@@ -31,6 +31,7 @@ mi_osd::mi_osd(mc_rbdyn::Robot & robot,
   // std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl;
 
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_mM(tempMassMatrix);
+
   cache_.invMassMatrix.resize(mRows, mCols);
   cache_.invMassMatrix = lu_decomp_mM.inverse();
 
