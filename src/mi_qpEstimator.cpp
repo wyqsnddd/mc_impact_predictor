@@ -104,12 +104,13 @@ void mi_qpEstimator::initializeQP_()
   jacobianDeltaTau_.resize(getDof(), getDof());
   jacobianDeltaTau_.setZero();
 
-  for(size_t idx = 0; idx < vector_A_dagger_.size(); ++idx)
+  // Resize each element of vector_A_dagger_, where each of them correspond to one impact
+  for(auto & A_dagger : vector_A_dagger_ )
   {
-    vector_A_dagger_[idx].resize(
-
+    A_dagger.resize(
         getDof() + getEstimatorParams().dim * getEeNum(), 3);
-    vector_A_dagger_[idx].setZero();
+
+    A_dagger.setZero();
   }
   std::cout << "Reset LSSOL QP estimator variables. " << std::endl;
 }
@@ -126,7 +127,9 @@ void mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,
   kkt.resize(kktDim, kktDim);
   kkt.setZero();
 
+  //kkt.block(0, 0, getNumVar_(), getNumVar_()) = Q_;
   kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(), getNumVar_());
+
   // kkt.block(0, 0, getNumVar_(), getNumVar_())=  kkt.block(0, 0, getNumVar_(), getNumVar_())*2;
 
   kkt.block(getNumVar_(), 0, C_.rows(), C_.cols()) = C_;
@@ -172,6 +175,9 @@ void mi_qpEstimator::updateImpactModels_()
     idx->second->update();
   }
 }
+
+
+
 void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
 {
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = surfaceNormals.begin(); idx != surfaceNormals.end();
@@ -210,8 +216,13 @@ void mi_qpEstimator::update_()
   {
     eq->update();
 
+    // Range space
     C_.block(count, 0, eq->nrEq(), getNumVar_()) = eq->AEq();
+
+    // Lower bounds: lb == ub for equalities
     cl_.segment(count, eq->nrEq()) = eq->bEq();
+
+    // Upper bounds: 
     cu_.segment(count, eq->nrEq()) = eq->bEq();
 
     count += eq->nrEq();
@@ -226,6 +237,10 @@ void mi_qpEstimator::update_()
   auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopStruct - startStruct);
 
   structTime_ = static_cast<double>(durationStruct.count());
+
+  // Update Q with the current mass matrix
+  
+  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix();
 
   auto startSolve = std::chrono::high_resolution_clock::now();
   if(params_.useLagrangeMultiplier)
@@ -257,101 +272,8 @@ void mi_qpEstimator::update_()
   // std::cout<<"jacobianDeltaTau_ size is: "<<jacobianDeltaTau_.rows() <<", "<<jacobianDeltaTau_.cols()<<std::endl;
   jacobianDeltaTau_.setZero();
 
-  // for(auto idx = getOsd()->getEes().begin(); idx!=getOsd()->getEes().end(); ++idx)
-  for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
-  {
-    int eeIndex = nameToIndex_(idx->first);
-    int location = getEstimatorParams().dim * eeIndex;
-
-    // auto & tempEe =  getEndeffector_(*idx);
-    double inv_dt = 1.0 / (getImpactModels().begin()->second->getImpactDuration());
-
-    idx->second.estimatedImpulse = solutionVariables.segment(getDof() + location, getEstimatorParams().dim);
-
-    idx->second.estimatedAverageImpulsiveForce = idx->second.estimatedImpulse * inv_dt;
-
-    Eigen::MatrixXd tempJ;
-    if(osdContactEe_(idx->first))
-      tempJ = getOsd()->getJacobian(idx->first);
-    else
-      tempJ = getImpactModel(idx->first)->getJacobian();
-
-    idx->second.eeVJump = tempJ * jointVelJump_;
-
-    // std::cout<<"A_dagger_ size is: "<<A_dagger_.rows() <<", "<<A_dagger_.cols()<<std::endl;
-    // std::cout<<"Dof is: "<<getDof()<<std::endl;
-    // std::cout<<"location is: "<<location<<std::endl;
-
-    // std::cout<<"tempA_dagger_ee is: "<<std::endl<<tempA_dagger_ee<<std::endl;
-    if(getEstimatorParams().useLagrangeMultiplier)
-    {
-
-      // int kktDim =  getNumVar_() + static_cast<int>(C_.rows());
-      // Eigen::VectorXd b;
-      // b.resize(kktDim); b.setZero();
-      // b.segment(getNumVar_(), cu_.rows() ) = cu_;
-
-      // auto solution = tempInv_*b;
-
-      // double inv_dt = 1.0/getImpactModel()->getImpactDuration();
-      // Eigen::MatrixXd test_A = tempInv_.block(getDof() + location, 0, 3, 3)  ;
-      // tempEe.checkForce = test_A*getImpactModel()->getEeVelocityJump()*inv_dt;
-      // tempEe.checkForce = inv_dt*solution.segment(getDof() + location, 3);
-
-      idx->second.jacobianDeltaF.resize(3, getDof());
-      idx->second.jacobianDeltaF.setZero();
-      idx->second.checkForce.setZero();
-
-      // for (int i?i = 0; ii< static_cast<int>(impactModels_.size()); ++ii )
-      unsigned int iiA = 0;
-      Eigen::MatrixXd tempJ_T = tempJ.transpose();
-      for(auto impactIdx = impactModels_.begin(); impactIdx != impactModels_.end(); ++impactIdx, ++iiA)
-      {
-
-        Eigen::Matrix3d tempA_dagger_ee = vector_A_dagger_[iiA].block(getDof() + location, 0, 3, 3);
-
-        idx->second.jacobianDeltaF += tempA_dagger_ee * impactIdx->second->getProjector();
-
-        idx->second.checkForce += inv_dt * idx->second.jacobianDeltaF * impactIdx->second->getJointVel();
-
-        jacobianDeltaTau_ += tempJ_T * tempA_dagger_ee * impactIdx->second->getProjector();
-      }
-
-      tauJump_ += tempJ_T * idx->second.estimatedAverageImpulsiveForce;
-
-      // tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() - 3, 3,
-      // 3)*getImpactModel()->getEeVelocityJump();
-
-      // tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() , 3, tempInv_.cols())*b;
-      // tempEe.checkForce(0) = (b.segment(0, b.rows()-3)).norm();
-      // std::cout<<"b is: " <<std::endl<<b.transpose()<<std::endl;
-      /*
-            tempEe.checkForce(0) = (
-                //jointVelJump_  -  tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)*
-         getImpactModel()->getEeVelocityJump()
-                //jointVelJump_  -  tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)* tempJac*
-         getImpactModel()->getJointVel() jointVelJump_  -  A_dagger_.block(0, 0, getDof(), 3)* tempJac*
-         getImpactModel()->getJointVel()
-                ).norm();
-      */
-
-      // std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -
-      // tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
-    } // end of Lagrange Multipliers
-
-    // tempEe.jacobianDeltaF = tempA_dagger_ee;
-
-    // std::cout<<"test "<<std::endl;
-    // std::cout<<"test "<<std::endl;
-
-    // std::cout<<"tempJ_T size is: "<<tempJ_T.rows() <<", "<<tempJ_T.cols()<<std::endl;
-
-    // std::cout<<"test "<<std::endl;
-
-    // std::cout<<"test "<<std::endl;
-
-  } // end of the for end-effector loop.
-
+  readEeJacobiansSolution_(solutionVariables);
+  
   if(getEstimatorParams().useLagrangeMultiplier)
   {
     unsigned int iiA = 0;
@@ -394,31 +316,7 @@ void mi_qpEstimator::update_()
 
  */ 
 
-  for(auto & idx: endEffectors_)
-  {
-    idx.second.perturbedWrench.force().setZero();
-    idx.second.perturbedWrench.couple().setZero();
-
-    for(auto & ii:getImpactModels())
-    {
-      if(ii.first == idx.first )
-	      continue;
-
-      
-      sva::PTransformd X_ii_idx = getSimRobot().bodyPosW(ii.first).inv();
-
-      sva::ForceVecd tempWrench;
-      tempWrench.force().setZero();
-      tempWrench.force() = getEndeffector(ii.first).estimatedAverageImpulsiveForce;
-      tempWrench.couple().setZero();
-
-      idx.second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
-
-    }
-
-    //std::cout<<"qpEstimator: The converted wrench of "<<idx.first<<" is: "<< idx.second.perturbedWrench.vector().transpose()<<std::endl;
-
-  }
+  calcPerturbedWrench_();
 
 }
 
@@ -536,4 +434,147 @@ void mi_qpEstimator::print() const
   }
   std::cout << std::endl;
 }
+void mi_qpEstimator::calcPerturbedWrench_()
+{
+//for(auto & idx: endEffectors_)
+  for(auto & idx: endEffectors_)
+  {
+    idx.second.perturbedWrench.force().setZero();
+    idx.second.perturbedWrench.couple().setZero();
+for(auto & ii:getImpactModels())
+    {
+      // If this end-effector is applying an impact, we continue without calculating
+      if(ii.first == idx.first )
+        continue;
+
+      sva::PTransformd X_0_ii = getSimRobot().bodyPosW(ii.first);
+      sva::PTransformd X_0_idx = getSimRobot().bodyPosW(idx.first);
+
+      // Impact frame w.r.t. the idx end-effector frame.
+      sva::PTransformd X_ii_idx = X_0_idx*X_0_ii.inv();
+
+     // sva::PTransformd X_ii_idx = getSimRobot().bodyPosW(ii.first).inv();
+
+      sva::ForceVecd tempWrench;
+      tempWrench.force().setZero();
+      tempWrench.force() = getEndeffector(ii.first).estimatedAverageImpulsiveForce;
+      tempWrench.couple().setZero();
+
+      idx.second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
+
+    }
+
+    //std::cout<<"qpEstimator: The converted wrench of "<<idx.first<<" is: "<< idx.second.perturbedWrench.vector().transpose()<<std::endl;
+
+  }
+}
+
+void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVariables)
+{
+
+  // We fill the following for each end-effector:  
+  // (a) force Jump Jacobian
+  // (b) impulse
+  // (c) force Jump
+  //
+  // We also fill: 
+  // Joint torque Jump
+
+  for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
+  {
+    int eeIndex = nameToIndex_(idx->first);
+    int location = getEstimatorParams().dim * eeIndex;
+
+    // auto & tempEe =  getEndeffector_(*idx);
+    double inv_dt = 1.0 / (getImpactModels().begin()->second->getImpactDuration());
+
+    idx->second.estimatedImpulse = solutionVariables.segment(getDof() + location, getEstimatorParams().dim);
+
+    idx->second.estimatedAverageImpulsiveForce = idx->second.estimatedImpulse * inv_dt;
+    Eigen::MatrixXd tempJ;
+
+    // The Jacobian may exist in two places
+    if(osdContactEe_(idx->first))
+      tempJ = getOsd()->getJacobian(idx->first);
+    else
+      tempJ = getImpactModel(idx->first)->getJacobian();
+
+    idx->second.eeVJump = tempJ * jointVelJump_;
+
+    // std::cout<<"A_dagger_ size is: "<<A_dagger_.rows() <<", "<<A_dagger_.cols()<<std::endl;
+    // std::cout<<"Dof is: "<<getDof()<<std::endl;
+    // std::cout<<"location is: "<<location<<std::endl;
+
+    // std::cout<<"tempA_dagger_ee is: "<<std::endl<<tempA_dagger_ee<<std::endl;
+    if(getEstimatorParams().useLagrangeMultiplier)
+    {
+
+      // int kktDim =  getNumVar_() + static_cast<int>(C_.rows());
+      // Eigen::VectorXd b;
+      // b.resize(kktDim); b.setZero();
+      // b.segment(getNumVar_(), cu_.rows() ) = cu_;
+
+      // auto solution = tempInv_*b;
+
+      // double inv_dt = 1.0/getImpactModel()->getImpactDuration();
+      // Eigen::MatrixXd test_A = tempInv_.block(getDof() + location, 0, 3, 3)  ;
+      // tempEe.checkForce = test_A*getImpactModel()->getEeVelocityJump()*inv_dt;
+      // tempEe.checkForce = inv_dt*solution.segment(getDof() + location, 3);
+
+      idx->second.jacobianDeltaF.resize(3, getDof());
+      idx->second.jacobianDeltaF.setZero();
+      idx->second.checkForce.setZero();
+
+      // for (int i?i = 0; ii< static_cast<int>(impactModels_.size()); ++ii )
+      unsigned int iiA = 0;
+      Eigen::MatrixXd tempJ_T = tempJ.transpose();
+      for(auto impactIdx = impactModels_.begin(); impactIdx != impactModels_.end(); ++impactIdx, ++iiA)
+      {
+
+        Eigen::Matrix3d tempA_dagger_ee = vector_A_dagger_[iiA].block(getDof() + location, 0, 3, 3);
+
+        idx->second.jacobianDeltaF += tempA_dagger_ee * impactIdx->second->getProjector();
+
+        idx->second.checkForce += inv_dt * idx->second.jacobianDeltaF * impactIdx->second->getJointVel();
+
+        jacobianDeltaTau_ += tempJ_T * tempA_dagger_ee * impactIdx->second->getProjector();
+      }
+
+      tauJump_ += tempJ_T * idx->second.estimatedAverageImpulsiveForce;
+
+      // tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() - 3, 3,
+      // 3)*getImpactModel()->getEeVelocityJump();
+
+      // tempEe.checkForce = inv_dt* tempInv_.block(getDof() + location, tempInv_.cols() , 3, tempInv_.cols())*b;
+      // tempEe.checkForce(0) = (b.segment(0, b.rows()-3)).norm();
+      // std::cout<<"b is: " <<std::endl<<b.transpose()<<std::endl;
+      /*
+            tempEe.checkForce(0) = (
+                //jointVelJump_  -  tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)*
+         getImpactModel()->getEeVelocityJump()
+                //jointVelJump_  -  tempInv_.block(0, tempInv_.cols() - 3, getDof(), 3)* tempJac*
+         getImpactModel()->getJointVel() jointVelJump_  -  A_dagger_.block(0, 0, getDof(), 3)* tempJac*
+         getImpactModel()->getJointVel()
+                ).norm();
+      */
+
+      // std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -
+      // tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
+    } // end of Lagrange Multipliers
+
+    // tempEe.jacobianDeltaF = tempA_dagger_ee;
+
+    // std::cout<<"test "<<std::endl;
+    // std::cout<<"test "<<std::endl;
+
+    // std::cout<<"tempJ_T size is: "<<tempJ_T.rows() <<", "<<tempJ_T.cols()<<std::endl;
+
+    // std::cout<<"test "<<std::endl;
+
+    // std::cout<<"test "<<std::endl;
+
+  } // end of the for end-effector loop.
+
+}
+
 } // namespace mc_impact
