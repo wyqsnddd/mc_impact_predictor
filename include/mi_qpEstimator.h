@@ -143,6 +143,9 @@ private:
                   const Eigen::VectorXd & cu_,
                   Eigen::VectorXd & solution);
 
+  void readEeJacobiansSolution_(const Eigen::VectorXd & solutionVariables);
+  void calcPerturbedWrench_();
+
   inline int getNumVar_() const
   {
     return numVar_;

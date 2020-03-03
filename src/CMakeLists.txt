@@ -6,7 +6,7 @@ set(mc_impact_predictor_src
   mi_invOsdEquality.cpp
   mi_iniEquality.cpp
   mi_impactModel.cpp
-  mi_balance.cpp
+  #mi_balance.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
