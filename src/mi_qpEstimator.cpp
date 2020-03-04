@@ -8,6 +8,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
                                const struct qpEstimatorParameter params)
 : simRobot_(simRobot), osdPtr_(osdPtr), params_(params), solverTime_(0), structTime_(0.0)
 {
+	
   // (1) initilize the Impact models
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
@@ -17,6 +18,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
         params_.coeRes, params_.dim);
   }
   // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
+  /*
   for(auto idx = getOsd()->getContactEes().begin(); idx != getOsd()->getContactEes().end(); ++idx)
   {
     bool isOsdEe = true;
@@ -29,12 +31,26 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
     addEndeffector_(idx->first, isOsdEe);
   }
 
+  */
+ 
+  // Try to use all the end-effectors from the OSD
+  for(auto & ee: getOsd()->getEes())
+  {
+    bool isOsdEe = true;
+    addEndeffector_(ee, isOsdEe);
+  }
+
   if(params_.useJsd)
     eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_));
 
   if(params_.useOsd)
     eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_invOsdEquality>(getOsd(), static_cast<int>(getImpactModels().size())));
+
+  if(params_.useImpulseBalance)
+    eqConstraints_.emplace_back(
+        std::make_shared<mc_impact::mi_balance>(getOsd(), getImpactModels()));
+
 
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
@@ -420,19 +436,19 @@ void mi_qpEstimator::print() const
   coeR: "<<getImpactModel()->getCoeRes()<<", coeF: "<<getImpactModel()->getCoeFricDe()<<", impact duration:
   "<<getImpactModel()->getImpactDuration()<<". "<<std::endl;
 */
-  std::cout << "The QP estimator OSD has end-effectors: ";
+  std::cout << red<<"The QP estimator: "<< getEstimatorParams().name<<" has an OSD model with the end-effectors: "<<cyan;
   for(auto idx = getOsd()->getEes().begin(); idx != getOsd()->getEes().end(); ++idx)
   {
     std::cout << *idx << " ";
   }
-  std::cout << std::endl;
+  std::cout << reset<< std::endl;
 
-  std::cout << "The QP estimator OSD has end-effectors with established contact : ";
+  std::cout <<red <<"The QP estimator: "<< getEstimatorParams().name <<" has an  OSD model  with established contacts: "<< green;
   for(auto idx = getOsd()->getContactEes().begin(); idx != getOsd()->getContactEes().end(); ++idx)
   {
     std::cout << *idx << " ";
   }
-  std::cout << std::endl;
+  std::cout << reset <<std::endl;
 }
 void mi_qpEstimator::calcPerturbedWrench_()
 {

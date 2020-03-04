@@ -38,7 +38,7 @@ void mi_balance::reset_()
 
 
   // Initialize the centroidal momentum matrix: 
-  cmmPtr_ = std::make_shared<rbd::CentroidalMomentumMatrix>();
+  cmmPtr_ = std::make_shared<rbd::CentroidalMomentumMatrix>(getOsd_()->getRobot().mb());
 
 }
 

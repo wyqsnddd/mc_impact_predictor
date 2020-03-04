@@ -31,9 +31,10 @@ struct qpEstimatorParameter
   double coeRes = 0.8;
   int dim = 3;
   bool useLagrangeMultiplier = false;
-  bool useJsd = true;
-  bool useOsd = true;
-  bool useImpulseBalance= true;
+  bool useJsd = false;
+  bool useOsd = false;
+  bool useImpulseBalance= false;
+  std::string name = "qp Estimator";
 };
 
 struct endEffector

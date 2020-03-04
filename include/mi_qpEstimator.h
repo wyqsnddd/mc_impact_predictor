@@ -12,6 +12,7 @@
 #include "mi_iniEquality.h"
 #include "mi_invOsdEquality.h"
 #include "mi_jsdEquality.h"
+#include "mi_balance.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 
@@ -76,7 +77,7 @@ public:
   {
     return impactModels_;
   }
-  inline const qpEstimatorParameter & getEstimatorParams()
+  inline const qpEstimatorParameter & getEstimatorParams() const
   {
     return params_;
   }
