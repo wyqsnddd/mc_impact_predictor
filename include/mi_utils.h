@@ -34,6 +34,7 @@ struct qpEstimatorParameter
   bool useJsd = false;
   bool useOsd = false;
   bool useImpulseBalance= false;
+  bool testWeightedQp = false;
   std::string name = "qp Estimator";
 };
 

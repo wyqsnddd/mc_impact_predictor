@@ -80,6 +80,22 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   std::cout << "the QP-based impulse estimator is created. " << std::endl;
 }
 
+
+mi_qpEstimator::~mi_qpEstimator()
+{
+  if(logEntries_.size()>0)
+  {
+    assert(hostCtlPtr_ not nullptr);
+    removeImpulseEstimations_();
+  }
+
+  if(guiEntries_.size()>0)
+  {
+    assert(hostCtlPtr_ not nullptr);
+    removeMcRtcGuiItems();
+  }
+}
+
 void mi_qpEstimator::initializeQP_()
 {
   numVar_ = getDof() + 3 * getEeNum();
@@ -129,6 +145,58 @@ void mi_qpEstimator::initializeQP_()
     A_dagger.setZero();
   }
   std::cout << "Reset LSSOL QP estimator variables. " << std::endl;
+}
+
+void mi_qpEstimator::solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
+                                const Eigen::VectorXd & p_,
+                                const Eigen::MatrixXd & C_,
+                                const Eigen::VectorXd & cu_,
+                                Eigen::VectorXd & solution)
+{
+  Eigen::MatrixXd kkt;
+  int kktDim = getNumVar_() + static_cast<int>(C_.rows());
+
+  kkt.resize(kktDim, kktDim);
+  kkt.setZero();
+
+  kkt.block(0, 0, getNumVar_(), getNumVar_()) = Q_;
+  //kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(), getNumVar_());
+
+  // kkt.block(0, 0, getNumVar_(), getNumVar_())=  kkt.block(0, 0, getNumVar_(), getNumVar_())*2;
+
+  kkt.block(getNumVar_(), 0, C_.rows(), C_.cols()) = C_;
+  kkt.block(0, getNumVar_(), C_.cols(), C_.rows()) = C_.transpose();
+
+  Eigen::VectorXd b;
+  b.resize(kktDim);
+  b.setZero();
+  b.segment(getNumVar_(), cu_.rows()) = cu_;
+
+  // solve the least squares problem:
+  // Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_kkt(kkt);
+  // solution.resize(kktDim);
+  // solution = lu_decomp_kkt.inverse()*cu_;
+
+  // Eigen::MatrixXd tempInverse =  kkt.completeOrthogonalDecomposition().pseudoInverse();
+
+  // Suppose kkt has full column rank, we perform cholesky decomposition to compute pinv = (A^*A)^{-1}A^*
+  Eigen::MatrixXd tempInverse = (kkt.transpose() * kkt).inverse() * kkt.transpose();
+
+  solution = tempInverse * b;
+  // solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
+
+  // std::cout<<"tempInverse size is: "<<tempInverse.rows() <<", "<<tempInverse.cols()<<std::endl;
+
+  // std::cout<<"test 2" <<std::endl;
+  for(size_t idx = 0; idx < impactModels_.size(); ++idx)
+  {
+    vector_A_dagger_[idx] =
+        tempInverse.block(0, tempInverse.cols() - 3 * static_cast<int>(idx + 1), vector_A_dagger_[idx].rows(), 3);
+  }
+
+  // std::cout<<"test 3" <<std::endl;
+  // A_dagger_ =  //tempInv_= tempInverse.block(0, tempInverse.cols() - 3, tempInverse.rows(), 3);
+  tempInv_ = tempInverse;
 }
 
 void mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,
@@ -256,21 +324,28 @@ void mi_qpEstimator::update_()
 
   // Update Q with the current mass matrix
   
-  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix();
+  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix().transpose() * getOsd()->getMassMatrix();
 
   auto startSolve = std::chrono::high_resolution_clock::now();
-  if(params_.useLagrangeMultiplier)
+  if(getEstimatorParams().useLagrangeMultiplier)
   {
 
     // Eigen::VectorXd b_temp = cu_.segment(getNumVar_(), C_.rows());
     // Eigen::MatrixXd A_temp = C_;
-    solveEqQp_(Q_, p_, C_, cu_, solutionVariables);
+    if(getEstimatorParams().testWeightedQp)
+    {
+      solveWeightedEqQp_(Q_, p_, C_, cu_, solutionVariables);
+    }else
+    {
+      solveEqQp_(Q_, p_, C_, cu_, solutionVariables);
+    }
     // solutionVariables = A_temp.completeOrthogonalDecomposition().pseudoInverse()*b_temp;
   }
   else
   {
     solver_.solve(xl_, xu_, Q_, p_, C_, cl_, cu_);
     solutionVariables = solver_.result();
+    //solveWeightedEqQp_(Q_, p_, C_, cu_, solutionVariables);
   }
 
   auto stopSolve = std::chrono::high_resolution_clock::now();
@@ -591,6 +666,123 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
 
   } // end of the for end-effector loop.
 
+}
+
+void mi_qpEstimator::logImpulseEstimations()
+{
+
+  const std::string & qpName = getEstimatorParams().name;
+  logEntries_.emplace_back(qpName + "_"+ "JointVelJump");
+
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getJointVelJump(); });
+
+  logEntries_.emplace_back(qpName + "_"+ "JointTorqueJump");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getTauJump(); });
+
+  // (1) Loop over the end-effectors: 
+  
+  for (auto & ee:getOsd()->getEes())
+  {
+    // (1.1) Force jump
+    logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]()-> Eigen::VectorXd {
+	return getEndeffector(ee).estimatedAverageImpulsiveForce;
+    });
+
+    // (1.2) Ee velocity jump 
+    logEntries_.emplace_back(qpName + "_" + ee + "_" + "eeVelJump");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]()-> Eigen::VectorXd {
+	return getEndeffector(ee).eeVJump;
+    });
+
+  }
+
+  
+  // (2) Loop over the impact bodies: 
+  for (auto & eePair:getImpactModels())
+  {
+    const std::string & eeName = eePair.first;
+    // (2.1) Estimated end-effector induced impulse joint torque
+    logEntries_.emplace_back(qpName + "_" + eeName + "_" + "jointTorqueJump");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, eeName]()-> Eigen::VectorXd {
+	return getImpactModel(eeName)->getJacobian().transpose()
+                             * getHostCtl_()->robot().bodyWrench(eeName).force();
+	    
+    });
+
+    // (2.2) Predicted ee velocity jump (using coefficient of restitution)
+    logEntries_.emplace_back(qpName + "_" + eeName + "_"+ "ImpactModel_eeVelJump");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                       [this, eeName]() { return getImpactModel(eeName)->getEeVelocityJump(); });
+
+    // (2.3) ee velocity 
+    logEntries_.emplace_back(qpName + "_" + eeName + "_"+ "ImpactModel_eeVel");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                       [this, eeName]() { return getImpactModel(eeName)->getEeVelocity(); });
+
+    // (2.4) impact normal orientation 
+    logEntries_.emplace_back(qpName + "_" + eeName + "_"+ "ImpactModel_impactNormal");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                       [this, eeName]() { return getImpactModel(eeName)->getSurfaceNormal(); });
+  }
+}
+
+void mi_qpEstimator::removeImpulseEstimations_()
+{
+  assert(getHostCtl_() not nullptr);
+
+  for(auto & name : logEntries_)
+  {
+    getHostCtl_()->logger().removeLogEntry(name); 
+  }
+}
+
+void mi_qpEstimator::addMcRtcGuiItems()
+{
+
+  mc_rtc::gui::ArrowConfig surfaceXConfig({0., (153.0/255.0), (153.0/255.0)});
+  surfaceXConfig.start_point_scale = 0.0;
+  surfaceXConfig.end_point_scale = 0.0;
+
+  double arrowLengthScale = 0.01;
+
+  // Loop over all the end-effectors:  
+  
+  for (auto & eeName:getOsd()->getEes())
+  {
+  
+  guiEntries_.emplace_back(eeName  + "_ForceJump");
+   
+  getHostCtl_()->gui()->addElement(
+        {getEstimatorParams().name},
+   mc_rtc::gui::Arrow(guiEntries_.back(), surfaceXConfig,
+                           [this, eeName]() -> Eigen::Vector3d {
+                             // start of the arrow
+                             auto X_0_s = getHostCtl_()->robot().bodyPosW(eeName);
+                             return X_0_s.translation();
+                           },
+                           [this, eeName, arrowLengthScale]() -> Eigen::Vector3d {
+                             // End of the arrow
+                             auto X_0_s = getHostCtl_()->robot().bodyPosW(eeName);
+			     // Note that (1) the forceJump is defined in the local frame. 
+			     // (2) the rotaiton =  X_0_s.rotation().transpose();
+			     // (3) We are plotting the forceJump in the inertial frame. 
+                             Eigen::Vector3d eeForceJump=
+                                 X_0_s.translation() + arrowLengthScale * X_0_s.rotation().transpose()*getEndeffector(eeName).estimatedAverageImpulsiveForce;
+                             return eeForceJump;
+                           }));
+  
+  }
+}
+
+void mi_qpEstimator::removeMcRtcGuiItems()
+{
+  assert(getHostCtl_() not nullptr);
+
+  for(auto & name : guiEntries_)
+  {
+    getHostCtl_()->gui()->removeElement({getEstimatorParams().name}, name);
+  }
 }
 
 } // namespace mc_impact

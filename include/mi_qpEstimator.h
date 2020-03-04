@@ -8,6 +8,8 @@
 //# include <Eigen/QR>
 #include <mc_rbdyn/Robots.h>
 
+#include <mc_control/fsm/Controller.h>
+
 #include "mi_impactModel.h"
 #include "mi_iniEquality.h"
 #include "mi_invOsdEquality.h"
@@ -28,7 +30,7 @@ public:
   mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
                  const std::shared_ptr<mi_osd> osdPtr,
                  const struct qpEstimatorParameter params);
-  ~mi_qpEstimator() {}
+  ~mi_qpEstimator();
   void update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
   void update();
 
@@ -105,6 +107,26 @@ public:
   {
     return solverTime_; 
   }
+  inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
+  {
+  
+    if(hostCtlPtr_ == nullptr)
+    {
+      hostCtlPtr_ = ctlPtr;
+    }else{
+      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name + " is already set!");
+    }
+  }
+
+  /*! \brief Add the GUI entries
+   *   Require to set the host fsm controller first
+   **/
+  void addMcRtcGuiItems();
+
+  /*! \brief Add the log entries
+   *   Require to set the host fsm controller first
+   **/
+  void logImpulseEstimations();
 
 
 private:
@@ -113,6 +135,23 @@ private:
   endEffector & getEndeffector_(const std::string & name);
   qpEstimatorParameter params_;
   void update_();
+
+  std::vector<std::string> guiEntries_;
+  std::vector<std::string> logEntries_;
+  void removeImpulseEstimations_();
+  void removeMcRtcGuiItems();
+  mc_control::fsm::Controller * hostCtlPtr_ = nullptr;
+
+  inline mc_control::fsm::Controller * getHostCtl_()
+  {
+    if(hostCtlPtr_ != nullptr)
+    {
+      return hostCtlPtr_; 
+    }else{
+      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name + " is not set!");
+    }
+  }
+
 
   bool osdContactEe_(const std::string & eeName);
   void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
@@ -137,6 +176,13 @@ private:
   Eigen::LSSOL_QP solver_;
 
   std::vector<std::shared_ptr<mi_equality>> eqConstraints_;
+
+  void solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
+                  const Eigen::VectorXd & p_,
+                  const Eigen::MatrixXd & C_,
+                  const Eigen::VectorXd & cu_,
+                  Eigen::VectorXd & solution);
+
 
   void solveEqQp_(const Eigen::MatrixXd & Q_,
                   const Eigen::VectorXd & p_,
@@ -167,7 +213,7 @@ private:
   std::vector<Eigen::MatrixXd> vector_A_dagger_;
   Eigen::MatrixXd tempInv_;
 
-  double  solverTime_;
+  double solverTime_;
   double structTime_;
 };
 } // namespace mc_impact
