@@ -102,7 +102,7 @@ void mi_balance::update()
     int eeIndex = getOsd_()->nameToIndex_(contact);
     // int eeIndex = nameToIndex_(*idx);
     const Eigen::MatrixXd & eeGraspMatrix = forceGraspMatrix(contact, getOsd_()->getRobot().com());
-    A_.block(0, dof + eeIndex * dim, 6, dim) = eeGraspMatrix; 
+    A_.block(0, dof + eeIndex * dim, 6, dim) = -eeGraspMatrix; 
   }
 
   // (2) Fill the impact bodies: 
@@ -113,7 +113,7 @@ void mi_balance::update()
     int eeIndex = getOsd_()->nameToIndex_(impactModel.first);
 
     const Eigen::MatrixXd & eeGraspMatrix = forceGraspMatrix(impactModel.first, getOsd_()->getRobot().com());
-    A_.block(0, dof + eeIndex* dim, 6, dim) =  eeGraspMatrix;
+    A_.block(0, dof + eeIndex* dim, 6, dim) =  -eeGraspMatrix;
   }
 }
 
