@@ -35,6 +35,10 @@ struct qpEstimatorParameter
   bool useOsd = false;
   bool useImpulseBalance= false;
   bool testWeightedQp = false;
+  // 0: The default option which minimize the sum of momentum 
+  // 1: Momentum conservation using the Spatial Jacobian 
+  // 2: Momentum conservation using the Body Jacobian 
+  int objectiveChoice = 0; 
   std::string name = "qp Estimator";
 };
 

@@ -128,6 +128,10 @@ public:
    **/
   void logImpulseEstimations();
 
+  inline double getObj() const
+  {
+   return objectiveValue_; 
+  }
 
 private:
   const mc_rbdyn::Robot & simRobot_;
@@ -152,6 +156,8 @@ private:
     }
   }
 
+  void updateObjective_(const int & choice);
+  void constructQ_(const int & choice);
 
   bool osdContactEe_(const std::string & eeName);
   void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
@@ -171,6 +177,8 @@ private:
   Eigen::VectorXd cl_, cu_;
 
   Eigen::VectorXd p_;
+
+  double objectiveValue_ = 0.0;
 
   Eigen::VectorXd xl_, xu_;
   Eigen::LSSOL_QP solver_;

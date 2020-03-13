@@ -290,6 +290,65 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
   updateImpactModels_(surfaceNormals);
   update_();
 }
+
+void mi_qpEstimator::constructQ_(const int & choice)
+{ 
+  
+  // The spatial vector case is not defined.
+  int dim = getOsd()->getJacobianDim();
+
+  Eigen::MatrixXd tempA;
+  tempA.resize(getDof(), getDof() + dim*getEeNum());
+
+  tempA.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix();
+  
+  // Go through the contact bodies:
+  for(auto & ee:getOsd()->getContactEes())
+  {
+
+    int eeIndex = getOsd()->nameToIndex_(ee);
+    tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = - getOsd()->getJacobian(ee).transpose();
+  }
+
+  // Go through the impact bodies:
+  for(auto & impactModel : impactModels_) 
+  {
+    int eeIndex = getOsd()->nameToIndex_(impactModel.first);
+
+    tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = - getOsd()->getJacobian(impactModel.first);
+  }
+
+  Q_ = tempA.transpose()*tempA;
+
+}
+void mi_qpEstimator::updateObjective_(const int & choice)
+{
+
+
+  switch(choice)
+	{
+	// Default: Minimize sum of momentum
+	case 0:
+	  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix().transpose() * getOsd()->getMassMatrix();
+	  break;
+	// Momentum conservation using spatial-Jacobian
+	case 1:
+	  constructQ_(choice);
+	  break;
+	  // Momentum conservation using body-Jacobian
+	case 2:
+	  constructQ_(choice);
+	  break;
+
+	  // Exception
+	default: 
+	  throw std::runtime_error("The choice of Objective: is not set!");
+	}
+
+
+
+
+}
 void mi_qpEstimator::update_()
 {
 
@@ -324,7 +383,7 @@ void mi_qpEstimator::update_()
 
   // Update Q with the current mass matrix
   
-  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix().transpose() * getOsd()->getMassMatrix();
+  updateObjective_(getEstimatorParams().objectiveChoice);
 
   auto startSolve = std::chrono::high_resolution_clock::now();
   if(getEstimatorParams().useLagrangeMultiplier)
@@ -347,6 +406,8 @@ void mi_qpEstimator::update_()
     solutionVariables = solver_.result();
     //solveWeightedEqQp_(Q_, p_, C_, cu_, solutionVariables);
   }
+
+  objectiveValue_ = solutionVariables.transpose()*Q_*solutionVariables;
 
   auto stopSolve = std::chrono::high_resolution_clock::now();
   auto durationSolve = std::chrono::duration_cast<std::chrono::microseconds>(stopSolve - startSolve);
@@ -675,6 +736,10 @@ void mi_qpEstimator::logImpulseEstimations()
   logEntries_.emplace_back(qpName + "_"+ "JointVelJump");
 
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getJointVelJump(); });
+
+  logEntries_.emplace_back(qpName + "_"+ "Objective");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObj(); });
+
 
   logEntries_.emplace_back(qpName + "_"+ "JointTorqueJump");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getTauJump(); });
