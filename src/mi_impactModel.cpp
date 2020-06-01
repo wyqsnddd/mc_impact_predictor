@@ -33,16 +33,27 @@ void mi_impactModel::update(const Eigen::Vector3d & surfaceNormal)
 void mi_impactModel::update()
 {
 
-  sva::PTransformd X_0_ee = simRobot_.bodyPosW(getImpactBody());
-  local_surfaceNormal_ = X_0_ee.rotation() * inertial_surfaceNormal_;
-  local_surfaceNormal_.normalize();
+  if(useBodyJacobian())
+  {
+    sva::PTransformd X_0_ee = simRobot_.bodyPosW(getImpactBody());
+    local_surfaceNormal_ = X_0_ee.rotation() * inertial_surfaceNormal_;
+    local_surfaceNormal_.normalize();
+  }
+  else{
+    local_surfaceNormal_ = inertial_surfaceNormal_;
+  }
   update_();
 }
 
 void mi_impactModel::updateJacobian_()
 {
+  Eigen::MatrixXd tempJacobian;
 
-  Eigen::MatrixXd tempJacobian = jacPtr_->bodyJacobian(simRobot_.mb(), simRobot_.mbc());
+  if(useBodyJacobian()){
+    tempJacobian  = jacPtr_->bodyJacobian(simRobot_.mb(), simRobot_.mbc());
+  }else{
+    tempJacobian  = jacPtr_->jacobian(simRobot_.mb(), simRobot_.mbc());
+  }
 
   jacPtr_->fullJacobian(simRobot_.mb(), tempJacobian.block(3, 0, 3, tempJacobian.cols()), jacobian_);
 }
@@ -69,12 +80,15 @@ void mi_impactModel::update_()
   // reductionProjector_ = tempReductionProjector*osdPtr_->getJacobian(getImpactBody());
   reductionProjector_ = tempReductionProjector * getJacobian();
 
-  Eigen::VectorXd alpha = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
-  Eigen::VectorXd alphaD = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alphaD);
+  //Eigen::VectorXd alpha = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
+  //Eigen::VectorXd alphaD = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alphaD);
   // temp_q_vel_ = (alpha + alphaD * getTimeStep());
-  temp_q_vel_ = alpha;
+  //temp_q_vel_ = alpha;
+  //temp_q_vel_ = (alpha + alphaD * getTimeStep());
+  robotJointVel_ = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
+  Eigen::VectorXd alphaD = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alphaD);
   // eeV_ = osdPtr_->getJacobian(getImpactBody()) *  temp_q_vel_;
-  eeV_ = getJacobian() * temp_q_vel_;
+  eeV_ = getJacobian() * getJointVel();
 
   contactVel_ = tempProjector * eeV_;
   /*

@@ -38,17 +38,20 @@ public:
                  // const std::shared_ptr<mi_osd> & osdPtr,
                  const std::string & iBodyName,
                  const Eigen::Vector3d & inertial_surfaceNormal,
+                 bool useBodyJacobian = true,
                  double iDuration = 0.005,
                  double timeStep = 0.005,
                  double coeF = 0.2,
                  double coeR = 0.8,
                  int dim = 3)
-  : simRobot_(simRobot), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal),
+  : simRobot_(simRobot), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal), useBodyJacobian_(useBodyJacobian),
     impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
   {
+    int dof = simRobot_.mb().nrDof();
     jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getImpactBody());
-    jacobian_.resize(getDim(), simRobot_.mb().nrDof());
+    jacobian_.resize(getDim(), dof);
     inertial_surfaceNormal_.normalize();
+    robotJointVel_.resize(dof);
   }
 
   ~mi_impactModel() {}
@@ -91,7 +94,7 @@ public:
   }
   inline const Eigen::VectorXd & getJointVel() const
   {
-    return temp_q_vel_;
+    return robotJointVel_;
   }
 
   /** Predict the impact-induced state jumps based on the internal update.
@@ -117,6 +120,10 @@ public:
   {
     return contactVel_;
   }
+  inline bool useBodyJacobian() const
+  {
+    return useBodyJacobian_; 
+  }
 
 private:
   const mc_rbdyn::Robot & simRobot_;
@@ -131,6 +138,8 @@ private:
   ///< This is the impact normal direction in the inertial frame
   Eigen::Vector3d inertial_surfaceNormal_;
 
+  bool useBodyJacobian_ = true;
+
   double impactDuration_;
   double timeStep_;
   double coeFrictionDeduction_;
@@ -142,7 +151,7 @@ private:
   Eigen::VectorXd deltaV_ = Eigen::VectorXd::Zero(3);
   Eigen::VectorXd eeV_ = Eigen::VectorXd::Zero(3);
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3, 3);
-  Eigen::VectorXd temp_q_vel_;
+  Eigen::VectorXd robotJointVel_;
   Eigen::Vector3d local_surfaceNormal_;
   Eigen::Vector3d contactVel_ = Eigen::Vector3d::Zero(3);
 };

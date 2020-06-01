@@ -83,8 +83,9 @@ public:
   /*!
       \param robot reference to the robot model used by the QP
       \param linearJacobian whether use the linear part of the Jacobian?
+      \param bodyJacobian whether use the linear part of the Jacobian?
       */
-  mi_osd(mc_rbdyn::Robot & robot, bool linearJacobian);
+  mi_osd(mc_rbdyn::Robot & robot, bool linearJacobian = true, bool bodyJacobian =true);
 
   ~mi_osd() {}
 
@@ -236,14 +237,21 @@ public:
     return jacobianDim_;
   }
   void printInfo();
-
-private:
-  int robotDof_;
-  bool linearJacobian_;
-  bool useLinearJacobian_() const
+  bool useBodyJacobian() const
+  {
+    return bodyJacobian_;
+  }
+  bool useLinearJacobian() const
   {
     return linearJacobian_;
   }
+private:
+  int robotDof_;
+  bool linearJacobian_;
+  
+
+  bool bodyJacobian_;
+  
   int eeNum_;
   osdDataCache cache_;
   int jacobianDim_;

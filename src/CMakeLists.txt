@@ -6,12 +6,13 @@ set(mc_impact_predictor_src
   mi_invOsdEquality.cpp
   mi_iniEquality.cpp
   mi_impactModel.cpp
+  mi_balance.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
-target_link_libraries(mc_impact_predictor mc_rtc::mc_control)
-target_link_libraries(mc_impact_predictor eigen-lssol::eigen-lssol)
-pkg_config_use_dependency(mc_impact_predictor nlopt)
+target_link_libraries(mc_impact_predictor PUBLIC mc_rtc::mc_rbdyn)
+target_link_libraries(mc_impact_predictor PUBLIC eigen-lssol::eigen-lssol)
+target_link_libraries(mc_impact_predictor PRIVATE nlopt::nlopt)
 
 install(
     DIRECTORY ${CMAKE_SOURCE_DIR}/include/

@@ -29,10 +29,15 @@
 //# include <Eigen/QR>
 #include <mc_rbdyn/Robots.h>
 
+#include <mc_control/fsm/Controller.h>
+
+#include <RBDyn/Momentum.h>
+
 #include "mi_impactModel.h"
 #include "mi_iniEquality.h"
 #include "mi_invOsdEquality.h"
 #include "mi_jsdEquality.h"
+#include "mi_balance.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 
@@ -42,26 +47,13 @@
 namespace mc_impact
 {
 
-#ifndef COLOUR_PRINT 
-#define COLOUR_PRINT 
-const std::string red("\033[0;31m");
-const std::string green("\033[1;32m");
-const std::string yellow("\033[1;33m");
-const std::string cyan("\033[0;36m");
-const std::string magenta("\033[0;35m");
-const std::string reset("\033[0m");
-# endif
-
-
-
-
 class mi_qpEstimator
 {
 public:
   mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
                  const std::shared_ptr<mi_osd> osdPtr,
                  const struct qpEstimatorParameter params);
-  ~mi_qpEstimator() {}
+  ~mi_qpEstimator();
   void update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
   void update();
 
@@ -110,11 +102,11 @@ public:
   {
     return impactModels_;
   }
-  inline const qpEstimatorParameter & getEstimatorParams()
+  inline const qpEstimatorParameter & getEstimatorParams() const
   {
     return params_;
   }
-  inline const std::shared_ptr<mi_osd> & getOsd() const
+  inline const std::shared_ptr<mi_osd> getOsd() const
   {
     return osdPtr_;
   }
@@ -138,14 +130,66 @@ public:
   {
     return solverTime_; 
   }
+  inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
+  {
+  
+    if(hostCtlPtr_ == nullptr)
+    {
+      hostCtlPtr_ = ctlPtr;
+    }else{
+      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name + " is already set!");
+    }
+  }
 
+  /*! \brief Add the GUI entries
+   *   Require to set the host fsm controller first
+   **/
+  void addMcRtcGuiItems();
 
+  /*! \brief Add the log entries
+   *   Require to set the host fsm controller first
+   **/
+  void logImpulseEstimations();
+
+  inline double getObj() const
+  {
+   return objectiveValue_; 
+  }
+
+  inline std::shared_ptr<rbd::CentroidalMomentumMatrix> getCmm() const
+  {
+    return cmmPtr_;
+  }
 private:
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
   endEffector & getEndeffector_(const std::string & name);
   qpEstimatorParameter params_;
   void update_();
+
+  std::vector<std::string> guiEntries_;
+  std::vector<std::string> logEntries_;
+  void removeImpulseEstimations_();
+  void removeMcRtcGuiItems();
+  mc_control::fsm::Controller * hostCtlPtr_ = nullptr;
+
+  std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr_;
+  inline mc_control::fsm::Controller * getHostCtl_()
+  {
+    if(hostCtlPtr_ != nullptr)
+    {
+      return hostCtlPtr_; 
+    }else{
+      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name + " is not set!");
+    }
+  }
+
+  void updateObjective_(const int & choice);
+  // Minimize the equations of motion error: M*\Delta_q_dot = \sum J^\top impulse 
+  void eomQ_();
+
+  // Minimize the Centroidal-momentum jump: (cmmMatrix*\Delta_q_dot)^2
+  void cmmQ_();
 
   bool osdContactEe_(const std::string & eeName);
   void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
@@ -166,16 +210,28 @@ private:
 
   Eigen::VectorXd p_;
 
+  double objectiveValue_ = 0.0;
+
   Eigen::VectorXd xl_, xu_;
   Eigen::LSSOL_QP solver_;
 
   std::vector<std::shared_ptr<mi_equality>> eqConstraints_;
+
+  void solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
+                  const Eigen::VectorXd & p_,
+                  const Eigen::MatrixXd & C_,
+                  const Eigen::VectorXd & cu_,
+                  Eigen::VectorXd & solution);
+
 
   void solveEqQp_(const Eigen::MatrixXd & Q_,
                   const Eigen::VectorXd & p_,
                   const Eigen::MatrixXd & C_,
                   const Eigen::VectorXd & cu_,
                   Eigen::VectorXd & solution);
+
+  void readEeJacobiansSolution_(const Eigen::VectorXd & solutionVariables);
+  void calcPerturbedWrench_();
 
   inline int getNumVar_() const
   {
@@ -197,7 +253,7 @@ private:
   std::vector<Eigen::MatrixXd> vector_A_dagger_;
   Eigen::MatrixXd tempInv_;
 
-  double  solverTime_;
+  double solverTime_;
   double structTime_;
 };
 } // namespace mc_impact
