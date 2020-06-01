@@ -12,16 +12,27 @@ void mi_impactModel::update(const Eigen::Vector3d & surfaceNormal)
 void mi_impactModel::update()
 {
 
-  sva::PTransformd X_0_ee = simRobot_.bodyPosW(getImpactBody());
-  local_surfaceNormal_ = X_0_ee.rotation() * inertial_surfaceNormal_;
-  local_surfaceNormal_.normalize();
+  if(useBodyJacobian())
+  {
+    sva::PTransformd X_0_ee = simRobot_.bodyPosW(getImpactBody());
+    local_surfaceNormal_ = X_0_ee.rotation() * inertial_surfaceNormal_;
+    local_surfaceNormal_.normalize();
+  }
+  else{
+    local_surfaceNormal_ = inertial_surfaceNormal_;
+  }
   update_();
 }
 
 void mi_impactModel::updateJacobian_()
 {
+  Eigen::MatrixXd tempJacobian;
 
-  Eigen::MatrixXd tempJacobian = jacPtr_->bodyJacobian(simRobot_.mb(), simRobot_.mbc());
+  if(useBodyJacobian()){
+    tempJacobian  = jacPtr_->bodyJacobian(simRobot_.mb(), simRobot_.mbc());
+  }else{
+    tempJacobian  = jacPtr_->jacobian(simRobot_.mb(), simRobot_.mbc());
+  }
 
   jacPtr_->fullJacobian(simRobot_.mb(), tempJacobian.block(3, 0, 3, tempJacobian.cols()), jacobian_);
 }

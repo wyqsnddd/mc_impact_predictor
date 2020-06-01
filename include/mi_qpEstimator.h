@@ -10,6 +10,8 @@
 
 #include <mc_control/fsm/Controller.h>
 
+#include <RBDyn/Momentum.h>
+
 #include "mi_impactModel.h"
 #include "mi_iniEquality.h"
 #include "mi_invOsdEquality.h"
@@ -133,6 +135,10 @@ public:
    return objectiveValue_; 
   }
 
+  inline std::shared_ptr<rbd::CentroidalMomentumMatrix> getCmm() const
+  {
+    return cmmPtr_;
+  }
 private:
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
@@ -146,6 +152,7 @@ private:
   void removeMcRtcGuiItems();
   mc_control::fsm::Controller * hostCtlPtr_ = nullptr;
 
+  std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr_;
   inline mc_control::fsm::Controller * getHostCtl_()
   {
     if(hostCtlPtr_ != nullptr)
@@ -157,7 +164,11 @@ private:
   }
 
   void updateObjective_(const int & choice);
-  void constructQ_(const int & choice);
+  // Minimize the equations of motion error: M*\Delta_q_dot = \sum J^\top impulse 
+  void eomQ_();
+
+  // Minimize the Centroidal-momentum jump: (cmmMatrix*\Delta_q_dot)^2
+  void cmmQ_();
 
   bool osdContactEe_(const std::string & eeName);
   void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);

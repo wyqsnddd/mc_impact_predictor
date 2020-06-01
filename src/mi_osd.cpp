@@ -5,11 +5,11 @@ namespace mc_impact
 
 mi_osd::mi_osd(mc_rbdyn::Robot & robot,
                //    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
-               bool linearJacobian)
-: robot_(robot), computationTime_(0.0) //, FDPtr_(fdPtr) // robotPtr_(robotPtr),
+               bool linearJacobian,
+               bool bodyJacobian)
+: robot_(robot), linearJacobian_(linearJacobian), bodyJacobian_(bodyJacobian), computationTime_(0.0) //, FDPtr_(fdPtr) // robotPtr_(robotPtr),
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
-  linearJacobian_ = linearJacobian;
   // Initilize the forward dynamics:
   FDPtr_ = std::make_shared<rbd::ForwardDynamics>(getRobot().mb());
 
@@ -37,7 +37,7 @@ mi_osd::mi_osd(mc_rbdyn::Robot & robot,
 
   // assert(mRows == mCols);
 
-  if(useLinearJacobian_())
+  if(useLinearJacobian())
   {
     jacobianDim_ = 3;
     // jacobianDim_ = 1;
@@ -153,14 +153,26 @@ void mi_osd::updateCache_()
     // int ii = it->second.second;
     int ii = it->second.containerIndex;
 
-    Eigen::MatrixXd tempJacobian = it->second.jacPtr->bodyJacobian(getRobot().mb(), getRobot().mbc());
-    Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->bodyJacobianDot(getRobot().mb(), getRobot().mbc());
+    Eigen::MatrixXd tempJacobian;
+    Eigen::MatrixXd tempJacobianDot;
+    if(useBodyJacobian()){
+       tempJacobian = it->second.jacPtr->bodyJacobian(getRobot().mb(), getRobot().mbc());
+       tempJacobianDot = it->second.jacPtr->bodyJacobianDot(getRobot().mb(), getRobot().mbc());
+    }else{
+       tempJacobian = it->second.jacPtr->jacobian(getRobot().mb(), getRobot().mbc());
+       tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
+
+    }
+
+    //Eigen::MatrixXd tempJacobian = it->second.jacPtr->jacobian(getRobot().mb(), getRobot().mbc());
+    //Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
+
 
     Eigen::MatrixXd tempFullJacobian, tempFullJacobianDot;
     tempFullJacobian.resize(getJacobianDim(), getDof());
     tempFullJacobianDot.resize(getJacobianDim(), getDof());
 
-    if(useLinearJacobian_())
+    if(useLinearJacobian())
     {
       it->second.jacPtr->fullJacobian(getRobot().mb(), tempJacobian.block(3, 0, 3, tempJacobian.cols()),
                                       tempFullJacobian);

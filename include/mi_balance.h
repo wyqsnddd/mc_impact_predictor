@@ -31,7 +31,9 @@ public:
       */
   mi_balance(
 		  const std::shared_ptr<mi_osd> osdPtr,
-		  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels
+		  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+		  const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr
+
 		  );
 
   ~mi_balance() {}
@@ -56,6 +58,11 @@ public:
    */
   Eigen::MatrixXd forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference = Eigen::Vector3d::Zero());
   
+  
+  inline std::shared_ptr<rbd::CentroidalMomentumMatrix> getCmm() const
+  {
+    return cmmPtr_;
+  }
 
 private:
 

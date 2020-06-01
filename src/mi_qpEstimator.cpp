@@ -9,12 +9,16 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 : simRobot_(simRobot), osdPtr_(osdPtr), params_(params), solverTime_(0), structTime_(0.0)
 {
 	
+  // (0) Initialize the centroidal momentum calculator
+  //cmmPtr_ ->sComputeMatrix(osdPtr_->getRobot().mb(), osdPtr_->getRobot().mbc(), osdPtr_->getRobot().com());
+
+  cmmPtr_ = std::make_shared<rbd::CentroidalMomentumMatrix>(osdPtr_->getRobot().mb());
   // (1) initilize the Impact models
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
   {
     impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>(
-        getSimRobot(), idx->first, idx->second, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction,
+        getSimRobot(), idx->first, idx->second, params_.impactModelBodyJacobian, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction,
         params_.coeRes, params_.dim);
   }
   // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
@@ -49,7 +53,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   if(params_.useImpulseBalance)
     eqConstraints_.emplace_back(
-        std::make_shared<mc_impact::mi_balance>(getOsd(), getImpactModels()));
+        std::make_shared<mc_impact::mi_balance>(getOsd(), getImpactModels(), cmmPtr_));
 
 
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
@@ -291,7 +295,40 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
   update_();
 }
 
-void mi_qpEstimator::constructQ_(const int & choice)
+void mi_qpEstimator::cmmQ_()
+{ 
+  
+  int dim = getOsd()->getJacobianDim();
+  Eigen::MatrixXd tempA;
+  tempA.resize(6, getDof() + dim*getEeNum());
+  tempA.setZero();
+
+  // Directly get the cmm matrix as the constraints has been updated already. 
+  
+  const Eigen::MatrixXd &  cmmMatrix = cmmPtr_->matrix();
+  tempA.block(0 , 0, 6, getDof()) = cmmMatrix;
+
+  // Go through the contact bodies:
+  for(auto & ee:getOsd()->getContactEes())
+  {
+    int eeIndex = getOsd()->nameToIndex_(ee);
+    tempA.block(0, getDof() + eeIndex * dim, 6, dim).setIdentity(); 
+    //tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
+  }
+  // Go through the impact bodies:
+  for(auto & impactModel : impactModels_) 
+  {
+    int eeIndex = getOsd()->nameToIndex_(impactModel.first);
+
+    tempA.block(0, getDof() + eeIndex* dim, 6, dim).setIdentity();
+    //tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = getOsd()->getJacobian(impactModel.first);
+  }
+
+
+  Q_ = tempA.transpose()*tempA + Eigen::MatrixXd::Identity(getDof() + dim*getEeNum(), getDof() + dim*getEeNum())*0.05;
+
+}
+void mi_qpEstimator::eomQ_()
 { 
   
   // The spatial vector case is not defined.
@@ -299,15 +336,27 @@ void mi_qpEstimator::constructQ_(const int & choice)
 
   Eigen::MatrixXd tempA;
   tempA.resize(getDof(), getDof() + dim*getEeNum());
+  tempA.setZero();
 
   tempA.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix();
-  
+
+  // Go through all the end-effectors
+  /*
+  for(auto & ee:getOsd()->getEes())
+  {
+
+    int eeIndex = getOsd()->nameToIndex_(ee);
+    tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = - getOsd()->getJacobian(ee).transpose();
+  }
+  */
+
   // Go through the contact bodies:
   for(auto & ee:getOsd()->getContactEes())
   {
 
     int eeIndex = getOsd()->nameToIndex_(ee);
     tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = - getOsd()->getJacobian(ee).transpose();
+    //tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
   }
 
   // Go through the impact bodies:
@@ -315,10 +364,12 @@ void mi_qpEstimator::constructQ_(const int & choice)
   {
     int eeIndex = getOsd()->nameToIndex_(impactModel.first);
 
-    tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = - getOsd()->getJacobian(impactModel.first);
+    tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = - getOsd()->getJacobian(impactModel.first).transpose();
+    //tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = getOsd()->getJacobian(impactModel.first);
   }
 
-  Q_ = tempA.transpose()*tempA;
+  Q_ = tempA.transpose()*tempA + Eigen::MatrixXd::Identity(getDof() + dim*getEeNum(), getDof() + dim*getEeNum())*0.05;
+
 
 }
 void mi_qpEstimator::updateObjective_(const int & choice)
@@ -327,17 +378,18 @@ void mi_qpEstimator::updateObjective_(const int & choice)
 
   switch(choice)
 	{
-	// Default: Minimize sum of momentum
+	// Default: Minimize sum of momentum: (M*\Delta_q_dot)^2 + \sum impulse 
 	case 0:
-	  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix().transpose() * getOsd()->getMassMatrix();
+	  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix().transpose() * getOsd()->getMassMatrix() + Eigen::MatrixXd::Identity(getDof(), getDof())*0.01;
+
 	  break;
-	// Momentum conservation using spatial-Jacobian
+	// Minimize centroidal momentum jump;
 	case 1:
-	  constructQ_(choice);
+	  cmmQ_();
 	  break;
-	  // Momentum conservation using body-Jacobian
+	// Minimize the equations-of-motion error: M*\Delta_q_dot = \sum J^\top impulse 
 	case 2:
-	  constructQ_(choice);
+	  eomQ_();
 	  break;
 
 	  // Exception
@@ -351,6 +403,9 @@ void mi_qpEstimator::updateObjective_(const int & choice)
 }
 void mi_qpEstimator::update_()
 {
+
+  // Update the CMM matrix
+  cmmPtr_ ->sComputeMatrix(osdPtr_->getRobot().mb(), osdPtr_->getRobot().mbc(), osdPtr_->getRobot().com());
 
   auto startStruct = std::chrono::high_resolution_clock::now();
   int count = 0;

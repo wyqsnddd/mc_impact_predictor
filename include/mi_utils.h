@@ -26,11 +26,14 @@ struct qpEstimatorParameter
   // std::vector<std::string> impactBodyNames={"r_wrist"};
   std::map<std::string, Eigen::Vector3d> impactNameAndNormals;
   double impactDuration = 0.005;
+  double qWeightLambda = 0.005;
   double timeStep = 0.005;
   double coeFrictionDeduction = 0.2;
   double coeRes = 0.8;
   int dim = 3;
   bool useLagrangeMultiplier = false;
+  bool impactModelBodyJacobian = true;
+  bool osdBodyJacobian = true;
   bool useJsd = false;
   bool useOsd = false;
   bool useImpulseBalance= false;

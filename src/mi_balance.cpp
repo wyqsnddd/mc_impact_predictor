@@ -4,8 +4,9 @@ namespace mc_impact{
 
 mi_balance::mi_balance(
 		const std::shared_ptr<mi_osd> osdPtr,
-		const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels
-		): mi_equality(osdPtr), impactModels_(impactModels)
+		const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+		const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr
+		): mi_equality(osdPtr), impactModels_(impactModels), cmmPtr_(cmmPtr)
 {
 
   reset_();
@@ -65,17 +66,52 @@ Eigen::MatrixXd mi_balance::forceGraspMatrix(const std::string eeName, const Eig
    graspMatrx.resize(6, 3);
    graspMatrx.setZero();
 
+  // Transform of the endEffector.
   auto X_0_c = getOsd_()->getRobot().bodyPosW(eeName);
 
-  auto rotationTranspose = X_0_c.rotation();
-
+  // R_0_pi
+  auto rotation= X_0_c.rotation();
+  // P_pi_com   
   auto translation = X_0_c.translation() - reference;
 
-  graspMatrx.block<3, 3>(0, 0) = rotationTranspose; 
 
-  graspMatrx.block<3, 3>(3, 0) = -rotationTranspose * crossMatrix(translation);
+  // Old-implementation:
+  //auto rotationTranspose = X_0_c.rotation().transpose();
+  //auto translation = X_0_c.translation() - reference;
 
-  return graspMatrx;
+  if(getOsd_()->useBodyJacobian()){
+  // the impulse(force) are aligned in the local frame
+  
+    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation)* rotation;
+    graspMatrx.block<3, 3>(3, 0) = rotation; 
+
+    // Old-implementation:
+   // graspMatrx.block<3, 3>(3, 0) = rotationTranspose; 
+    //graspMatrx.block<3, 3>(0, 0) = -rotationTranspose * crossMatrix(translation);
+  }else{
+   // the impulse(force) are aligned to the inertial frame
+    
+    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation);
+    graspMatrx.block<3, 3>(3, 0).setIdentity();
+
+    // Old-implementation:
+    //graspMatrx.block<3, 3>(3, 0).setIdentity();
+    //graspMatrx.block<3, 3>(0, 0) = - crossMatrix(translation);
+  }
+  /*
+  if(getOsd_()->useBodyJacobian()){
+  // the impulse(force) are aligned in the local frame
+    graspMatrx.block<3, 3>(0, 0) = rotationTranspose; 
+
+    graspMatrx.block<3, 3>(3, 0) = -rotationTranspose * crossMatrix(translation);
+  }else{
+   // the impulse(force) are aligned to the inertial frame
+    graspMatrx.block<3, 3>(0, 0).setIdentity();
+
+    graspMatrx.block<3, 3>(3, 0) = - crossMatrix(translation);
+  }
+  */
+    return graspMatrx;
 
 }
 
@@ -87,12 +123,13 @@ void mi_balance::update()
 
   // (0) Fill the centroidal momentum matrix
   
-  cmmPtr_ ->computeMatrix(getOsd_()->getRobot().mb(), getOsd_()->getRobot().mbc(), getOsd_()->getRobot().com());
+  cmmPtr_ ->sComputeMatrix(getOsd_()->getRobot().mb(), getOsd_()->getRobot().mbc(), getOsd_()->getRobot().com());
 
   const Eigen::MatrixXd &  cmmMatrix = cmmPtr_->matrix();
 
 
   A_.block(0, 0, 6, dof) = cmmMatrix; 
+  //std::cout<<red<<"The CMM matrix is: "<<std::endl<< cyan<<cmmMatrix<<reset<<std::endl;
 
     // (1) Fill the contact:
 
