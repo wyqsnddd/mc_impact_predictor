@@ -1,3 +1,24 @@
+/* Copyright 2019 CNRS-UM LIRMM
+ *
+ * \author Yuquan Wang, Arnaud Tanguy 
+ *
+ * 
+ *
+ * mc_impact_predictor is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public License as
+ * published by the Free Software Foundation, either version 3 of the License,
+ * or (at your option) any later version.
+ *
+ * mc_impact_predictor is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU Lesser
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with mc_impact_predictor. If not, see
+ * <http://www.gnu.org/licenses/>.
+ */
+
 #include "mi_qpEstimator.h"
 
 namespace mc_impact
@@ -368,43 +389,41 @@ void mi_qpEstimator::update_()
   */
   // jacobianDeltaAlpha_ = A_dagger_.block(0, 0, getDof(), 3);
   // jacobianDeltaTau_ = jacobianDeltaTau_*tempJac;
-/* 
-  for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
-  {
-    idx->second.perturbedWrench.vector().setZero();
-
-    for(auto ii = endEffectors_.begin(); ii != endEffectors_.end(); ++ii)
+  /*
+    for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
     {
-      if(ii==idx)
-  continue;
-      sva::PTransformd X_0_ii = getSimRobot().bodyPosW(ii->first);
-      sva::PTransformd X_0_idx = getSimRobot().bodyPosW(idx->first);
-      sva::PTransformd X_ii_idx = X_0_idx*X_0_ii.inv();
-      sva::ForceVecd tempWrench;
-      tempWrench.force().setZero();
-      tempWrench.force() = ii->second.estimatedAverageImpulsiveForce;
-      tempWrench.couple().setZero();
+      idx->second.perturbedWrench.vector().setZero();
 
-      idx->second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
+      for(auto ii = endEffectors_.begin(); ii != endEffectors_.end(); ++ii)
+      {
+        if(ii==idx)
+    continue;
+        sva::PTransformd X_0_ii = getSimRobot().bodyPosW(ii->first);
+        sva::PTransformd X_0_idx = getSimRobot().bodyPosW(idx->first);
+        sva::PTransformd X_ii_idx = X_0_idx*X_0_ii.inv();
+        sva::ForceVecd tempWrench;
+        tempWrench.force().setZero();
+        tempWrench.force() = ii->second.estimatedAverageImpulsiveForce;
+        tempWrench.couple().setZero();
+
+        idx->second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
+
+      }
+
 
     }
 
+   */
 
-  }
-
- */ 
-
-  for(auto & idx: endEffectors_)
+  for(auto & idx : endEffectors_)
   {
     idx.second.perturbedWrench.force().setZero();
     idx.second.perturbedWrench.couple().setZero();
 
-    for(auto & ii:getImpactModels())
+    for(auto & ii : getImpactModels())
     {
-      if(ii.first == idx.first )
-	      continue;
+      if(ii.first == idx.first) continue;
 
-      
       sva::PTransformd X_ii_idx = getSimRobot().bodyPosW(ii.first).inv();
 
       sva::ForceVecd tempWrench;
@@ -412,14 +431,12 @@ void mi_qpEstimator::update_()
       tempWrench.force() = getEndeffector(ii.first).estimatedAverageImpulsiveForce;
       tempWrench.couple().setZero();
 
-      idx.second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
-
+      idx.second.perturbedWrench += X_ii_idx.dualMul(tempWrench);
     }
 
-    //std::cout<<"qpEstimator: The converted wrench of "<<idx.first<<" is: "<< idx.second.perturbedWrench.vector().transpose()<<std::endl;
-
+    // std::cout<<"qpEstimator: The converted wrench of "<<idx.first<<" is: "<<
+    // idx.second.perturbedWrench.vector().transpose()<<std::endl;
   }
-
 }
 
 const endEffector & mi_qpEstimator::getEndeffector(const std::string & name)
@@ -489,11 +506,10 @@ bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fr
   tempJ.resize(getEstimatorParams().dim, getDof());
   tempJ.setZero();
 
-  
   sva::ForceVecd tempWrench;
   tempWrench.force().setZero();
   tempWrench.couple().setZero();
-  
+
   int eeIndex = 0;
 
   if(fromOsdModel)
