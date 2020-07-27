@@ -50,6 +50,7 @@ public:
     int dof = simRobot_.mb().nrDof();
     jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getImpactBody());
     jacobian_.resize(getDim(), dof);
+    jacobianDot_.resize(getDim(), dof);
     inertial_surfaceNormal_.normalize();
     robotJointVel_.resize(dof);
   }
@@ -88,6 +89,18 @@ public:
   {
     return deltaV_;
   }
+
+  /*! 
+   * @return P*(J + J_dot*dt)
+   */
+  inline const Eigen::MatrixXd & getProjectorTwo() const
+  {
+    return reductionProjectorTwo_;
+  }
+
+  /*! 
+   * @return P*J
+   */
   inline const Eigen::MatrixXd & getProjector() const
   {
     return reductionProjector_;
@@ -112,6 +125,10 @@ public:
     return local_surfaceNormal_;
   }
 
+  inline const Eigen::MatrixXd & getJacobianDot()
+  {
+    return jacobianDot_;
+  }
   inline const Eigen::MatrixXd & getJacobian()
   {
     return jacobian_;
@@ -132,6 +149,7 @@ private:
   std::shared_ptr<rbd::Jacobian> jacPtr_;
   void updateJacobian_();
   Eigen::MatrixXd jacobian_;
+  Eigen::MatrixXd jacobianDot_;
 
   std::string impactBodyName_;
 
@@ -151,6 +169,7 @@ private:
   Eigen::VectorXd deltaV_ = Eigen::VectorXd::Zero(3);
   Eigen::VectorXd eeV_ = Eigen::VectorXd::Zero(3);
   Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3, 3);
+  Eigen::MatrixXd reductionProjectorTwo_ = Eigen::MatrixXd::Zero(3, 3);
   Eigen::VectorXd robotJointVel_;
   Eigen::Vector3d local_surfaceNormal_;
   Eigen::Vector3d contactVel_ = Eigen::Vector3d::Zero(3);

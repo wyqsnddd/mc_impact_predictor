@@ -71,7 +71,10 @@ public:
   {
     return params_.Qweight;
   }
-
+  inline const Eigen::MatrixXd & getJacobianTwoDeltaAlpha()
+  {
+    return jacobianTwoDeltaAlpha_;
+  }
   inline const Eigen::MatrixXd & getJacobianDeltaAlpha()
   {
     return jacobianDeltaAlpha_;
@@ -249,6 +252,7 @@ private:
   Eigen::VectorXd jointVelJump_, tauJump_;
 
   Eigen::MatrixXd jacobianDeltaAlpha_;
+  Eigen::MatrixXd jacobianTwoDeltaAlpha_;
   Eigen::MatrixXd jacobianDeltaTau_;
   std::vector<Eigen::MatrixXd> vector_A_dagger_;
   Eigen::MatrixXd tempInv_;

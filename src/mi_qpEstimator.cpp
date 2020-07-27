@@ -158,6 +158,11 @@ void mi_qpEstimator::initializeQP_()
 
   jacobianDeltaAlpha_.resize(getDof(), getDof());
   jacobianDeltaAlpha_.setZero();
+
+  jacobianTwoDeltaAlpha_.resize(getDof(), getDof());
+  jacobianTwoDeltaAlpha_.setZero();
+
+
   jacobianDeltaTau_.resize(getDof(), getDof());
   jacobianDeltaTau_.setZero();
 
@@ -508,6 +513,7 @@ void mi_qpEstimator::update_()
     for(auto impactIdx = impactModels_.begin(); impactIdx != impactModels_.end(); ++impactIdx, ++iiA)
     {
       jacobianDeltaAlpha_ = vector_A_dagger_[iiA].block(0, 0, getDof(), 3) * impactIdx->second->getProjector();
+      jacobianTwoDeltaAlpha_ = vector_A_dagger_[iiA].block(0, 0, getDof(), 3) * impactIdx->second->getProjectorTwo();
     }
   }
 

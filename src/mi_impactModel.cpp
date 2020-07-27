@@ -48,14 +48,19 @@ void mi_impactModel::update()
 void mi_impactModel::updateJacobian_()
 {
   Eigen::MatrixXd tempJacobian;
+  Eigen::MatrixXd tempJacobianDot;
 
   if(useBodyJacobian()){
     tempJacobian  = jacPtr_->bodyJacobian(simRobot_.mb(), simRobot_.mbc());
+    tempJacobianDot  = jacPtr_->bodyJacobianDot(simRobot_.mb(), simRobot_.mbc());
   }else{
     tempJacobian  = jacPtr_->jacobian(simRobot_.mb(), simRobot_.mbc());
+    tempJacobianDot  = jacPtr_->jacobianDot(simRobot_.mb(), simRobot_.mbc());
   }
 
   jacPtr_->fullJacobian(simRobot_.mb(), tempJacobian.block(3, 0, 3, tempJacobian.cols()), jacobian_);
+
+  jacPtr_->fullJacobian(simRobot_.mb(), tempJacobianDot.block(3, 0, 3, tempJacobian.cols()), jacobianDot_);
 }
 
 void mi_impactModel::update_()
@@ -79,6 +84,8 @@ void mi_impactModel::update_()
 
   // reductionProjector_ = tempReductionProjector*osdPtr_->getJacobian(getImpactBody());
   reductionProjector_ = tempReductionProjector * getJacobian();
+  reductionProjectorTwo_ = reductionProjector_ + tempReductionProjector * getJacobianDot() * getTimeStep();
+
 
   //Eigen::VectorXd alpha = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
   //Eigen::VectorXd alphaD = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alphaD);
