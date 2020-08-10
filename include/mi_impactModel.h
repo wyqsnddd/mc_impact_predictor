@@ -28,6 +28,8 @@
 #include <Eigen/StdVector>
 #include <iostream>
 
+#include <FIDynamics/TwoDimModel/TwoDimModel.h>
+
 namespace mc_impact
 {
 
