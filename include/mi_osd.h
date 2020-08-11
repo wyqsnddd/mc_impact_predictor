@@ -247,15 +247,15 @@ public:
   }
 private:
   int robotDof_;
-  bool linearJacobian_;
-  
-
-  bool bodyJacobian_;
-  
   int eeNum_;
   osdDataCache cache_;
   int jacobianDim_;
   mc_rbdyn::Robot & robot_;
+
+  bool linearJacobian_;
+  bool bodyJacobian_;
+  
+
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
 
   std::vector<std::string> contactEndeffectors_; ///< end-effectors with established contact.

@@ -283,7 +283,7 @@ bool mi_osd::addEndeffector_(std::string eeName)
           std::make_pair(std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName), cache_.jacobians.size());
   */
 
-  cache_.jacobians[eeName] = {cache_.jacobians.size(), // index in the container
+  cache_.jacobians[eeName] = {static_cast<int>(cache_.jacobians.size()), // index in the container
                               std::make_shared<rbd::Jacobian>(getRobot().mb(), eeName)};
   endEffectors_.push_back(eeName);
 
