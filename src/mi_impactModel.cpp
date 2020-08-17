@@ -33,14 +33,14 @@ void mi_impactModel::update(const Eigen::Vector3d & surfaceNormal)
 void mi_impactModel::update()
 {
 
-  if(useBodyJacobian())
+  if(getParams().useBodyJacobian)
   {
-    sva::PTransformd X_0_ee = simRobot_.bodyPosW(getImpactBody());
-    local_surfaceNormal_ = X_0_ee.rotation() * inertial_surfaceNormal_;
+    sva::PTransformd X_0_ee = simRobot_.bodyPosW(getParams().iBodyName);
+    local_surfaceNormal_ = X_0_ee.rotation() * getParams().inertial_surfaceNormal;
     local_surfaceNormal_.normalize();
   }
   else{
-    local_surfaceNormal_ = inertial_surfaceNormal_;
+    local_surfaceNormal_ = getParams().inertial_surfaceNormal;
   }
   update_();
 }
@@ -50,7 +50,7 @@ void mi_impactModel::updateJacobian_()
   Eigen::MatrixXd tempJacobian;
   Eigen::MatrixXd tempJacobianDot;
 
-  if(useBodyJacobian()){
+  if(getParams().useBodyJacobian){
     tempJacobian  = jacPtr_->bodyJacobian(simRobot_.mb(), simRobot_.mbc());
     tempJacobianDot  = jacPtr_->bodyJacobianDot(simRobot_.mb(), simRobot_.mbc());
   }else{
@@ -78,13 +78,14 @@ void mi_impactModel::update_()
 
   // std::cout<<"impactModel: temp projector is: "<<std::endl<<tempReductionProjector<<std::endl;
   // Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes()) * tempProjector + getCoeFricDe() * tempNullProjector);
-  Eigen::Matrix3d tempReductionProjector = -((1 + getCoeRes()) * tempProjector);
+  
+  Eigen::Matrix3d tempReductionProjector = -((1 + getParams().coeR) * tempProjector);
   // reductionProjector_ = -((1 + getCoeRes()) * tempProjector + getCoeFricDe() *
   // tempNullProjector)*osdPtr_->getJacobian(getImpactBody());
 
   // reductionProjector_ = tempReductionProjector*osdPtr_->getJacobian(getImpactBody());
   reductionProjector_ = tempReductionProjector * getJacobian();
-  reductionProjectorTwo_ = reductionProjector_ + tempReductionProjector * getJacobianDot() * getTimeStep();
+  reductionProjectorTwo_ = reductionProjector_ + tempReductionProjector * getJacobianDot() * getParams().timeStep;
 
 
   //Eigen::VectorXd alpha = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);

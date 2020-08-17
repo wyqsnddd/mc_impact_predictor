@@ -13,10 +13,12 @@ set(DOXYGEN_USE_MATHJAX "YES")
 
 include(cmake/base.cmake)
 
-set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 project(${PROJECT_NAME} LANGUAGES CXX VERSION ${PROJECT_VERSION})
 
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMakeModules")
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 add_project_dependency(eigen-lssol REQUIRED)
 add_project_dependency(mc_rtc REQUIRED)
 add_project_dependency(FIDynamics REQUIRED)
@@ -24,5 +26,6 @@ add_project_dependency(FIDynamics REQUIRED)
 find_package(nlopt REQUIRED)
 
 include_directories(include)
+
 add_subdirectory(src)
 

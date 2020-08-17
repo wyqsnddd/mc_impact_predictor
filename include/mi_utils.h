@@ -80,4 +80,20 @@ struct endEffector
   sva::ForceVecd perturbedWrench;
 };
 
+enum class ImpactModelType {OneDimModel, TwoDimModel};
+
+struct ImpactModelParams
+{
+  std::string iBodyName;
+  Eigen::Vector3d inertial_surfaceNormal = Eigen::Vector3d::Zero();
+  bool useBodyJacobian = true;
+  double iDuration = 0.005;
+  double timeStep = 0.005;
+  double coeF = 0.2;
+  double coeR = 0.8;
+  int dim = 3;
+  ImpactModelType impactModel = ImpactModelType::OneDimModel;
+}; // End of the ImpactModelParams.
+
+
 } // namespace mc_impact

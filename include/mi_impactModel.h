@@ -30,35 +30,38 @@
 
 #include <TwoDimModel/TwoDimModel.h>
 
+#include "mi_utils.h"
+#include "ImpactDynamicsModelInterface.h"
+
 namespace mc_impact
 {
 
 class mi_impactModel
+/*!
+ * \brief Interface to the impact dynamics models.
+ */
 {
 public:
   mi_impactModel(const mc_rbdyn::Robot & simRobot,
-                 // const std::shared_ptr<mi_osd> & osdPtr,
-                 const std::string & iBodyName,
-                 const Eigen::Vector3d & inertial_surfaceNormal,
-                 bool useBodyJacobian = true,
-                 double iDuration = 0.005,
-                 double timeStep = 0.005,
-                 double coeF = 0.2,
-                 double coeR = 0.8,
-                 int dim = 3)
-  : simRobot_(simRobot), impactBodyName_(iBodyName), inertial_surfaceNormal_(inertial_surfaceNormal), useBodyJacobian_(useBodyJacobian),
-    impactDuration_(iDuration), timeStep_(timeStep), coeFrictionDeduction_(coeF), coeRes_(coeR), dim_(dim)
+		 const ImpactModelParams & params)
+  : simRobot_(simRobot), params_(params)
   {
     int dof = simRobot_.mb().nrDof();
-    jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getImpactBody());
-    jacobian_.resize(getDim(), dof);
-    jacobianDot_.resize(getDim(), dof);
-    inertial_surfaceNormal_.normalize();
+    jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getParams().iBodyName );
+    jacobian_.resize(getParams().dim, dof);
+    jacobianDot_.resize(getParams().dim, dof);
+    params_.inertial_surfaceNormal.normalize();
     robotJointVel_.resize(dof);
   }
 
   ~mi_impactModel() {}
 
+  const ImpactModelParams & getParams() const
+  {
+    return params_; 
+  }
+
+  /*
   inline int getDim() const
   {
     return dim_;
@@ -83,6 +86,15 @@ public:
   {
     return coeFrictionDeduction_;
   }
+  
+  inline bool useBodyJacobian() const
+  {
+    return useBodyJacobian_; 
+  }
+  
+
+
+*/
   inline const Eigen::VectorXd & getEeVelocity() const
   {
     return eeV_;
@@ -91,7 +103,6 @@ public:
   {
     return deltaV_;
   }
-
   /*! 
    * @return P*(J + J_dot*dt)
    */
@@ -111,7 +122,10 @@ public:
   {
     return robotJointVel_;
   }
-
+  inline const Eigen::Vector3d & getSurfaceNormal()
+  {
+    return local_surfaceNormal_;
+  }
   /** Predict the impact-induced state jumps based on the internal update.
    *
    */
@@ -122,12 +136,8 @@ public:
    * @param surfaceNormal the given impact normal direction
    */
   void update(const Eigen::Vector3d & surfaceNormal);
-  inline const Eigen::Vector3d & getSurfaceNormal()
-  {
-    return local_surfaceNormal_;
-  }
 
-  inline const Eigen::MatrixXd & getJacobianDot()
+    inline const Eigen::MatrixXd & getJacobianDot()
   {
     return jacobianDot_;
   }
@@ -139,13 +149,11 @@ public:
   {
     return contactVel_;
   }
-  inline bool useBodyJacobian() const
-  {
-    return useBodyJacobian_; 
-  }
+  
 
 private:
   const mc_rbdyn::Robot & simRobot_;
+  ImpactModelParams params_;
   // const std::shared_ptr<mi_osd> & osdPtr_;
 
   std::shared_ptr<rbd::Jacobian> jacPtr_;
@@ -153,18 +161,19 @@ private:
   Eigen::MatrixXd jacobian_;
   Eigen::MatrixXd jacobianDot_;
 
-  std::string impactBodyName_;
 
   ///< This is the impact normal direction in the inertial frame
+
+  /*
   Eigen::Vector3d inertial_surfaceNormal_;
-
+  std::string impactBodyName_;
   bool useBodyJacobian_ = true;
-
   double impactDuration_;
   double timeStep_;
   double coeFrictionDeduction_;
   double coeRes_;
   int dim_;
+  */
 
   void update_();
 

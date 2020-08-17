@@ -48,6 +48,9 @@ namespace mc_impact
 {
 
 class mi_qpEstimator
+/*!
+ * \brief Estimates the post-impact state jumps. 
+ */
 {
 public:
   mi_qpEstimator(const mc_rbdyn::Robot & simRobot,

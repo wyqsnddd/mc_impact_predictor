@@ -38,9 +38,17 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
   {
-    impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>(
-        getSimRobot(), idx->first, idx->second, params_.impactModelBodyJacobian, params_.impactDuration, params_.timeStep, params_.coeFrictionDeduction,
-        params_.coeRes, params_.dim);
+    ImpactModelParams params;
+    params.coeF = params_.coeFrictionDeduction;
+    params.iBodyName = idx->first;
+    params.inertial_surfaceNormal = idx->second;
+    params.coeR =  params_.coeRes;
+    params.timeStep =  params_.timeStep;
+    params.iDuration =  params_.impactDuration;
+    params.dim =  params_.dim;
+    params.useBodyJacobian =  params_.impactModelBodyJacobian;
+
+    impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>( getSimRobot(), params);
   }
   // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
   /*
@@ -719,7 +727,7 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
     int location = getEstimatorParams().dim * eeIndex;
 
     // auto & tempEe =  getEndeffector_(*idx);
-    double inv_dt = 1.0 / (getImpactModels().begin()->second->getImpactDuration());
+    double inv_dt = 1.0 / (getImpactModels().begin()->second->getParams().iDuration);
 
     idx->second.estimatedImpulse = solutionVariables.segment(getDof() + location, getEstimatorParams().dim);
 

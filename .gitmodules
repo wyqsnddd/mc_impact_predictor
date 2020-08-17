@@ -1,3 +1,6 @@
 [submodule "cmake"]
 	path = cmake
 	url = https://github.com/jrl-umi3218/jrl-cmakemodules
+[submodule "CMakeModules"]
+	path = CMakeModules
+	url = git@github.com:wyqsnddd/CMakeModules.git
