@@ -1,6 +1,8 @@
 #include <TwoDimModel/TwoDimModel.h>
 #include <VirtualContactPoint/VirtualContactPoint.h>
 #include <VirtualContactPoint/SolveSemiAxes.h>
+
+#include <RBDyn/Momentum.h>
 #include "mi_utils.h"
 
 namespace mc_impact 
@@ -20,6 +22,14 @@ inline const mc_rbdyn::Robot & getRobot()
 {
   return simRobot_;
 }
+
+inline const ImpactModelParams  & getParams()
+{
+  return params_;
+}
+
+virtual void update(const Eigen::Vector3d & impactNormal); 
+virtual void update();
 protected:
 
 const mc_rbdyn::Robot & simRobot_;
@@ -29,6 +39,8 @@ ImpactModelParams params_;
 
 
 class TwoDimModelBridge : public ImpactDynamicsModel
+/*! \brief We always assume the inertial frame
+ */
 {
 public:
 TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
@@ -36,10 +48,18 @@ TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
 
 const Eigen::VectorXd & getPostImpactVel() override;
 
-void update();
+void update(const Eigen::Vector3d & impactNormal) override;
+void update() override;
+
+const FIDynamics::PIParams & getPlanarImpactParams()
+{
+  return piParams_;
+}
+
 protected:
 
-FIDynamics::PIParams params_;
+void updatePlanarImpactParams_();
+FIDynamics::PIParams piParams_;
 
 std::shared_ptr<FIDynamics::TwoDimModel> twoDimModelPtr_;
 
@@ -62,6 +82,8 @@ OneDimModelBridge(const mc_rbdyn::Robot & simRobot,
 		const ImpactModelParams & params);
 
 const Eigen::VectorXd & getPostImpactVel() override;
+
+void update() override;
 
 protected:
 
