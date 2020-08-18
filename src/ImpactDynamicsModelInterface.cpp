@@ -44,23 +44,25 @@ void TwoDimModelBridge::updatePlanarImpactParams_()
 void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal)
 {
 
-  // Compute the whole-body inertia and average velocity
+  // (0) Compute the whole-body inertia and average velocity
   Eigen::Matrix6d centroidalInertia; 
   centroidalInertia.setIdentity();
 
   sva::ForceVecd cm;
   sva::ForceVecd av;
   rbd::computeCentroidalInertiaAndVelocity(getRobot().mb(), getRobot().mbc(), getRobot().com(), centroidalInertia, cm, av);
-  // Update the ssa model
+
+  // (1) Update the ssa model
   
   // Inertia should be the upper corner? check! 
   std::cout<<alarm<< "The centroidal inertia is: " << std::endl << centroidalInertia<< std::endl;
   ssaPtr_->update(getRobot().mass(), centroidalInertia.block<3, 3>(0, 0));
 
-  // Update the vc model
+  // (2) Update the virtual-contact model
   vcParams_.com = getRobot().com();
+  // Use the value from the semi-axes-calculator 
   vcParams_.semiAxesVector << ssaPtr_->getSemiAxes()[0], ssaPtr_->getSemiAxes()[1], ssaPtr_->getSemiAxes()[2];
-
+  // Use the impact body translation
   sva::PTransformd X_0_ee = getRobot().bodyPosW(getParams().iBodyName);
   vcParams_.eePosition = X_0_ee.translation(); 
 
@@ -68,8 +70,11 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal)
   vcParams_.debug = false;
   vcPtr_->update(vcParams_);
 
+  Eigen::Vector3d vc = vcPtr_->getVirtualContactPoint();
+
   // Update the twoDim model
-  
+  piParams_.contactPoint = ? 
+  updatePlanarImpactParams_(
 }
 
 } // End of NameSpace
