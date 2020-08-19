@@ -25,22 +25,19 @@ TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
   piParams_.e = 0.8;
   // Coefficient of friction 
   piParams_.miu = 0.7;
+  rotation_.setZero();
+  rotationFull_.setIdentity();
 
   twoDimModelPtr_.reset(new FIDynamics::TwoDimModel(piParams_));
   std::cout<<green<<"TwoDimModelBridge is created."<<reset<<std::endl;
 }
 
-void TwoDimModelBridge::updatePlanarImpactParams_()
+void TwoDimModelBridge::update( )
 {
-  // How to obtain the planar impact model parameters?  
-  /*
-  params_.tu = ? 
-  params_.nu = ? 
-  params_.contactPoint = ? 
-  */
 
+  // Update with the initial impact normal
+  update(getParams().inertial_surfaceNormal);
 }
-
 void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal)
 {
 
@@ -48,15 +45,23 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal)
   Eigen::Matrix6d centroidalInertia; 
   centroidalInertia.setIdentity();
 
-  sva::ForceVecd cm;
-  sva::ForceVecd av;
+  Eigen::Vector6d cm;
+  Eigen::Vector6d av;
   rbd::computeCentroidalInertiaAndVelocity(getRobot().mb(), getRobot().mbc(), getRobot().com(), centroidalInertia, cm, av);
+  
+  // Assert that the average com velocity is equal to the com velocity
+  assert(mc_impact::areSame(av(3), getRobot().comVelocity()(0)));
+  assert(mc_impact::areSame(av(4), getRobot().comVelocity()(1)));
+  assert(mc_impact::areSame(av(5), getRobot().comVelocity()(2)));
+
+  rAverageAngularVel_ = av.segment<3>(0);
+  rCentroidalInertia_ = centroidalInertia.block<3, 3>(0, 0);
 
   // (1) Update the ssa model
   
   // Inertia should be the upper corner? check! 
-  std::cout<<alarm<< "The centroidal inertia is: " << std::endl << centroidalInertia<< std::endl;
-  ssaPtr_->update(getRobot().mass(), centroidalInertia.block<3, 3>(0, 0));
+  std::cout<<green<< "The centroidal inertia is: " << std::endl << centroidalInertia<< std::endl;
+  ssaPtr_->update(getRobot().mass(), rCentroidalInertia_);
 
   // (2) Update the virtual-contact model
   vcParams_.com = getRobot().com();
@@ -72,9 +77,131 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal)
 
   Eigen::Vector3d vc = vcPtr_->getVirtualContactPoint();
 
-  // Update the twoDim model
-  piParams_.contactPoint = ? 
-  updatePlanarImpactParams_(
+  // (3) Update the twoDim model 
+  updatePiParams_(vcParams_.impactNormal, vc);
+  twoDimModelPtr_->update();
+
+  // (4) Convert the twoDim model solution back to 3D:
+  planarSolutionTo3D_();
+
+}
+
+void TwoDimModelBridge::updatePiParams_(const Eigen::Vector3d & in, const Eigen::Vector3d vc)
+{
+  // (1) Update the normal and tangential unit vectors
+   // Compute the angle
+   double angle = atan2(in.z(), in.y());
+   // Update the 2*3 rotation matrix:
+   rotation_(0,0) = 1.0;
+   rotation_(1,1) = cos(angle);
+   rotationFull_(1,1) = cos(angle);
+   rotation_(1,2) = -sin(angle);
+   rotationFull_(1,2) = -sin(angle);
+
+   rotationFull_(2,1) = sin(angle);
+   rotationFull_(2,2) = cos(angle);
+
+   piParams_.nu = rotation_*in;
+   //Eigen::Vector2d rotatedZ = rotation_*Eigen::Vector3d::UnitZ();
+   piParams_.tu(0) = -piParams_.nu(1);
+   piParams_.tu(1) = piParams_.nu(0);
+
+  // (2) Contact Point: 
+   piParams_.contactPoint = rotation_*vc;
+
+  // (3) Parmams of the bat and the object:
+   switch(getCase_())
+   {
+     case TwoDimModelCase::PushWall:
+	     // Update the parameters using the Push-Wall assumptions
+	     paramUpdatePushWall_();
+	     break;
+     default:
+	  throw std::runtime_error("The assumptions are not set for the TwoDimModelBridge.");
+   }
+  
+}
+
+void TwoDimModelBridge::paramUpdatePushWall_()
+{
+  // Bat is supposed to be the robot:
+  // (1) Robot
+  piParams_.batParams.com = rotation_*getRobot().com(); 
+  piParams_.batParams.mass = getRobot().mass(); 
+  // Get the z-axis diagonal element: 
+  piParams_.batParams.inertia = (rotationFull_*rCentroidalInertia_)(2,2); 
+  // Rotate the com velocity 
+  piParams_.batParams.preVel = rotation_*getRobot().comVelocity();
+  // Get the z-axis average angular velocity:
+  piParams_.batParams.preW = rAverageAngularVel_(2);
+
+  piParams_.batParams.name = "robot";
+  
+  // Object is suppose to be the wall:
+  
+  // (2) Wall
+  piParams_.objectParams.preVel << 0.0, 0.0;
+  piParams_.objectParams.preW = 0.0;
+  piParams_.objectParams.name = "wall";
+
+  // mass and inertia of the wall are set to be infinite.
+  piParams_.objectParams.mass = std::numeric_limits<double>::infinity();
+  piParams_.objectParams.inertia = std::numeric_limits<double>::infinity();
+
+  
+  // com of the wall is set to be the contact point such that r = cp - com == 0.
+  // Suppose that piParams_.contactPoint is already set.
+  piParams_.objectParams.com = piParams_.contactPoint;
+}
+
+void TwoDimModelBridge::planarSolutionTo3DPushWall_()
+{
+  // Convert the post-impact impulse:
+  // The robot applies the impulse "I", thus it receives impulse "-I". 
+  robotPostImpactStates_.impulse = - rotation_.transpose()*twoDimModelPtr_->getSolution().I_r;
+
+  // Convert the post-impact velocities:
+  // robot:
+  robotPostImpactStates_.linearVel = rotation_.transpose()*twoDimModelPtr_->getImpactBodies().first.postVel;
+  robotPostImpactStates_.anguleVel = rAverageAngularVel_;
+  robotPostImpactStates_.anguleVel(2) += twoDimModelPtr_->getImpactBodies().first.postW;
+
+}
+void TwoDimModelBridge::planarSolutionTo3D_()
+{
+  switch(getCase_())
+   {
+     case TwoDimModelCase::PushWall:
+	     // Convert the solution using the Push-Wall assumptions
+	     planarSolutionTo3DPushWall_();
+	     break;
+     default:
+	  throw std::runtime_error("The assumptions are not set for the TwoDimModelBridge.");
+   }
+}
+
+const PostImpactStates & TwoDimModelBridge::getObjectPostImpactStates()
+{
+   switch(getCase_())
+   {
+     case TwoDimModelCase::PushWall:
+	     // In this case the object(wall)  is supposed to be stationary.
+	     throw std::runtime_error("In the PushWall case, the wall is stationary. Thus there is no need to check its post-impact states.");
+     default:
+	  return objectPostImpactStates_; 
+   }
+ }
+
+
+const PostImpactStates & ImpactDynamicsModel::getRobotPostImpactStates()
+{
+   return robotPostImpactStates_; 
+}
+
+
+const PostImpactStates & ImpactDynamicsModel::getObjectPostImpactStates()
+{
+   return objectPostImpactStates_; 
 }
 
 } // End of NameSpace

@@ -22,10 +22,12 @@
 #pragma once
 
 #include <mc_rbdyn/Robots.h>
-
 #include <Eigen/Dense>
 #include <iostream>
 #include <map>
+
+#include <assert.h>  
+#include <limits>
 
 namespace mc_impact
 {
@@ -81,6 +83,7 @@ struct endEffector
 };
 
 enum class ImpactModelType {OneDimModel, TwoDimModel};
+enum class TwoDimModelCase {PushWall};
 
 struct ImpactModelParams
 {
@@ -95,5 +98,10 @@ struct ImpactModelParams
   ImpactModelType impactModel = ImpactModelType::OneDimModel;
 }; // End of the ImpactModelParams.
 
+
+inline bool areSame(double a, double b)
+{
+    return fabs(a - b) < 1e-3;
+}
 
 } // namespace mc_impact
