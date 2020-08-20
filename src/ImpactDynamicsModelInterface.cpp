@@ -60,9 +60,20 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal)
   // (1) Update the ssa model
   
   // Inertia should be the upper corner? check! 
-  std::cout<<green<< "The centroidal inertia is: " << std::endl << centroidalInertia<< std::endl;
+  //std::cout<<green<< "The centroidal inertia is: " << std::endl << centroidalInertia<< std::endl;
   ssaPtr_->update(getRobot().mass(), rCentroidalInertia_);
 
+// clang-format off
+// This is a sample centroidal inertia:
+/*
+   6.50171    0.0572213     0.282871   1.1147e-17  7.68482e-16 -3.81639e-16
+   0.0572213      6.06731       0.1157 -2.58474e-16  3.37024e-17 -3.95517e-16
+   0.282871       0.1157      1.81269  1.94289e-16  1.78677e-16 -1.89735e-17
+   1.8384e-17  2.13371e-16   3.1225e-17      39.0255  9.96488e-17 -1.82363e-16
+   2.75821e-16  5.28301e-17  1.17961e-16  4.28319e-17      39.0255  1.39119e-16
+  -5.89806e-16 -4.02456e-16 -1.10453e-18 -6.34367e-16  2.32848e-16      39.0255
+*/
+// clang-format on
   // (2) Update the virtual-contact model
   vcParams_.com = getRobot().com();
   // Use the value from the semi-axes-calculator 
