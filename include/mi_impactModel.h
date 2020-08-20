@@ -28,10 +28,7 @@
 #include <Eigen/StdVector>
 #include <iostream>
 
-#include <TwoDimModel/TwoDimModel.h>
-
 #include "mi_utils.h"
-#include "ImpactDynamicsModelInterface.h"
 
 namespace mc_impact
 {

@@ -111,6 +111,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   initializeQP_();
   std::cout << "the QP-based impulse estimator is created. " << std::endl;
+
 }
 
 
@@ -585,7 +586,7 @@ endEffector & mi_qpEstimator::getEndeffector_(const std::string & name)
   }
 }
 
-const std::shared_ptr<mc_impact::mi_impactModel> & mi_qpEstimator::getImpactModel(const std::string & eeName)
+const std::shared_ptr<mc_impact::mi_impactModel> mi_qpEstimator::getImpactModel(const std::string & eeName)
 {
   auto idx = impactModels_.find(eeName);
   if(idx != (impactModels_.end()))

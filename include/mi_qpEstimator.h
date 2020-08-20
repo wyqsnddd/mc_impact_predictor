@@ -103,7 +103,7 @@ public:
   const endEffector & getEndeffector(const std::string & name);
   void print() const;
   void print(const std::string & eeName);
-  const std::shared_ptr<mi_impactModel> & getImpactModel(const std::string & eeName);
+  const std::shared_ptr<mi_impactModel> getImpactModel(const std::string & eeName);
   inline const std::map<std::string, std::shared_ptr<mi_impactModel>> & getImpactModels()
   {
     return impactModels_;
@@ -262,5 +262,6 @@ private:
 
   double solverTime_;
   double structTime_;
+
 };
 } // namespace mc_impact
