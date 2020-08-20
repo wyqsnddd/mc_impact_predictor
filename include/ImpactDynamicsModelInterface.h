@@ -35,8 +35,8 @@ inline const ImpactModelParams  & getParams()
   return params_;
 }
 
-virtual void update(const Eigen::Vector3d & impactNormal); 
-virtual void update();
+virtual void update(const Eigen::Vector3d & impactNormal) = 0;
+virtual void update() = 0;
 protected:
 
 const mc_rbdyn::Robot & simRobot_;
