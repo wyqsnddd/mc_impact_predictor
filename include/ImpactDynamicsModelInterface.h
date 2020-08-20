@@ -22,6 +22,8 @@ public:
 ImpactDynamicsModel(const mc_rbdyn::Robot & simRobot,
 		const ImpactModelParams & params);
 
+~ImpactDynamicsModel(){}
+
 virtual const PostImpactStates & getRobotPostImpactStates();
 virtual const PostImpactStates & getObjectPostImpactStates();
 
@@ -57,6 +59,7 @@ public:
 TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
 		const ImpactModelParams & params);
 
+~TwoDimModelBridge(){}
 const PostImpactStates & getObjectPostImpactStates() override;
 
 void update(const Eigen::Vector3d & impactNormal) override;
