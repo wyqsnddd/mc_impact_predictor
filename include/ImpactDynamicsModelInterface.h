@@ -2,6 +2,7 @@
 #include <VirtualContactPoint/VirtualContactPoint.h>
 #include <VirtualContactPoint/SolveSemiAxes.h>
 
+#include <mc_control/fsm/Controller.h>
 #include <RBDyn/Momentum.h>
 #include "mi_utils.h"
 
@@ -37,13 +38,12 @@ inline const ImpactModelParams  & getParams()
   return params_;
 }
 
-virtual void update(const Eigen::Vector3d & impactNormal) = 0;
-virtual void update() = 0;
+virtual void update(const Eigen::Vector3d & impactNormal, const Eigen::Vector3d & impactLinearVel) = 0;
+//virtual void update() = 0;
 protected:
 
 const mc_rbdyn::Robot & simRobot_;
 ImpactModelParams params_;
-
 PostImpactStates robotPostImpactStates_;
 PostImpactStates objectPostImpactStates_;
 
@@ -57,13 +57,14 @@ class TwoDimModelBridge : public ImpactDynamicsModel
 {
 public:
 TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
-		const ImpactModelParams & params);
+		const ImpactModelParams & params,
+		bool useVirtualContact);
 
 ~TwoDimModelBridge(){}
 const PostImpactStates & getObjectPostImpactStates() override;
 
-void update(const Eigen::Vector3d & impactNormal) override;
-void update() override;
+void update(const Eigen::Vector3d & impactNormal, const Eigen::Vector3d & impactLinearVel) override;
+//void update() override;
 
 /*
 inline const Eigen::Vector3d & getImpulse()
@@ -76,13 +77,42 @@ const FIDynamics::PIParams & getPlanarImpactParams()
   return piParams_;
 }
 
+inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
+  {
+  
+    if(hostCtlPtr_ == nullptr)
+    {
+      hostCtlPtr_ = ctlPtr;
+    }else{
+      throw std::runtime_error("The host fsm controller is already set!");
+    }
+  }
+void logImpulseEstimations();
+
+void removeImpulseEstimations();
 protected:
+
+bool useVirtualContact_;
+
+double rotationAngle_;
+
+std::vector<std::string> logEntries_;
+mc_control::fsm::Controller * hostCtlPtr_ = nullptr;
+inline mc_control::fsm::Controller * getHostCtl_()
+  {
+    if(hostCtlPtr_ != nullptr)
+    {
+      return hostCtlPtr_; 
+    }else{
+      throw std::runtime_error("The host fsm controller is not set!");
+    }
+  }
 // Compute the planar impact parameters using 3D data.
 /*!
  * \param in The impact normal
  * \param vc The virtual contact point
  */
-void updatePiParams_(const Eigen::Vector3d & in, const Eigen::Vector3d vc);
+void updatePiParams_(const Eigen::Vector3d & in, const Eigen::Vector3d vc, const Eigen::Vector3d & impactLinearVel);
 FIDynamics::PIParams piParams_;
 
 Eigen::Matrix<double, 2, 3> rotation_;
@@ -116,7 +146,7 @@ inline const TwoDimModelCase & getCase_()
 TwoDimModelCase case_ = TwoDimModelCase::PushWall;
 /*! \brief update the piParmas with the Push-Wall assumption: object mass and moment of inertia are infinite.  
  */
-void paramUpdatePushWall_();
+void paramUpdatePushWall_(const Eigen::Vector3d & impactLinearVel);
 void planarSolutionTo3DPushWall_();
 };
 
