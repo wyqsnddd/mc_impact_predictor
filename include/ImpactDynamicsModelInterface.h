@@ -12,7 +12,9 @@ namespace mc_impact
 struct PostImpactStates
 {
   Eigen::Vector3d linearVel = Eigen::Vector3d::Zero();
+  Eigen::Vector3d linearVelJump = Eigen::Vector3d::Zero();
   Eigen::Vector3d anguleVel = Eigen::Vector3d::Zero();
+  Eigen::Vector3d anguleVelJump = Eigen::Vector3d::Zero();
   Eigen::Vector3d impulse = Eigen::Vector3d::Zero();
 };
 
@@ -49,6 +51,13 @@ PostImpactStates objectPostImpactStates_;
 
 };
 
+struct TwoDimModelBridgeParams
+{
+  std::string name = "TwoDimModel";
+  bool useVirtualContact = true;
+  bool useComVel = true;
+  ImpactModelParams modelParams;
+};
 
 class TwoDimModelBridge : public ImpactDynamicsModel
 /*! \brief We always assume the inertial frame
@@ -57,8 +66,7 @@ class TwoDimModelBridge : public ImpactDynamicsModel
 {
 public:
 TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
-		const ImpactModelParams & params,
-		bool useVirtualContact);
+		const TwoDimModelBridgeParams & params);
 
 ~TwoDimModelBridge(){}
 const PostImpactStates & getObjectPostImpactStates() override;
@@ -76,7 +84,10 @@ const FIDynamics::PIParams & getPlanarImpactParams()
 {
   return piParams_;
 }
-
+inline const TwoDimModelBridgeParams & getTwoDimModelBridgeParams()
+{
+  return params_;
+}
 inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
   
@@ -90,9 +101,17 @@ inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
 void logImpulseEstimations();
 
 void removeImpulseEstimations();
+const Eigen::Vector3d & getAverageLinerVel()
+{
+  return rAverageLinearVel_;
+}
+const Eigen::Vector3d & getAverageAngularVel()
+{
+  return rAverageAngularVel_;
+}
 protected:
-
-bool useVirtualContact_;
+TwoDimModelBridgeParams params_;
+//bool useVirtualContact_;
 
 double rotationAngle_;
 
@@ -121,6 +140,7 @@ Eigen::Matrix<double, 3, 3> rotationFull_;
 
 Eigen::Matrix3d rCentroidalInertia_; ///< Robot centroidal inertia.
 Eigen::Vector3d rAverageAngularVel_; ///< Robot average angular velocity 
+Eigen::Vector3d rAverageLinearVel_; ///< Robot average angular velocity 
 
 std::shared_ptr<FIDynamics::TwoDimModel> twoDimModelPtr_;
 

@@ -10,8 +10,7 @@ ImpactDynamicsModel::ImpactDynamicsModel(const mc_rbdyn::Robot & simRobot,
 }
 
 TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
-		const ImpactModelParams & params,
-		bool useVirtualContact): ImpactDynamicsModel(simRobot, params), useVirtualContact_(useVirtualContact)
+		const TwoDimModelBridgeParams & params) : ImpactDynamicsModel(simRobot, params.modelParams), params_(params)
 {
 
   // Initialize the semiaxes calculator
@@ -23,7 +22,7 @@ TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
 
   // Initialize the two-dim-model 
   // Energetic coefficient of restitution
-  piParams_.e = 0.8;
+  piParams_.e = 0.2;
   // Coefficient of friction 
   piParams_.miu = 0.7;
   rotation_.setZero();
@@ -55,11 +54,14 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   
   //std::cout<<"inertia updated"<<std::endl;
   // Assert that the average com velocity is equal to the com velocity
+  /*
   assert(mc_impact::areSame(av(3), getRobot().comVelocity()(0)));
   assert(mc_impact::areSame(av(4), getRobot().comVelocity()(1)));
   assert(mc_impact::areSame(av(5), getRobot().comVelocity()(2)));
+  */
 
   rAverageAngularVel_ = av.segment<3>(0);
+  rAverageLinearVel_ = av.segment<3>(3);
   rCentroidalInertia_ = centroidalInertia.block<3, 3>(0, 0);
 
   //std::cout<<"The average angular velocity is: "<<rAverageAngularVel_.transpose()<<std::endl;
@@ -102,7 +104,7 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   //std::cout<<"vc parameters updated"<<std::endl;
   
   Eigen::Vector3d vc; 
-  if(useVirtualContact_)
+  if(getTwoDimModelBridgeParams().useVirtualContact)
   {
     vcPtr_->update(vcParams_);
     vc = vcPtr_->getVirtualContactPoint();
@@ -181,8 +183,16 @@ void TwoDimModelBridge::paramUpdatePushWall_(const Eigen::Vector3d & impactLinea
   piParams_.batParams.inertia = (rotationFull_*rCentroidalInertia_)(2,2); 
   std::cout<<green<<"The bat inertia is: "<<piParams_.batParams.inertia<<std::endl;
   // Rotate the com velocity 
-  //piParams_.batParams.preVel = rotation_*getRobot().comVelocity();
-  piParams_.batParams.preVel = rotation_*impactLinearVel;
+  if(getTwoDimModelBridgeParams().useComVel)
+  {
+    piParams_.batParams.preVel = rotation_*rAverageLinearVel_;
+    //piParams_.batParams.preVel = rotation_*getRobot().bodySensor("FloatingBase").linearVelocity();
+  }
+  else
+  {
+    piParams_.batParams.preVel = rotation_*impactLinearVel;
+  }
+
   std::cout<<green<<"The bat preimpact vel is: "<<piParams_.batParams.preVel<<std::endl;
   // Get the z-axis average angular velocity:
   piParams_.batParams.preW = rAverageAngularVel_(2);
@@ -221,9 +231,15 @@ void TwoDimModelBridge::planarSolutionTo3DPushWall_()
   // Convert the post-impact velocities:
   // robot:
   robotPostImpactStates_.linearVel = rotation_.transpose()*twoDimModelPtr_->getImpactBodies().first.postVel;
+  robotPostImpactStates_.linearVelJump = robotPostImpactStates_.impulse/getRobot().mass();
+
   std::cout<<"The post-imapct linear velocity is: "<< twoDimModelPtr_->getImpactBodies().first.postVel<<std::endl;
-  robotPostImpactStates_.anguleVel = rAverageAngularVel_;
-  robotPostImpactStates_.anguleVel(2) += twoDimModelPtr_->getImpactBodies().first.postW;
+
+  //  Compute: wJump = (1 / getParams().inertia) * cross2(r, I_r);
+  Eigen::Vector3d rb = vcPtr_->getVirtualContactPoint() - vcParams_.com;
+  robotPostImpactStates_.anguleVelJump = rCentroidalInertia_.inverse()*rb.cross(robotPostImpactStates_.impulse);
+
+  robotPostImpactStates_.anguleVel = rAverageAngularVel_ + robotPostImpactStates_.anguleVelJump;
 
 }
 void TwoDimModelBridge::planarSolutionTo3D_()
@@ -266,37 +282,81 @@ const PostImpactStates & ImpactDynamicsModel::getObjectPostImpactStates()
 
 void TwoDimModelBridge::logImpulseEstimations()
 {
-  const std::string & qpName = "TwoDimModel";
+  const std::string & bridgeName = getTwoDimModelBridgeParams().name; 
 
-  logEntries_.emplace_back(qpName + "_"+ "rotationAngle");
+  logEntries_.emplace_back(bridgeName + "_"+ "rotationAngle");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return rotationAngle_; });
 
-  logEntries_.emplace_back(qpName + "_"+ "robot_postImpact_linearVel");
+  logEntries_.emplace_back(bridgeName + "_"+ "robot_postImpact_linearVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().linearVel; });
 
-  logEntries_.emplace_back(qpName + "_"+ "robot_postImpact_angularVel");
+  logEntries_.emplace_back(bridgeName + "_"+ "robot_linearVelJump");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().linearVelJump; });
+
+
+  logEntries_.emplace_back(bridgeName + "_"+ "robot_postImpact_angularVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().anguleVel; });
 
-  logEntries_.emplace_back(qpName + "_"+ "robot_postImpact_impulse");
+  logEntries_.emplace_back(bridgeName + "_"+ "robot_postImpact_angularVelJump");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().anguleVelJump; });
+
+
+  logEntries_.emplace_back(bridgeName + "_"+ "robot_postImpact_impulse");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().impulse; });
 
   std::cout<<green<<"The impulse is: "<<getRobotPostImpactStates().impulse<<std::endl;
 
-  logEntries_.emplace_back(qpName + "_"+ "average_angularVel");
+  logEntries_.emplace_back(bridgeName + "_"+ "average_angularVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return rAverageAngularVel_; });
 
-  logEntries_.emplace_back(qpName + "_"+ "virtualContactPoint");
+  logEntries_.emplace_back(bridgeName + "_"+ "average_linearVel");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return rAverageLinearVel_; });
+
+
+  logEntries_.emplace_back(bridgeName + "_"+ "virtualContactPoint");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return vcPtr_->getVirtualContactPoint(); });
 
+  logEntries_.emplace_back(bridgeName + "_"+ "useVirtualContactPoint");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
+		 if(getTwoDimModelBridgeParams().useVirtualContact) 
+		  return true;
+		 else 
+		  return false; 
+		  });
 
+  logEntries_.emplace_back(bridgeName + "_"+ "useComVel");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
+		 if(getTwoDimModelBridgeParams().useComVel) 
+		  return true;
+		 else 
+		  return false; 
+		  });
+
+  logEntries_.emplace_back(bridgeName + "_"+ "impactEventSequence");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
+		  switch(twoDimModelPtr_->getSolution().sequence){
+		     case FIDynamics::EventSequence::not_specified:
+		         return 0; 
+		     case FIDynamics::EventSequence::C_R_Process:
+			 return 1;
+		     case FIDynamics::EventSequence::C_S_R_Process:
+			 return 2;
+		     case FIDynamics::EventSequence::S_C_R_Process:
+			 return 3;
+		     case FIDynamics::EventSequence::SpecialSolution:
+			 return 4;
+		  default:  
+		      throw std::runtime_error("impact event sequence is not defined");
+		  }
+		 });
   /*
-  logEntries_.emplace_back(qpName + "_"+ "object_postImpact_linearVel");
+  logEntries_.emplace_back(bridgeName + "_"+ "object_postImpact_linearVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObjectPostImpactStates().linearVel; });
 
-  logEntries_.emplace_back(qpName + "_"+ "object_postImpact_angularVel");
+  logEntries_.emplace_back(bridgeName + "_"+ "object_postImpact_angularVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObjectPostImpactStates().anguleVel; });
 
-  logEntries_.emplace_back(qpName + "_"+ "object_postImpact_impulse");
+  logEntries_.emplace_back(bridgeName + "_"+ "object_postImpact_impulse");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObjectPostImpactStates().impulse; });
 */
 
