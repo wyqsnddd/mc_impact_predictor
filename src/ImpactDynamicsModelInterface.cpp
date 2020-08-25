@@ -49,9 +49,9 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   Eigen::Matrix6d centroidalInertia; 
   centroidalInertia.setIdentity();
 
-  Eigen::Vector6d cm;
+  //Eigen::Vector6d cm;
   Eigen::Vector6d av;
-  rbd::computeCentroidalInertiaAndVelocity(getRobot().mb(), getRobot().mbc(), getRobot().com(), centroidalInertia, cm, av);
+  rbd::computeCentroidalInertia(getRobot().mb(), getRobot().mbc(), getRobot().com(), centroidalInertia, av);
   
   //std::cout<<"inertia updated"<<std::endl;
   // Assert that the average com velocity is equal to the com velocity
