@@ -922,8 +922,19 @@ void mi_qpEstimator::addMcRtcGuiItems()
 			     // Note that (1) the forceJump is defined in the local frame. 
 			     // (2) the rotaiton =  X_0_s.rotation().transpose();
 			     // (3) We are plotting the forceJump in the inertial frame. 
-                             Eigen::Vector3d eeForceJump=
-                                 X_0_s.translation() + arrowLengthScale * X_0_s.rotation().transpose()*getEndeffector(eeName).estimatedAverageImpulsiveForce;
+			     
+                             Eigen::Vector3d eeForceJump;
+
+			     if(getOsd()->useBodyJacobian())
+			     {
+			         // Force are computed in the body frame.
+                                 eeForceJump = X_0_s.translation() + arrowLengthScale * X_0_s.rotation().transpose()*getEndeffector(eeName).estimatedAverageImpulsiveForce;
+			     }
+			     else
+			     {
+				 // Force are computed in the inertial frame
+                                 eeForceJump = X_0_s.translation() + arrowLengthScale * getEndeffector(eeName).estimatedAverageImpulsiveForce;
+			     }
                              return eeForceJump;
                            }));
   
