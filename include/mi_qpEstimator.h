@@ -95,10 +95,17 @@ public:
   {
     return tauJump_;
   }
+
   inline const Eigen::VectorXd & getJointVelJump()
   {
     return jointVelJump_;
   }
+
+  inline const Eigen::Vector3d & getCOMVelJump()
+  {
+    return comVelJump_;
+  }
+
 
   const endEffector & getEndeffector(const std::string & name);
   void print() const;
@@ -253,6 +260,7 @@ private:
 
   std::map<std::string, endEffector> endEffectors_;
   Eigen::VectorXd jointVelJump_, tauJump_;
+  Eigen::Vector3d comVelJump_ = Eigen::Vector3d::Zero();
 
   Eigen::MatrixXd jacobianDeltaAlpha_;
   Eigen::MatrixXd jacobianTwoDeltaAlpha_;

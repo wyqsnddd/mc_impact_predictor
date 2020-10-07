@@ -507,6 +507,13 @@ void mi_qpEstimator::update_()
   // std::cout<<"test 1" <<std::endl;
   // Eigen::MatrixXd tempJac = getImpactModel()->getProjector();
   jointVelJump_ = solutionVariables.segment(0, getDof());
+
+  double mass_inv = 1.0/getSimRobot().mass();
+
+  const Eigen::MatrixXd &  cmmMatrix = getCmm()->matrix();
+
+  comVelJump_ = mass_inv * cmmMatrix.block(3, 0, 3, getDof()) * jointVelJump_;
+
   tauJump_.setZero();
 
   jacobianDeltaTau_.resize(getDof(), getDof());
@@ -824,8 +831,10 @@ void mi_qpEstimator::logImpulseEstimations()
 
   const std::string & qpName = getEstimatorParams().name;
   logEntries_.emplace_back(qpName + "_"+ "JointVelJump");
-
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getJointVelJump(); });
+
+  logEntries_.emplace_back(qpName + "_"+ "COMVelJump");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getCOMVelJump(); });
 
   logEntries_.emplace_back(qpName + "_"+ "Objective");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObj(); });
