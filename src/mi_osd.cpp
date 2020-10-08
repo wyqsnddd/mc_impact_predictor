@@ -298,6 +298,80 @@ bool mi_osd::addEndeffector_(std::string eeName)
   }
 }
 
+
+Eigen::Matrix3d mi_osd::crossMatrix(const Eigen::Vector3d & input)
+{
+
+  Eigen::Matrix3d skewSymmetricMatrix = Eigen::Matrix3d::Zero();
+
+  skewSymmetricMatrix(0, 1) = -input(2);
+  skewSymmetricMatrix(1, 0) = input(2);
+
+  skewSymmetricMatrix(0, 2) = input(1);
+  skewSymmetricMatrix(2, 0) = -input(1);
+
+  skewSymmetricMatrix(1, 2) = -input(0);
+  skewSymmetricMatrix(2, 1) = input(0);
+
+  return skewSymmetricMatrix;
+}
+
+Eigen::MatrixXd mi_osd::forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference)
+{
+   Eigen::MatrixXd graspMatrx;
+   graspMatrx.resize(6, 3);
+   graspMatrx.setZero();
+
+  // Transform of the endEffector.
+  auto X_0_c = getRobot().bodyPosW(eeName);
+
+  // R_0_pi
+  auto rotation= X_0_c.rotation();
+  // P_pi_com   
+  auto translation = X_0_c.translation() - reference;
+
+
+  // Old-implementation:
+  //auto rotationTranspose = X_0_c.rotation().transpose();
+  //auto translation = X_0_c.translation() - reference;
+
+  if(useBodyJacobian()){
+  // the impulse(force) are aligned in the local frame
+  
+    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation)* rotation;
+    graspMatrx.block<3, 3>(3, 0) = rotation; 
+
+    // Old-implementation:
+   // graspMatrx.block<3, 3>(3, 0) = rotationTranspose; 
+    //graspMatrx.block<3, 3>(0, 0) = -rotationTranspose * crossMatrix(translation);
+  }else{
+   // the impulse(force) are aligned to the inertial frame
+    
+    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation);
+    graspMatrx.block<3, 3>(3, 0).setIdentity();
+
+    // Old-implementation:
+    //graspMatrx.block<3, 3>(3, 0).setIdentity();
+    //graspMatrx.block<3, 3>(0, 0) = - crossMatrix(translation);
+  }
+  /*
+  if(getOsd_()->useBodyJacobian()){
+  // the impulse(force) are aligned in the local frame
+    graspMatrx.block<3, 3>(0, 0) = rotationTranspose; 
+
+    graspMatrx.block<3, 3>(3, 0) = -rotationTranspose * crossMatrix(translation);
+  }else{
+   // the impulse(force) are aligned to the inertial frame
+    graspMatrx.block<3, 3>(0, 0).setIdentity();
+
+    graspMatrx.block<3, 3>(3, 0) = - crossMatrix(translation);
+  }
+  */
+  return graspMatrx;
+
+}
+
+
 void mi_osd::printInfo()
 {
   std::cout << "mi_osd model has endeffectors: " << std::endl;

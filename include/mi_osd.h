@@ -262,6 +262,17 @@ public:
   {
     return linearJacobian_;
   }
+
+  Eigen::Matrix3d crossMatrix(const Eigen::Vector3d & input);
+
+  /*! \brief returns the 6 by 3 "force" (or linear) part of the Grasp matrix
+   *  \param eeName of the end-effector where the force is applied
+   *  \param reference point, e.g. the COM. By default, we use the origin of the inertial frame.
+   *
+   *  The reference frame is the inertial frame 
+   */
+  Eigen::MatrixXd forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference = Eigen::Vector3d::Zero());
+ 
 private:
   int robotDof_;
   int eeNum_;

@@ -43,78 +43,6 @@ void mi_balance::reset_()
 
 }
 
-Eigen::Matrix3d mi_balance::crossMatrix(const Eigen::Vector3d & input)
-{
-
-  Eigen::Matrix3d skewSymmetricMatrix = Eigen::Matrix3d::Zero();
-
-  skewSymmetricMatrix(0, 1) = -input(2);
-  skewSymmetricMatrix(1, 0) = input(2);
-
-  skewSymmetricMatrix(0, 2) = input(1);
-  skewSymmetricMatrix(2, 0) = -input(1);
-
-  skewSymmetricMatrix(1, 2) = -input(0);
-  skewSymmetricMatrix(2, 1) = input(0);
-
-  return skewSymmetricMatrix;
-}
-
-Eigen::MatrixXd mi_balance::forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference)
-{
-   Eigen::MatrixXd graspMatrx;
-   graspMatrx.resize(6, 3);
-   graspMatrx.setZero();
-
-  // Transform of the endEffector.
-  auto X_0_c = getOsd_()->getRobot().bodyPosW(eeName);
-
-  // R_0_pi
-  auto rotation= X_0_c.rotation();
-  // P_pi_com   
-  auto translation = X_0_c.translation() - reference;
-
-
-  // Old-implementation:
-  //auto rotationTranspose = X_0_c.rotation().transpose();
-  //auto translation = X_0_c.translation() - reference;
-
-  if(getOsd_()->useBodyJacobian()){
-  // the impulse(force) are aligned in the local frame
-  
-    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation)* rotation;
-    graspMatrx.block<3, 3>(3, 0) = rotation; 
-
-    // Old-implementation:
-   // graspMatrx.block<3, 3>(3, 0) = rotationTranspose; 
-    //graspMatrx.block<3, 3>(0, 0) = -rotationTranspose * crossMatrix(translation);
-  }else{
-   // the impulse(force) are aligned to the inertial frame
-    
-    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation);
-    graspMatrx.block<3, 3>(3, 0).setIdentity();
-
-    // Old-implementation:
-    //graspMatrx.block<3, 3>(3, 0).setIdentity();
-    //graspMatrx.block<3, 3>(0, 0) = - crossMatrix(translation);
-  }
-  /*
-  if(getOsd_()->useBodyJacobian()){
-  // the impulse(force) are aligned in the local frame
-    graspMatrx.block<3, 3>(0, 0) = rotationTranspose; 
-
-    graspMatrx.block<3, 3>(3, 0) = -rotationTranspose * crossMatrix(translation);
-  }else{
-   // the impulse(force) are aligned to the inertial frame
-    graspMatrx.block<3, 3>(0, 0).setIdentity();
-
-    graspMatrx.block<3, 3>(3, 0) = - crossMatrix(translation);
-  }
-  */
-    return graspMatrx;
-
-}
-
 void mi_balance::update()
 {
 
@@ -138,7 +66,7 @@ void mi_balance::update()
   {
     int eeIndex = getOsd_()->nameToIndex_(contact);
     // int eeIndex = nameToIndex_(*idx);
-    const Eigen::MatrixXd & eeGraspMatrix = forceGraspMatrix(contact, getOsd_()->getRobot().com());
+    const Eigen::MatrixXd & eeGraspMatrix = getOsd_()->forceGraspMatrix(contact, getOsd_()->getRobot().com());
     A_.block(0, dof + eeIndex * dim, 6, dim) = -eeGraspMatrix; 
   }
 
@@ -149,7 +77,7 @@ void mi_balance::update()
   {
     int eeIndex = getOsd_()->nameToIndex_(impactModel.first);
 
-    const Eigen::MatrixXd & eeGraspMatrix = forceGraspMatrix(impactModel.first, getOsd_()->getRobot().com());
+    const Eigen::MatrixXd & eeGraspMatrix = getOsd_()->forceGraspMatrix(impactModel.first, getOsd_()->getRobot().com());
     A_.block(0, dof + eeIndex* dim, 6, dim) =  -eeGraspMatrix;
   }
 }
