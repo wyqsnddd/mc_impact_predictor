@@ -134,7 +134,7 @@ public:
    */
   void update(const Eigen::Vector3d & surfaceNormal);
 
-    inline const Eigen::MatrixXd & getJacobianDot()
+  inline const Eigen::MatrixXd & getJacobianDot()
   {
     return jacobianDot_;
   }
@@ -146,7 +146,6 @@ public:
   {
     return contactVel_;
   }
-  
 
 private:
   const mc_rbdyn::Robot & simRobot_;

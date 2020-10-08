@@ -71,5 +71,6 @@ private:
   const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels_;
 
   std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr_;
+
 };
 } // namespace mc_impact

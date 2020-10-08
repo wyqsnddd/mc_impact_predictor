@@ -836,6 +836,14 @@ void mi_qpEstimator::logImpulseEstimations()
   logEntries_.emplace_back(qpName + "_"+ "COMVelJump");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getCOMVelJump(); });
 
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getLMJump(); });
+
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getAMJump(); });
+
+
+
   logEntries_.emplace_back(qpName + "_"+ "Objective");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObj(); });
 

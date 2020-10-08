@@ -48,7 +48,7 @@ mi_osd::mi_osd(mc_rbdyn::Robot & robot,
   assert(mCols == mRows);
   robotDof_ = mRows;
 
-  Eigen::MatrixXd tempMassMatrix = getFD()->H();
+  const Eigen::MatrixXd & tempMassMatrix = getFD()->H();
   // std::cout<<"The mass matrix is: " <<getFD()->H()<<std::endl;
 
   Eigen::FullPivLU<Eigen::MatrixXd> lu_decomp_mM(tempMassMatrix);

@@ -129,9 +129,23 @@ public:
   {
     return cache_.lambdaMatrixInv;
   }
+
   /*!
-      \return the Operational space inertia matrix: \f$ \Lambda(i , j) \f$
-      */
+   * return the equivalent mass
+   * Robot arm (single kinematic chain): \f$ (J M J^\top)^{-1} \f$ 
+   * Humanoid: (kinematic tree): the corresponding block from the operational space inertia matrix: lambda^{-1}.
+   */
+  inline const Eigen::MatrixXd getEquivalentMass(const std::string & eeName) const
+  {
+    return  cache_.lambdaMatrixInv.block(nameToIndex_(eeName) * getJacobianDim(), nameToIndex_(eeName) * getJacobianDim(),
+                                        getJacobianDim(), getJacobianDim());
+
+  }
+
+
+  /*!
+    \return the Operational space inertia matrix: \f$ \Lambda(i , j) \f$
+  */
   const Eigen::MatrixXd getLambdaMatrix(int rowInt, int columnInt) const
   {
     return cache_.lambdaMatrix.block(rowInt * getEeNum(), columnInt * getEeNum(), 6, 6);
@@ -157,6 +171,7 @@ public:
   {
     return cache_.osdJacobianDot.block(nameToIndex_(eeName) * getJacobianDim(), 0, getJacobianDim(), getDof());
   }
+
   /*!
       \return
       \f$  \tilde{\Lambda}_{m}= ( \sum^{m}_{i=1}\Lambda_{mi}J_i ) \bar{J}_m \f$
@@ -181,13 +196,15 @@ public:
   {
     return cache_.dcJacobianInvs[static_cast<unsigned long>(nameToIndex_(eeName))];
   }
-  /*!
-      \return \f$ M^{-1}\f$
-      */
+
   inline const Eigen::MatrixXd & getMassMatrix() const
   {
     return getFD()->H();
   }
+
+  /*!
+      \return \f$ M^{-1}\f$
+  */
   inline const Eigen::MatrixXd & getInvMassMatrix() const
   {
     return cache_.invMassMatrix;

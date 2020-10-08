@@ -106,6 +106,20 @@ public:
     return comVelJump_;
   }
 
+  /*! \return linear momentum jump 
+   */
+  inline const Eigen::Vector3d & getLMJump()
+  {
+    return lmJump_;
+  }
+
+
+  /*! \return angular momentum jump 
+   */
+  inline const Eigen::Vector3d & getAMJump()
+  {
+    return amJump_;
+  }
 
   const endEffector & getEndeffector(const std::string & name);
   void print() const;
@@ -260,7 +274,11 @@ private:
 
   std::map<std::string, endEffector> endEffectors_;
   Eigen::VectorXd jointVelJump_, tauJump_;
+
   Eigen::Vector3d comVelJump_ = Eigen::Vector3d::Zero();
+
+  Eigen::Vector3d amJump_ = Eigen::Vector3d::Zero();
+  Eigen::Vector3d lmJump_ = Eigen::Vector3d::Zero();
 
   Eigen::MatrixXd jacobianDeltaAlpha_;
   Eigen::MatrixXd jacobianTwoDeltaAlpha_;
