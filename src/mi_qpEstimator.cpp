@@ -107,10 +107,10 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   */
   vector_A_dagger_.resize(params.impactNameAndNormals.size());
 
-  amdJumpJacobian_.resize(3, getDof());
-  amdJumpJacobian_.setZero();
-  lmdJumpJacobian_.resize(3, getDof());
-  lmdJumpJacobian_.setZero();
+  amJumpJacobian_.resize(3, getDof());
+  amJumpJacobian_.setZero();
+  lmJumpJacobian_.resize(3, getDof());
+  lmJumpJacobian_.setZero();
 
   std::cout << "Created QP estimator constraint. " << std::endl;
 
@@ -734,10 +734,10 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
   // We also fill: 
   // Joint torque Jump
 
-  amdJumpJacobian_.setZero();
-  lmdJumpJacobian_.setZero();
-  amdJump_.setZero();
-  lmdJump_.setZero();
+  amJumpJacobian_.setZero();
+  lmJumpJacobian_.setZero();
+  amJump_.setZero();
+  lmJump_.setZero();
 
   for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
   {
@@ -819,17 +819,18 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
 
       // std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -
       // tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
-     
-      const Eigen::MatrixXd & eeGraspMatrix = getOsd()->forceGraspMatrix(idx->first, getOsd()->getRobot().com());
+     // Transform of the endEffector.
 
-      const Eigen::Matrix3d & torqueMatrix = eeGraspMatrix.block<3, 3>(0, 0);
-      const Eigen::Matrix3d & forceMatrix = eeGraspMatrix.block<3, 3>(3, 0);
+      auto translation = getSimRobot().bodyPosW(idx->first).translation() - getSimRobot().com();
 
-      amdJump_ += torqueMatrix * idx->second.estimatedAverageImpulsiveForce;
-      amdJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF; 
 
-      lmdJump_ += forceMatrix * idx->second.estimatedAverageImpulsiveForce;
-      lmdJumpJacobian_ += forceMatrix * idx->second.jacobianDeltaF; 
+      const Eigen::Matrix3d & torqueMatrix = getOsd()->crossMatrix(translation);
+
+      amJump_ += torqueMatrix * idx->second.estimatedImpulse;
+      amJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF; 
+
+      lmJump_ += idx->second.estimatedImpulse;
+      lmJumpJacobian_ += idx->second.jacobianDeltaF; 
 
     } // end of Lagrange Multipliers
 
@@ -858,34 +859,34 @@ void mi_qpEstimator::logImpulseEstimations()
   logEntries_.emplace_back(qpName + "_"+ "COMVelJump");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getCOMVelJump(); });
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentum");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getOsd()->getCentroidalMomentum(); });
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentum_simRobot");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getOsd()->getSimulatedCentroidalMomentum(); });
 
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumD");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getOsd()->getCentroidalMomentumD(); });
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumD_simRobot");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getOsd()->getSimulatedCentroidalMomentumD(); });
 
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumDJump_linear");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getLMDJump(); });
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getLMJump(); });
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumDJump_angular");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getAMDJump(); });
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getAMJump(); });
 
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumDJump_linear_test");
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear_test");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
 
     double inv_dt = 1.0 / (getImpactModels().begin()->second->getParams().iDuration);
 
-    return static_cast<Eigen::Vector3d>(inv_dt * getJacobianDeltaLMD()*getImpactModels().begin()->second->getJointVel());
+    return static_cast<Eigen::Vector3d>(getJacobianDeltaLM()*getImpactModels().begin()->second->getJointVel());
 		  });
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumDJump_angular_test");
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular_test");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
     double inv_dt = 1.0 / (getImpactModels().begin()->second->getParams().iDuration);
 
-    return static_cast<Eigen::Vector3d>(inv_dt * getJacobianDeltaAMD()*getImpactModels().begin()->second->getJointVel());
+    return static_cast<Eigen::Vector3d>(getJacobianDeltaAM()*getImpactModels().begin()->second->getJointVel());
     });
 
 

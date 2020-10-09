@@ -273,12 +273,14 @@ public:
    */
   Eigen::MatrixXd forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference = Eigen::Vector3d::Zero());
 
-  const sva::ForceVecd & getCentroidalMomentum()
+  
+  const sva::ForceVecd & getSimulatedCentroidalMomentum()
   {
     return centroidalMomentum_;
   }
+  
 
-  const sva::ForceVecd & getCentroidalMomentumD()
+  const sva::ForceVecd & getSimulatedCentroidalMomentumD()
   {
     return centroidalMomentumD_;
   }

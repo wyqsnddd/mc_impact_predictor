@@ -95,16 +95,16 @@ public:
   /*!
    * \return the Jacobian of the angular momentum derivative jump: \f$ \Delta \dot{L} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{L}} \dot{q}_{k+1}  $\f 
    */
-  inline const Eigen::Matrix3d & getJacobianDeltaAMD()
+  inline const Eigen::Matrix3d & getJacobianDeltaAM()
   {
-    return amdJumpJacobian_; 
+    return amJumpJacobian_; 
   }
   /*!
    * \return the Jacobian of the liner momentum derivative jump: \f$ \Delta \dot{P} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{P}} \dot{q}_{k+1}  $\f 
    */
-  inline const Eigen::Matrix3d & getJacobianDeltaLMD()
+  inline const Eigen::Matrix3d & getJacobianDeltaLM()
   {
-    return lmdJumpJacobian_; 
+    return lmJumpJacobian_; 
   }
 
   inline const Eigen::VectorXd & getTauJump() const
@@ -126,18 +126,18 @@ public:
 
   /*! \return linear momentum derivative jump \f$ \Delta \dot{P} $\f 
    */
-  inline const Eigen::Vector3d & getLMDJump()
+  inline const Eigen::Vector3d & getLMJump()
   {
-    return lmdJump_;
+    return lmJump_;
   }
 
 
   /*! \return angular momentum derivative jump \f$ \Delta \dot{L} $\f 
 
    */
-  inline const Eigen::Vector3d & getAMDJump()
+  inline const Eigen::Vector3d & getAMJump()
   {
-    return amdJump_;
+    return amJump_;
   }
 
   const endEffector & getEndeffector(const std::string & name);
@@ -296,13 +296,13 @@ private:
 
   Eigen::Vector3d comVelJump_ = Eigen::Vector3d::Zero();
 
-  Eigen::Vector3d amdJump_ = Eigen::Vector3d::Zero();
-  ///< amdJump_ = amdJumpJacobian_ * jointVelocity_next
-  Eigen::Matrix3d amdJumpJacobian_;
+  Eigen::Vector3d amJump_ = Eigen::Vector3d::Zero();
+  ///< amdJump_ = amJumpJacobian_ * jointVelocity_next
+  Eigen::Matrix3d amJumpJacobian_;
 
-  Eigen::Vector3d lmdJump_ = Eigen::Vector3d::Zero();
-  ///< lmdJump_ = lmdJumpJacobian_ * jointVelocity_next
-  Eigen::Matrix3d lmdJumpJacobian_;
+  Eigen::Vector3d lmJump_ = Eigen::Vector3d::Zero();
+  ///< lmdJump_ = lmJumpJacobian_ * jointVelocity_next
+  Eigen::Matrix3d lmJumpJacobian_;
 
   Eigen::MatrixXd jacobianDeltaAlpha_;
   Eigen::MatrixXd jacobianTwoDeltaAlpha_;
