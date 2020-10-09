@@ -49,7 +49,8 @@ public:
     jacobianDot_.resize(getParams().dim, dof);
     params_.inertial_surfaceNormal.normalize();
     robotJointVel_.resize(dof);
-    robotJointVel_.resize(dof);
+    robotJointVel_.setZero();
+
   }
 
   ~mi_impactModel() {}
@@ -93,18 +94,18 @@ public:
 
 
 */
-  inline const Eigen::Vector3d & getEeVelocity() const
+  inline const Eigen::VectorXd & getEeVelocity() const
   {
     return eeV_;
   }
-  inline const Eigen::Vector3d & getEeVelocityJump() const
+  inline const Eigen::VectorXd & getEeVelocityJump() const
   {
     return deltaV_;
   }
   /*! 
    * @return P*(J + J_dot*dt)
    */
-  inline const Eigen::Matrix3d & getProjectorTwo() const
+  inline const Eigen::MatrixXd & getProjectorTwo() const
   {
     return reductionProjectorTwo_;
   }
@@ -112,7 +113,7 @@ public:
   /*! 
    * @return P*J
    */
-  inline const Eigen::Matrix3d & getProjector() const
+  inline const Eigen::MatrixXd & getProjector() const
   {
     return reductionProjector_;
   }
@@ -174,13 +175,13 @@ private:
 
   void update_();
 
-  Eigen::Vector3d deltaV_ = Eigen::Vector3d::Zero();
-  Eigen::Vector3d eeV_ = Eigen::Vector3d::Zero();
+  Eigen::VectorXd deltaV_ = Eigen::Vector3d::Zero(3);
+  Eigen::VectorXd eeV_ = Eigen::Vector3d::Zero(3);
 
-  Eigen::Matrix3d reductionProjector_ = Eigen::Matrix3d::Zero();
-  Eigen::Matrix3d reductionProjectorTwo_ = Eigen::Matrix3d::Zero();
+  Eigen::MatrixXd reductionProjector_ = Eigen::MatrixXd::Zero(3, 3);
+  Eigen::MatrixXd reductionProjectorTwo_ = Eigen::MatrixXd::Zero(3, 3);
   Eigen::VectorXd robotJointVel_;
   Eigen::Vector3d local_surfaceNormal_ = Eigen::Vector3d::Zero();
-  Eigen::Vector3d contactVel_ = Eigen::Vector3d::Zero();
+  Eigen::Vector3d contactVel_ = Eigen::Vector3d::Zero(3);
 };
 } // namespace mc_impact
