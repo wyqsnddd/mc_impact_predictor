@@ -128,6 +128,12 @@ void mi_osd::update()
   // std::cout << "FD computed M ..." << std::endl;
   // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
   
+  // Update the Centroidal Momentum and its derivative: 
+  
+  centroidalMomentum_ = rbd::sComputeCentroidalMomentum(getRobot().mb(), getRobot().mbc(), getRobot().com());
+
+  centroidalMomentumD_ = rbd::sComputeCentroidalMomentumDot(getRobot().mb(), getRobot().mbc(), getRobot().com(), getRobot().comVelocity());
+
   auto stopModelUpdate = std::chrono::high_resolution_clock::now();
   
   auto durationModelUpdate = std::chrono::duration_cast< std::chrono::microseconds>(stopModelUpdate - startUpdate);

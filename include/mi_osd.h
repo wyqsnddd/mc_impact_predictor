@@ -31,7 +31,7 @@
 #include <RBDyn/FK.h>
 #include <RBDyn/FV.h>
 #include <RBDyn/Jacobian.h>
-
+#include <RBDyn/Momentum.h>
 #include <assert.h>
 #include <map>
 
@@ -272,7 +272,16 @@ public:
    *  The reference frame is the inertial frame 
    */
   Eigen::MatrixXd forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference = Eigen::Vector3d::Zero());
- 
+
+  const sva::ForceVecd & getCentroidalMomentum()
+  {
+    return centroidalMomentum_;
+  }
+
+  const sva::ForceVecd & getCentroidalMomentumD()
+  {
+    return centroidalMomentumD_;
+  }
 private:
   int robotDof_;
   int eeNum_;
@@ -294,5 +303,8 @@ private:
 
   double computationTime_;
   double modelUpdateTime_;
+
+  sva::ForceVecd centroidalMomentumD_ = sva::ForceVecd::Zero();
+  sva::ForceVecd centroidalMomentum_ = sva::ForceVecd::Zero();
 };
 } // namespace mc_impact
