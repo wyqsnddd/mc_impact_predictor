@@ -836,10 +836,11 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
 	forceMatrix = rotation; 
       }
 
+      // delta_t * (1/delta_t * J * dq) = Impulse 
       amJump_ += torqueMatrix * idx->second.estimatedImpulse;
-      amJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF;
+      amJumpJacobian_ +=  torqueMatrix * idx->second.jacobianDeltaF;
       lmJump_ += forceMatrix * idx->second.estimatedImpulse;
-      lmJumpJacobian_ += forceMatrix * idx->second.jacobianDeltaF; 
+      lmJumpJacobian_ +=  forceMatrix * idx->second.jacobianDeltaF; 
 
     } // end of Lagrange Multipliers
 
@@ -882,9 +883,10 @@ void mi_qpEstimator::logImpulseEstimations()
   logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getAMJump(); });
 
-  /*
+  
   logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear_debug");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
+
     Eigen::VectorXd robotJointVel = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
     return static_cast<Eigen::Vector3d>(getJacobianDeltaLM()*robotJointVel);});
 
@@ -893,7 +895,7 @@ void mi_qpEstimator::logImpulseEstimations()
 
     return static_cast<Eigen::Vector3d>(getJacobianDeltaAM()*getImpactModels().begin()->second->getJointVel());
     });
-    */
+    
 
 
   logEntries_.emplace_back(qpName + "_"+ "Objective");
