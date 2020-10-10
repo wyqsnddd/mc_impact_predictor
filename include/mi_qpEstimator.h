@@ -95,14 +95,14 @@ public:
   /*!
    * \return the Jacobian of the angular momentum derivative jump: \f$ \Delta \dot{L} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{L}} \dot{q}_{k+1}  $\f 
    */
-  inline const Eigen::Matrix3d & getJacobianDeltaAM()
+  inline const Eigen::MatrixXd & getJacobianDeltaAM()
   {
     return amJumpJacobian_; 
   }
   /*!
    * \return the Jacobian of the liner momentum derivative jump: \f$ \Delta \dot{P} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{P}} \dot{q}_{k+1}  $\f 
    */
-  inline const Eigen::Matrix3d & getJacobianDeltaLM()
+  inline const Eigen::MatrixXd & getJacobianDeltaLM()
   {
     return lmJumpJacobian_; 
   }
@@ -297,12 +297,14 @@ private:
   Eigen::Vector3d comVelJump_ = Eigen::Vector3d::Zero();
 
   Eigen::Vector3d amJump_ = Eigen::Vector3d::Zero();
+
   ///< amdJump_ = amJumpJacobian_ * jointVelocity_next
-  Eigen::Matrix3d amJumpJacobian_;
+  Eigen::MatrixXd amJumpJacobian_;
 
   Eigen::Vector3d lmJump_ = Eigen::Vector3d::Zero();
+
   ///< lmdJump_ = lmJumpJacobian_ * jointVelocity_next
-  Eigen::Matrix3d lmJumpJacobian_;
+  Eigen::MatrixXd lmJumpJacobian_;
 
   Eigen::MatrixXd jacobianDeltaAlpha_;
   Eigen::MatrixXd jacobianTwoDeltaAlpha_;

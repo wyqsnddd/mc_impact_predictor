@@ -109,7 +109,12 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   amJumpJacobian_.resize(3, getDof());
   amJumpJacobian_.setZero();
+  amJumpCheck_.resize(3, getDof());
+  amJumpCheck_.setZero();
+
   lmJumpJacobian_.resize(3, getDof());
+  lmJumpCheck_.resize(3, getDof());
+  lmJumpCheck_.setZero();
   lmJumpJacobian_.setZero();
 
   std::cout << "Created QP estimator constraint. " << std::endl;
@@ -736,6 +741,7 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
 
   amJumpJacobian_.setZero();
   lmJumpJacobian_.setZero();
+
   amJump_.setZero();
   lmJump_.setZero();
 
@@ -827,7 +833,8 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
       const Eigen::Matrix3d & torqueMatrix = getOsd()->crossMatrix(translation);
 
       amJump_ += torqueMatrix * idx->second.estimatedImpulse;
-      amJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF; 
+      amJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF;
+
 
       lmJump_ += idx->second.estimatedImpulse;
       lmJumpJacobian_ += idx->second.jacobianDeltaF; 
@@ -873,22 +880,18 @@ void mi_qpEstimator::logImpulseEstimations()
   logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getAMJump(); });
 
-
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear_test");
+  /*
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear_debug");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
+    Eigen::VectorXd robotJointVel = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
+    return static_cast<Eigen::Vector3d>(getJacobianDeltaLM()*robotJointVel);});
 
-    double inv_dt = 1.0 / (getImpactModels().begin()->second->getParams().iDuration);
-
-    return static_cast<Eigen::Vector3d>(getJacobianDeltaLM()*getImpactModels().begin()->second->getJointVel());
-		  });
-
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular_test");
+  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular_debug");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
-    double inv_dt = 1.0 / (getImpactModels().begin()->second->getParams().iDuration);
 
     return static_cast<Eigen::Vector3d>(getJacobianDeltaAM()*getImpactModels().begin()->second->getJointVel());
     });
-
+    */
 
 
   logEntries_.emplace_back(qpName + "_"+ "Objective");
@@ -908,11 +911,11 @@ void mi_qpEstimator::logImpulseEstimations()
 	return getEndeffector(ee).estimatedAverageImpulsiveForce;
     });
 
-    logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump_check");
+    // This one should be the same with 'ForceJump'
+    logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump_debug");
     getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]()-> Eigen::VectorXd {
 	return getEndeffector(ee).checkForce;
     });
-
 
 
     // (1.2) Ee velocity jump 
