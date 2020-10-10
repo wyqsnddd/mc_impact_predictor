@@ -109,12 +109,8 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   amJumpJacobian_.resize(3, getDof());
   amJumpJacobian_.setZero();
-  amJumpCheck_.resize(3, getDof());
-  amJumpCheck_.setZero();
 
   lmJumpJacobian_.resize(3, getDof());
-  lmJumpCheck_.resize(3, getDof());
-  lmJumpCheck_.setZero();
   lmJumpJacobian_.setZero();
 
   std::cout << "Created QP estimator constraint. " << std::endl;
@@ -827,17 +823,23 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
       // tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
      // Transform of the endEffector.
 
-      auto translation = getSimRobot().bodyPosW(idx->first).translation() - getSimRobot().com();
+      auto X_0_c = getSimRobot().bodyPosW(idx->first);
+      auto translation = X_0_c.translation() - getSimRobot().com();
+      // R_0_pi
+      auto rotation= X_0_c.rotation();
 
+      Eigen::Matrix3d torqueMatrix = getOsd()->crossMatrix(translation);
+      Eigen::Matrix3d forceMatrix = Eigen::Matrix3d::Identity();  
 
-      const Eigen::Matrix3d & torqueMatrix = getOsd()->crossMatrix(translation);
+      if(getOsd()->useBodyJacobian()){
+        torqueMatrix = torqueMatrix * rotation; 
+	forceMatrix = rotation; 
+      }
 
       amJump_ += torqueMatrix * idx->second.estimatedImpulse;
       amJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF;
-
-
-      lmJump_ += idx->second.estimatedImpulse;
-      lmJumpJacobian_ += idx->second.jacobianDeltaF; 
+      lmJump_ += forceMatrix * idx->second.estimatedImpulse;
+      lmJumpJacobian_ += forceMatrix * idx->second.jacobianDeltaF; 
 
     } // end of Lagrange Multipliers
 
