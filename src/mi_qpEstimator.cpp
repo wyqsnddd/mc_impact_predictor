@@ -227,7 +227,8 @@ void mi_qpEstimator::solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
   // Suppose kkt has full column rank, we perform cholesky decomposition to compute pinv = (A^*A)^{-1}A^*
   Eigen::MatrixXd tempInverse = (kkt.transpose() * kkt).inverse() * kkt.transpose();
 
-  solution = tempInverse * b;
+  // We discard the Lagrange multipliers associated with C_;
+  solution = (tempInverse * b).segment(0, getNumVar_());
   // solution = kkt.completeOrthogonalDecomposition().pseudoInverse()*b;
 
   // std::cout<<"tempInverse size is: "<<tempInverse.rows() <<", "<<tempInverse.cols()<<std::endl;
@@ -478,9 +479,7 @@ void mi_qpEstimator::update_()
   structTime_ = static_cast<double>(durationStruct.count());
 
   // Update Q with the current mass matrix
-  
   updateObjective_(getEstimatorParams().objectiveChoice);
-
   auto startSolve = std::chrono::high_resolution_clock::now();
   if(getEstimatorParams().useLagrangeMultiplier)
   {
