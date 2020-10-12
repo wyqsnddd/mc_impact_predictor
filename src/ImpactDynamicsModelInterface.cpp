@@ -24,7 +24,7 @@ TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
   // Energetic coefficient of restitution
   piParams_.e = 0.2;
   // Coefficient of friction 
-  piParams_.miu = 0.7;
+  piParams_.miu = 0.3;
   rotation_.setZero();
   rotationFull_.setIdentity();
 
