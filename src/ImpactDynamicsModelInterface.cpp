@@ -364,7 +364,7 @@ void TwoDimModelBridge::logImpulseEstimations()
 }
 void TwoDimModelBridge::removeImpulseEstimations()
 {
-  assert(getHostCtl_() not nullptr);
+  assert(getHostCtl_() != nullptr);
 
   for(auto & name : logEntries_)
   {

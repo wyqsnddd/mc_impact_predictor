@@ -125,13 +125,13 @@ mi_qpEstimator::~mi_qpEstimator()
 {
   if(logEntries_.size()>0)
   {
-    assert(hostCtlPtr_ not nullptr);
+    assert(hostCtlPtr_ != nullptr);
     removeImpulseEstimations_();
   }
 
   if(guiEntries_.size()>0)
   {
-    assert(hostCtlPtr_ not nullptr);
+    assert(hostCtlPtr_ != nullptr);
     removeMcRtcGuiItems();
   }
 }
@@ -962,7 +962,7 @@ void mi_qpEstimator::logImpulseEstimations()
 
 void mi_qpEstimator::removeImpulseEstimations_()
 {
-  assert(getHostCtl_() not nullptr);
+  assert(getHostCtl_() != nullptr);
 
   for(auto & name : logEntries_)
   {
@@ -1021,7 +1021,7 @@ void mi_qpEstimator::addMcRtcGuiItems()
 
 void mi_qpEstimator::removeMcRtcGuiItems()
 {
-  assert(getHostCtl_() not nullptr);
+  assert(getHostCtl_() != nullptr);
 
   for(auto & name : guiEntries_)
   {
