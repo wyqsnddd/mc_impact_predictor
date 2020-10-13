@@ -135,7 +135,8 @@ void TwoDimModelBridge::updatePiParams_(const Eigen::Vector3d & in, const Eigen:
 {
   // (1) Update the normal and tangential unit vectors
    // Compute the angle
-   rotationAngle_= atan2(in.z(), in.y());
+   //rotationAngle_= atan2(in.z(), in.y());
+   rotationAngle_ = 0.0;
    std::cout<<green<<"The rotation angle is: "<<rotationAngle_<<std::endl;
    // Update the 2*3 rotation matrix:
    rotation_(0,0) = 1.0;
@@ -283,6 +284,10 @@ const PostImpactStates & ImpactDynamicsModel::getObjectPostImpactStates()
 void TwoDimModelBridge::logImpulseEstimations()
 {
   const std::string & bridgeName = getTwoDimModelBridgeParams().name; 
+
+  logEntries_.emplace_back(bridgeName + "_"+ "computationTime");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return twoDimModelPtr_->computationTime(); });
+
 
   logEntries_.emplace_back(bridgeName + "_"+ "rotationAngle");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return rotationAngle_; });
