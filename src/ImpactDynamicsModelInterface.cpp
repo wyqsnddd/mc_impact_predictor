@@ -29,6 +29,12 @@ TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
   rotationFull_.setIdentity();
 
   twoDimModelPtr_.reset(new FIDynamics::TwoDimModel(piParams_));
+
+  if(getTwoDimModelBridgeParams().gradientApproximation)
+  {
+    initializeGradientApproximation_();
+  }
+
   std::cout<<green<<"TwoDimModelBridge is created."<<reset<<std::endl;
 }
 
@@ -88,16 +94,13 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   // (2) Update the virtual-contact model
   vcParams_.com = getRobot().com();
 
-  std::cout<<"The com is: "<<vcParams_.com.transpose()<<std::endl;
   // Use the value from the semi-axes-calculator 
   vcParams_.semiAxesVector << ssaPtr_->getSemiAxes()[0], ssaPtr_->getSemiAxes()[1], ssaPtr_->getSemiAxes()[2];
-  std::cout<<"The semiAxesVector is: "<<vcParams_.semiAxesVector.transpose()<<std::endl;
 
   // Use the impact body translation
   sva::PTransformd X_0_ee = getRobot().bodyPosW(getParams().iBodyName);
   vcParams_.eePosition = X_0_ee.translation(); 
 
-  std::cout<<"The ee position is: "<<vcParams_.eePosition.transpose()<<std::endl;
   vcParams_.impactNormal = impactNormal;
   vcParams_.debug = false;
 
@@ -114,9 +117,9 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
     vc = vcParams_.eePosition;
   }
 
-  std::cout<<"The virtual point is: "<<vc.transpose()<<std::endl;
+  //std::cout<<"The virtual point is: "<<vc.transpose()<<std::endl;
 
-  std::cout<<"The impact normal is: "<<vcParams_.impactNormal.transpose()<<std::endl;
+  
   // (3) Update the twoDim model 
   updatePiParams_(vcParams_.impactNormal, vc, impactLinearVel);
 
@@ -128,16 +131,107 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   // (4) Convert the twoDim model solution back to 3D:
   planarSolutionTo3D_();
 
+  if (getTwoDimModelBridgeParams().debug)
+  {
+    printVcParams();
+  }
+
   //std::cout<<"converted solution to 3d"<<std::endl;
+  if(getTwoDimModelBridgeParams().gradientApproximation) 
+  {
+     //velCases_.clear();
+
+     Eigen::Vector3d contactVel = impactLinearVel;
+
+     // Loop over the caurse grids: 
+     for (const auto & vel:caurseContactVelocityGrids_)
+     {
+
+       contactVel.x() = vel;
+       updatePiParams_(vcParams_.impactNormal, vc, contactVel);
+       // Reset the x component of the impact velocity 
+       twoDimModelPtr_->updateParams(getPlanarImpactParams());
+       //std::cout<<"twoDimModelPtr_->updated params "<<std::endl;
+       twoDimModelPtr_->update();
+
+       planarSolutionTo3D_();
+
+       //velCases_.insert(std::make_pair(vel, getRobotPostImpactStates().impulse));
+       //velCases_[vel] = getRobotPostImpactStates().impulse;
+       velCases_[vel] = getRobotPostImpactStates();
+	      // getRobotPostImpactStates().impulse.x(),  getRobotPostImpactStates().impulse.y(), getRobotPostImpactStates().impulse.z();
+
+       //std::cout<<"For contact vel: "<< vel<<", the impulse is: "<< getRobotPostImpactStates().impulse.transpose()<<std::endl;
+
+     }
+     //std::cout<<"The number of velCases are: "<< velCases_.size()<<std::endl;
+     // Loop over the fine grids: 
+  }
 }
 
+void TwoDimModelBridge::initializeGradientApproximation_()
+{  
+
+  double caurseStepSize =  (getTwoDimModelBridgeParams().gradientParams.upperVelBound
+	  - getTwoDimModelBridgeParams().gradientParams.lowerVelBound)/getTwoDimModelBridgeParams().gradientParams.numCaurseGrid;
+  std::cout<<"The caurse step size is: "<< caurseStepSize <<std::endl;
+
+   for (double vel = getTwoDimModelBridgeParams().gradientParams.lowerVelBound; vel <=  getTwoDimModelBridgeParams().gradientParams.upperVelBound; vel += caurseStepSize)
+   {
+     caurseContactVelocityGrids_.push_back(vel); 
+     PostImpactStates state;
+     velCases_.insert(std::make_pair(vel, state));
+     //velCases_.insert(std::make_pair(vel, Eigen::Vector3d::Zero()));
+
+     std::cout<<"Added contact vel: "<< vel <<std::endl;
+   }
+
+}
+
+void TwoDimModelBridge::printResult()
+{
+  std::cout<<"I_nr is: "<< twoDimModelPtr_->getSolution().I_nr<<std::endl;
+  std::cout<<"I_nc is: "<< twoDimModelPtr_->getSolution().I_nc<<std::endl;
+  std::cout<<"I_r is: "<< twoDimModelPtr_->getSolution().I_r.transpose()<<std::endl;
+  std::cout<<"The impulse is: "<< robotPostImpactStates_.impulse<<std::endl;
+
+  std::cout<<"The post-imapct linear velocity is: "<< twoDimModelPtr_->getImpactBodies().first.postVel<<std::endl;
+}
+void TwoDimModelBridge::printPIParams()
+{
+   std::cout<<green<<"The rotation angle is: "<<rotationAngle_<<std::endl;
+   std::cout<<green<<"The nu is: "<<piParams_.nu.transpose()<<std::endl;
+   std::cout<<green<<"The tu is: "<<piParams_.tu.transpose()<<std::endl;
+
+
+   std::cout<<green<<"The rotated contact point is: "<<piParams_.contactPoint.transpose()<<std::endl;
+
+   std::cout<<green<<"The rotated com is: "<<piParams_.batParams.com.transpose()<<std::endl;
+
+   std::cout<<green<<"The bat inertia is: "<<piParams_.batParams.inertia<<std::endl;
+
+  std::cout<<green<<"The bat preimpact vel is: "<<piParams_.batParams.preVel<<std::endl;
+
+  std::cout<<green<<"The bat preimpact angular vel is: "<<piParams_.batParams.preW<<std::endl;
+}
+
+void TwoDimModelBridge::printVcParams()
+{
+
+  std::cout<<"The Robot com is: "<<vcParams_.com.transpose()<<std::endl;
+  std::cout<<"The Robot moment of inertia semiAxesVector is: "<<vcParams_.semiAxesVector.transpose()<<std::endl;
+  std::cout<<"The ee position is: "<<vcParams_.eePosition.transpose()<<std::endl;
+
+  std::cout<<"The impact normal is: "<<vcParams_.impactNormal.transpose()<<std::endl;
+
+}
 void TwoDimModelBridge::updatePiParams_(const Eigen::Vector3d & in, const Eigen::Vector3d vc, const Eigen::Vector3d & impactLinearVel)
 {
   // (1) Update the normal and tangential unit vectors
    // Compute the angle
    //rotationAngle_= atan2(in.z(), in.y());
    rotationAngle_ = 0.0;
-   std::cout<<green<<"The rotation angle is: "<<rotationAngle_<<std::endl;
+   // std::cout<<green<<"The rotation angle is: "<<rotationAngle_<<std::endl;
    // Update the 2*3 rotation matrix:
    rotation_(0,0) = 1.0;
    rotation_(1,1) = cos(rotationAngle_);
@@ -153,13 +247,13 @@ void TwoDimModelBridge::updatePiParams_(const Eigen::Vector3d & in, const Eigen:
    piParams_.tu(0) = -piParams_.nu(1);
    piParams_.tu(1) = piParams_.nu(0);
 
-   std::cout<<green<<"The nu is: "<<piParams_.nu.transpose()<<std::endl;
-   std::cout<<green<<"The tu is: "<<piParams_.tu.transpose()<<std::endl;
+   //std::cout<<green<<"The nu is: "<<piParams_.nu.transpose()<<std::endl;
+   //std::cout<<green<<"The tu is: "<<piParams_.tu.transpose()<<std::endl;
 
   // (2) Contact Point: 
    piParams_.contactPoint = rotation_*vc;
 
-   std::cout<<green<<"The rotated contact point is: "<<piParams_.contactPoint.transpose()<<std::endl;
+   // std::cout<<green<<"The rotated contact point is: "<<piParams_.contactPoint.transpose()<<std::endl;
   // (3) Parmams of the bat and the object:
    switch(getCase_())
    {
@@ -178,11 +272,11 @@ void TwoDimModelBridge::paramUpdatePushWall_(const Eigen::Vector3d & impactLinea
   // Bat is supposed to be the robot:
   // (1) Robot
   piParams_.batParams.com = rotation_*getRobot().com(); 
-  std::cout<<green<<"The rotated com is: "<<piParams_.batParams.com.transpose()<<std::endl;
+  //std::cout<<green<<"The rotated com is: "<<piParams_.batParams.com.transpose()<<std::endl;
   piParams_.batParams.mass = getRobot().mass(); 
   // Get the z-axis diagonal element: 
   piParams_.batParams.inertia = (rotationFull_*rCentroidalInertia_)(2,2); 
-  std::cout<<green<<"The bat inertia is: "<<piParams_.batParams.inertia<<std::endl;
+  // std::cout<<green<<"The bat inertia is: "<<piParams_.batParams.inertia<<std::endl;
   // Rotate the com velocity 
   if(getTwoDimModelBridgeParams().useComVel)
   {
@@ -194,10 +288,10 @@ void TwoDimModelBridge::paramUpdatePushWall_(const Eigen::Vector3d & impactLinea
     piParams_.batParams.preVel = rotation_*impactLinearVel;
   }
 
-  std::cout<<green<<"The bat preimpact vel is: "<<piParams_.batParams.preVel<<std::endl;
+  // std::cout<<green<<"The bat preimpact vel is: "<<piParams_.batParams.preVel<<std::endl;
   // Get the z-axis average angular velocity:
   piParams_.batParams.preW = rAverageAngularVel_(2);
-  std::cout<<green<<"The bat preimpact angular vel is: "<<piParams_.batParams.preW<<std::endl;
+  // std::cout<<green<<"The bat preimpact angular vel is: "<<piParams_.batParams.preW<<std::endl;
 
   piParams_.batParams.name = "robot";
   
@@ -218,6 +312,11 @@ void TwoDimModelBridge::paramUpdatePushWall_(const Eigen::Vector3d & impactLinea
   // com of the wall is set to be the contact point such that r = cp - com == 0.
   // Suppose that piParams_.contactPoint is already set.
   piParams_.objectParams.com = piParams_.contactPoint;
+
+  if(getTwoDimModelBridgeParams().debug)
+  {
+    printPIParams(); 
+  }
 }
 
 void TwoDimModelBridge::planarSolutionTo3DPushWall_()
@@ -225,22 +324,27 @@ void TwoDimModelBridge::planarSolutionTo3DPushWall_()
   // Convert the post-impact impulse:
   // The robot applies the impulse "I", thus it receives impulse "-I". 
   robotPostImpactStates_.impulse = - rotation_.transpose()*twoDimModelPtr_->getSolution().I_r;
-  std::cout<<"I_nr is: "<< twoDimModelPtr_->getSolution().I_nr<<std::endl;
-  std::cout<<"I_nc is: "<< twoDimModelPtr_->getSolution().I_nc<<std::endl;
-  std::cout<<"I_r is: "<< twoDimModelPtr_->getSolution().I_r.transpose()<<std::endl;
-  std::cout<<"The impulse is: "<< robotPostImpactStates_.impulse<<std::endl;
+  //std::cout<<"I_nr is: "<< twoDimModelPtr_->getSolution().I_nr<<std::endl;
+  //std::cout<<"I_nc is: "<< twoDimModelPtr_->getSolution().I_nc<<std::endl;
+  //std::cout<<"I_r is: "<< twoDimModelPtr_->getSolution().I_r.transpose()<<std::endl;
+  //std::cout<<"The impulse is: "<< robotPostImpactStates_.impulse<<std::endl;
   // Convert the post-impact velocities:
   // robot:
   robotPostImpactStates_.linearVel = rotation_.transpose()*twoDimModelPtr_->getImpactBodies().first.postVel;
   robotPostImpactStates_.linearVelJump = robotPostImpactStates_.impulse/getRobot().mass();
 
-  std::cout<<"The post-imapct linear velocity is: "<< twoDimModelPtr_->getImpactBodies().first.postVel<<std::endl;
+  // std::cout<<"The post-imapct linear velocity is: "<< twoDimModelPtr_->getImpactBodies().first.postVel<<std::endl;
 
   //  Compute: wJump = (1 / getParams().inertia) * cross2(r, I_r);
   Eigen::Vector3d rb = vcPtr_->getVirtualContactPoint() - vcParams_.com;
   robotPostImpactStates_.anguleVelJump = rCentroidalInertia_.inverse()*rb.cross(robotPostImpactStates_.impulse);
 
   robotPostImpactStates_.anguleVel = rAverageAngularVel_ + robotPostImpactStates_.anguleVelJump;
+
+  if(getTwoDimModelBridgeParams().debug)
+  {
+    printResult(); 
+  }
 
 }
 void TwoDimModelBridge::planarSolutionTo3D_()
@@ -284,6 +388,15 @@ const PostImpactStates & ImpactDynamicsModel::getObjectPostImpactStates()
 void TwoDimModelBridge::logImpulseEstimations()
 {
   const std::string & bridgeName = getTwoDimModelBridgeParams().name; 
+
+  if(getTwoDimModelBridgeParams().gradientApproximation)
+  {
+     for (auto & result : velCases_)
+     {
+       logEntries_.emplace_back(bridgeName + "_" + "ImpulseGradientApproximation" + "_" + "ContactVel" + "_" + std::to_string(result.first));
+       getHostCtl_()->logger().addLogEntry(logEntries_.back(), [&result]() { return result.second.impulse; });
+     }
+  }
 
   logEntries_.emplace_back(bridgeName + "_"+ "computationTime");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return twoDimModelPtr_->computationTime(); });
@@ -366,6 +479,7 @@ void TwoDimModelBridge::logImpulseEstimations()
 */
 
 
+  
 }
 void TwoDimModelBridge::removeImpulseEstimations()
 {

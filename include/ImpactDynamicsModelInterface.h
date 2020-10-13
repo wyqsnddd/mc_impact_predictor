@@ -51,11 +51,28 @@ PostImpactStates objectPostImpactStates_;
 
 };
 
+struct GradientApproximationParams
+{
+  double upperVelBound = 0.8;  // Meter/Second
+  double lowerVelBound = 0.0;  // Meter/Second
+  size_t numCaurseGrid = 10; // Number of grids between upper and lower Velocity Bound.
+
+  // Compute for the points v +- (m * size) 
+  // m = velBound/stepSize
+  double velBound = 0.1; // Meter/Second
+  double stepSize = 0.01; // Meter/Second
+};
+
+
+
 struct TwoDimModelBridgeParams
 {
   std::string name = "TwoDimModel";
   bool useVirtualContact = true;
   bool useComVel = true;
+  bool debug = false;
+  bool gradientApproximation = true;
+  GradientApproximationParams gradientParams;
   ImpactModelParams modelParams;
 };
 
@@ -109,6 +126,9 @@ const Eigen::Vector3d & getAverageAngularVel()
 {
   return rAverageAngularVel_;
 }
+void printVcParams();
+void printPIParams();
+void printResult();
 protected:
 TwoDimModelBridgeParams params_;
 //bool useVirtualContact_;
@@ -153,6 +173,7 @@ inline const FIDynamics::VcParams & getVcParams_()
 
 std::shared_ptr<FIDynamics::SolveSemiAxes> ssaPtr_;
 
+
 // Convert the 2D solution to 3D 
 void planarSolutionTo3D_();
 
@@ -168,7 +189,17 @@ TwoDimModelCase case_ = TwoDimModelCase::PushWall;
  */
 void paramUpdatePushWall_(const Eigen::Vector3d & impactLinearVel);
 void planarSolutionTo3DPushWall_();
-};
+
+
+
+// First: impact velocity, Second: Corresponding PostImpactStates 
+//std::map<double, Eigen::Vector3d> velCases_;
+std::map<double, PostImpactStates> velCases_;
+std::vector<double> caurseContactVelocityGrids_;
+//std::vector<double> fineContactVelocityGrids_;
+void initializeGradientApproximation_();
+
+}; // end of the TwoDimModelBridge 
 
 
 /*
