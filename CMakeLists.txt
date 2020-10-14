@@ -22,6 +22,7 @@ add_project_dependency(eigen-lssol REQUIRED)
 add_project_dependency(mc_rtc REQUIRED)
 add_project_dependency(FIDynamics REQUIRED)
 
+find_package(GSL REQUIRED)
 find_package(nlopt REQUIRED)
 
 include_directories(include)

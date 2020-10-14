@@ -6,6 +6,9 @@
 #include <RBDyn/Momentum.h>
 #include "mi_utils.h"
 
+// Header file for GNU Scientific Library: Least squares fit.
+# include <gsl/gsl_fit.h>
+
 namespace mc_impact 
 {
 
@@ -16,6 +19,8 @@ struct PostImpactStates
   Eigen::Vector3d anguleVel = Eigen::Vector3d::Zero();
   Eigen::Vector3d anguleVelJump = Eigen::Vector3d::Zero();
   Eigen::Vector3d impulse = Eigen::Vector3d::Zero();
+  double c0 = 0.0;
+  double c1 = 0.0;
 };
 
 class ImpactDynamicsModel
@@ -55,7 +60,7 @@ struct GradientApproximationParams
 {
   double upperVelBound = 0.8;  // Meter/Second
   double lowerVelBound = 0.0;  // Meter/Second
-  size_t numCaurseGrid = 10; // Number of grids between upper and lower Velocity Bound.
+  size_t numCaurseGrid = 20; // Number of grids between upper and lower Velocity Bound.
 
   // Compute for the points v +- (m * size) 
   // m = velBound/stepSize
@@ -189,6 +194,8 @@ TwoDimModelCase case_ = TwoDimModelCase::PushWall;
  */
 void paramUpdatePushWall_(const Eigen::Vector3d & impactLinearVel);
 void planarSolutionTo3DPushWall_();
+
+void planarSolutionTo3DPushWall_(PostImpactStates & input);
 
 
 

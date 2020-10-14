@@ -143,29 +143,52 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
 
      Eigen::Vector3d contactVel = impactLinearVel;
 
+
+     double contactVelGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
+     double comVelJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
+ 
+     int ii = 0;
      // Loop over the caurse grids: 
      for (const auto & vel:caurseContactVelocityGrids_)
      {
 
        contactVel.x() = vel;
-       updatePiParams_(vcParams_.impactNormal, vc, contactVel);
-       // Reset the x component of the impact velocity 
-       twoDimModelPtr_->updateParams(getPlanarImpactParams());
-       //std::cout<<"twoDimModelPtr_->updated params "<<std::endl;
-       twoDimModelPtr_->update();
+       contactVelGrids[ii] = vel;
 
-       planarSolutionTo3D_();
+       if (vel != impactLinearVel.x()){
+	 // Compute if it is not the nominal contact velocity
+	 
+         updatePiParams_(vcParams_.impactNormal, vc, contactVel);
+         // Reset the x component of the impact velocity 
+         twoDimModelPtr_->updateParams(getPlanarImpactParams());
+         //std::cout<<"twoDimModelPtr_->updated params "<<std::endl;
+         twoDimModelPtr_->update();
+       }
+
+       planarSolutionTo3DPushWall_(velCases_[vel]);
 
        //velCases_.insert(std::make_pair(vel, getRobotPostImpactStates().impulse));
        //velCases_[vel] = getRobotPostImpactStates().impulse;
-       velCases_[vel] = getRobotPostImpactStates();
+       
+       //velCases_[vel] = getRobotPostImpactStates();
+       comVelJumpGrids[ii] = velCases_[vel].linearVelJump.x();
+
 	      // getRobotPostImpactStates().impulse.x(),  getRobotPostImpactStates().impulse.y(), getRobotPostImpactStates().impulse.z();
 
        //std::cout<<"For contact vel: "<< vel<<", the impulse is: "<< getRobotPostImpactStates().impulse.transpose()<<std::endl;
 
+       ii++;
      }
      //std::cout<<"The number of velCases are: "<< velCases_.size()<<std::endl;
-     // Loop over the fine grids: 
+     
+
+     double c0, c1, cov00, cov01, cov11, sumsq;
+     gsl_fit_linear (contactVelGrids, 1, comVelJumpGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &c0, &c1, &cov00, &cov01, &cov11, &sumsq);
+
+     
+     robotPostImpactStates_.c0 = c0;
+     robotPostImpactStates_.c1 = c1;
+
   }
 }
 
@@ -319,8 +342,35 @@ void TwoDimModelBridge::paramUpdatePushWall_(const Eigen::Vector3d & impactLinea
   }
 }
 
+void TwoDimModelBridge::planarSolutionTo3DPushWall_(PostImpactStates & input)
+{
+  // Convert the post-impact impulse:
+  // The robot applies the impulse "I", thus it receives impulse "-I". 
+  input.impulse = - rotation_.transpose()*twoDimModelPtr_->getSolution().I_r;
+  //std::cout<<"I_nr is: "<< twoDimModelPtr_->getSolution().I_nr<<std::endl;
+  //std::cout<<"I_nc is: "<< twoDimModelPtr_->getSolution().I_nc<<std::endl;
+  //std::cout<<"I_r is: "<< twoDimModelPtr_->getSolution().I_r.transpose()<<std::endl;
+  //std::cout<<"The impulse is: "<< robotPostImpactStates_.impulse<<std::endl;
+  // Convert the post-impact velocities:
+  // robot:
+  input.linearVel = rotation_.transpose()*twoDimModelPtr_->getImpactBodies().first.postVel;
+  input.linearVelJump = input.impulse/getRobot().mass();
+
+  // std::cout<<"The post-imapct linear velocity is: "<< twoDimModelPtr_->getImpactBodies().first.postVel<<std::endl;
+
+  //  Compute: wJump = (1 / getParams().inertia) * cross2(r, I_r);
+  Eigen::Vector3d rb = vcPtr_->getVirtualContactPoint() - vcParams_.com;
+  input.anguleVelJump = rCentroidalInertia_.inverse()*rb.cross(input.impulse);
+
+  input.anguleVel = rAverageAngularVel_ + input.anguleVelJump;
+
+}
+
 void TwoDimModelBridge::planarSolutionTo3DPushWall_()
 {
+
+  planarSolutionTo3DPushWall_(robotPostImpactStates_);
+	/*
   // Convert the post-impact impulse:
   // The robot applies the impulse "I", thus it receives impulse "-I". 
   robotPostImpactStates_.impulse = - rotation_.transpose()*twoDimModelPtr_->getSolution().I_r;
@@ -341,6 +391,7 @@ void TwoDimModelBridge::planarSolutionTo3DPushWall_()
 
   robotPostImpactStates_.anguleVel = rAverageAngularVel_ + robotPostImpactStates_.anguleVelJump;
 
+  */
   if(getTwoDimModelBridgeParams().debug)
   {
     printResult(); 
@@ -395,8 +446,26 @@ void TwoDimModelBridge::logImpulseEstimations()
      {
        logEntries_.emplace_back(bridgeName + "_" + "ImpulseGradientApproximation" + "_" + "ContactVel" + "_" + std::to_string(result.first));
        getHostCtl_()->logger().addLogEntry(logEntries_.back(), [&result]() { return result.second.impulse; });
+     
+       logEntries_.emplace_back(bridgeName + "_" + "ImpulseGradientApproximation" + "_" + "comVelJump" + "_" + std::to_string(result.first));
+       getHostCtl_()->logger().addLogEntry(logEntries_.back(), [&result]() { return result.second.linearVelJump; });
+
+       logEntries_.emplace_back(bridgeName + "_" + "ImpulseGradientApproximation" + "_" + "angularVelJump" + "_" + std::to_string(result.first));
+       getHostCtl_()->logger().addLogEntry(logEntries_.back(), [&result]() { return result.second.anguleVelJump; });
+
+
      }
+
   }
+
+  logEntries_.emplace_back(bridgeName + "_"+ "curveFitting_comVelJump_c0");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().c0; });
+
+
+  logEntries_.emplace_back(bridgeName + "_"+ "curveFitting_comVelJump_c1");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().c1; });
+
+
 
   logEntries_.emplace_back(bridgeName + "_"+ "computationTime");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return twoDimModelPtr_->computationTime(); });
