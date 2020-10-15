@@ -118,6 +118,18 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   initializeQP_();
   std::cout << "the QP-based impulse estimator is created. " << std::endl;
 
+  // Initialize the TwoDim frictional impact dynamics model
+  TwoDimModelBridgeParams newTwoDimModelParams;
+  newTwoDimModelParams.modelParams = getImpactModel("r_wrist")->getParams();
+
+  newTwoDimModelParams.name = "PredictorTwoDimModelSimRobot";
+  newTwoDimModelParams.useVirtualContact = false;
+  newTwoDimModelParams.useComVel = false;
+  twoDimFidModelPtr_ = std::make_shared<mc_impact::TwoDimModelBridge>(getSimRobot(), newTwoDimModelParams);
+
+
+
+
 }
 
 
@@ -304,6 +316,24 @@ void mi_qpEstimator::updateImpactModels_()
     //(getImpactModel(idx->first))->update();
     idx->second->update();
   }
+
+
+  if (getOsd()->useBodyJacobian())
+  {
+     // The two dim model by defaults computes in the inertial frame
+     // Convert the body frame variables to the inertial frame
+     const Eigen::Matrix3d & rotation =  getSimRobot().bodyPosW("r_wrist").rotation();
+     twoDimFidModelPtr_->update(rotation * getImpactModel("r_wrist")->getSurfaceNormal(),
+      	       rotation * getImpactModel("r_wrist")->getEeVelocity());
+  }
+  else
+  {
+     // Inertial Frame
+     twoDimFidModelPtr_->update(getImpactModel("r_wrist")->getSurfaceNormal(),
+      	       getImpactModel("r_wrist")->getEeVelocity());
+
+  }
+
 }
 
 
@@ -316,11 +346,16 @@ void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vect
     //(getImpactModel(const_cast<std::string & >(idx->first)))->update(idx->second);
     (getImpactModel(idx->first))->update(idx->second);
   }
+
+
+
+
 }
 void mi_qpEstimator::update()
 {
   updateImpactModels_();
   update_();
+
 }
 
 void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
@@ -957,6 +992,9 @@ void mi_qpEstimator::logImpulseEstimations()
     getHostCtl_()->logger().addLogEntry(logEntries_.back(),
                        [this, eeName]() { return getImpactModel(eeName)->getSurfaceNormal(); });
   }
+
+  // Log the frictional impact dynamics entries.
+  twoDimFidModelPtr_->logImpulseEstimations();
 }
 
 void mi_qpEstimator::removeImpulseEstimations_()

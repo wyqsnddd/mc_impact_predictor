@@ -44,6 +44,8 @@
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
 
+#include <mc_prediction/ImpactDynamicsModelInterface.h>
+
 namespace mc_impact
 {
 
@@ -182,6 +184,7 @@ public:
     if(hostCtlPtr_ == nullptr)
     {
       hostCtlPtr_ = ctlPtr;
+      twoDimFidModelPtr_->setHostCtl(hostCtlPtr_);
     }else{
       throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name + " is already set!");
     }
@@ -206,6 +209,11 @@ public:
   {
     return cmmPtr_;
   }
+  inline std::shared_ptr<mc_impact::TwoDimModelBridge> getFidModel() const
+  {
+    return  twoDimFidModelPtr_;
+  }
+	
 private:
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
@@ -315,5 +323,6 @@ private:
   double solverTime_;
   double structTime_;
 
+  std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_;
 };
 } // namespace mc_impact

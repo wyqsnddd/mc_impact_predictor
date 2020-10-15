@@ -1,3 +1,5 @@
+# pragma once 
+
 #include <TwoDimModel/TwoDimModel.h>
 #include <VirtualContactPoint/VirtualContactPoint.h>
 #include <VirtualContactPoint/SolveSemiAxes.h>
