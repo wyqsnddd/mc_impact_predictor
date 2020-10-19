@@ -13,12 +13,15 @@ TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot,
 		const TwoDimModelBridgeParams & params) : ImpactDynamicsModel(simRobot, params.modelParams), params_(params)
 {
 
-  // Initialize the semiaxes calculator
-  Eigen::Matrix3d inertiaMatrix = Eigen::Matrix3d::Identity();
-  ssaPtr_.reset(new FIDynamics::SolveSemiAxes(getRobot().mass(), inertiaMatrix));
+    // Initialize the virtual-contact-point calculator
   
-  // Initialize the virtual-contact-point calculator
-  vcPtr_.reset(new FIDynamics::VirtualContactPoint());
+  if(getTwoDimModelBridgeParams().useVirtualContact)
+  {
+    // Initialize the semiaxes calculator
+    Eigen::Matrix3d inertiaMatrix = Eigen::Matrix3d::Identity();
+    ssaPtr_.reset(new FIDynamics::SolveSemiAxes(getRobot().mass(), inertiaMatrix));
+    vcPtr_.reset(new FIDynamics::VirtualContactPoint());
+  }
 
   // Initialize the two-dim-model 
   // Energetic coefficient of restitution
@@ -77,7 +80,10 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   
   // Inertia should be the upper corner? check! 
   //std::cout<<green<< "The centroidal inertia is: " << std::endl << centroidalInertia<< std::endl;
-  ssaPtr_->update(getRobot().mass(), rCentroidalInertia_);
+  if(getTwoDimModelBridgeParams().useVirtualContact)
+  {
+    ssaPtr_->update(getRobot().mass(), rCentroidalInertia_);
+  }
 
   //std::cout<<"ssa updated"<<std::endl;
 // clang-format off
@@ -95,7 +101,10 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   vcParams_.com = getRobot().com();
 
   // Use the value from the semi-axes-calculator 
-  vcParams_.semiAxesVector << ssaPtr_->getSemiAxes()[0], ssaPtr_->getSemiAxes()[1], ssaPtr_->getSemiAxes()[2];
+  if(getTwoDimModelBridgeParams().useVirtualContact)
+  {
+    vcParams_.semiAxesVector << ssaPtr_->getSemiAxes()[0], ssaPtr_->getSemiAxes()[1], ssaPtr_->getSemiAxes()[2];
+  }
 
   // Use the impact body translation
   sva::PTransformd X_0_ee = getRobot().bodyPosW(getParams().iBodyName);
@@ -359,7 +368,15 @@ void TwoDimModelBridge::planarSolutionTo3DPushWall_(PostImpactStates & input)
   // std::cout<<"The post-imapct linear velocity is: "<< twoDimModelPtr_->getImpactBodies().first.postVel<<std::endl;
 
   //  Compute: wJump = (1 / getParams().inertia) * cross2(r, I_r);
-  Eigen::Vector3d rb = vcPtr_->getVirtualContactPoint() - vcParams_.com;
+  Eigen::Vector3d rb;
+  if(getTwoDimModelBridgeParams().useVirtualContact)
+  {
+    rb = vcPtr_->getVirtualContactPoint() - vcParams_.com;
+  }
+  else
+  {
+    rb = vcParams_.eePosition  - vcParams_.com;
+  }
   input.anguleVelJump = rCentroidalInertia_.inverse()*rb.cross(input.impulse);
 
   input.anguleVel = rAverageAngularVel_ + input.anguleVelJump;
@@ -500,8 +517,11 @@ void TwoDimModelBridge::logImpulseEstimations()
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return rAverageLinearVel_; });
 
 
-  logEntries_.emplace_back(bridgeName + "_"+ "virtualContactPoint");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return vcPtr_->getVirtualContactPoint(); });
+  if(getTwoDimModelBridgeParams().useVirtualContact)
+  {
+    logEntries_.emplace_back(bridgeName + "_"+ "virtualContactPoint");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return vcPtr_->getVirtualContactPoint(); });
+  }
 
   logEntries_.emplace_back(bridgeName + "_"+ "useVirtualContactPoint");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 

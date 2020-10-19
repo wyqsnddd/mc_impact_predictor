@@ -1001,6 +1001,8 @@ void mi_qpEstimator::removeImpulseEstimations_()
 {
   assert(getHostCtl_() != nullptr);
 
+  twoDimFidModelPtr_->removeImpulseEstimations();
+
   for(auto & name : logEntries_)
   {
     getHostCtl_()->logger().removeLogEntry(name); 
