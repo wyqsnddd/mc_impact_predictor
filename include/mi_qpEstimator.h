@@ -28,10 +28,11 @@
 #include <math.h>
 //# include <Eigen/QR>
 #include <mc_control/fsm/Controller.h>
-#include <mc_prediction/ImpactDynamicsModelInterface.h>
 #include <mc_rbdyn/Robots.h>
 
 #include <RBDyn/Momentum.h>
+
+#include "ImpactDynamicsModelInterface.h"
 
 #include "mi_balance.h"
 #include "mi_impactModel.h"

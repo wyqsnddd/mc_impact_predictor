@@ -958,14 +958,14 @@ void mi_qpEstimator::logImpulseEstimations()
   }
 
   // Log the frictional impact dynamics entries.
-  twoDimFidModelPtr_->logImpulseEstimations();
+  getFidModel()->logImpulseEstimations();
 }
 
 void mi_qpEstimator::removeImpulseEstimations_()
 {
   assert(getHostCtl_() != nullptr);
 
-  twoDimFidModelPtr_->removeImpulseEstimations();
+  getFidModel()->removeImpulseEstimations();
 
   for(auto & name : logEntries_)
   {

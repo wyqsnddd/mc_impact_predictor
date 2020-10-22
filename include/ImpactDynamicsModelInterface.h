@@ -4,13 +4,14 @@
 
 #include <RBDyn/Momentum.h>
 
-#include "mi_utils.h"
 #include <TwoDimModel/TwoDimModel.h>
 #include <VirtualContactPoint/SolveSemiAxes.h>
 #include <VirtualContactPoint/VirtualContactPoint.h>
 
 // Header file for GNU Scientific Library: Least squares fit.
 #include <gsl/gsl_fit.h>
+
+#include "mi_utils.h"
 
 namespace mc_impact
 {
