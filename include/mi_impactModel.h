@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -25,10 +25,9 @@
 
 #include <RBDyn/Jacobian.h>
 
+#include "mi_utils.h"
 #include <Eigen/StdVector>
 #include <iostream>
-
-#include "mi_utils.h"
 
 namespace mc_impact
 {
@@ -39,25 +38,23 @@ class mi_impactModel
  */
 {
 public:
-  mi_impactModel(const mc_rbdyn::Robot & simRobot,
-		 const ImpactModelParams & params)
+  mi_impactModel(const mc_rbdyn::Robot & simRobot, const ImpactModelParams & params)
   : simRobot_(simRobot), params_(params)
   {
     int dof = simRobot_.mb().nrDof();
-    jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getParams().iBodyName );
+    jacPtr_ = std::make_shared<rbd::Jacobian>(simRobot_.mb(), getParams().iBodyName);
     jacobian_.resize(getParams().dim, dof);
     jacobianDot_.resize(getParams().dim, dof);
     params_.inertial_surfaceNormal.normalize();
     robotJointVel_.resize(dof);
     robotJointVel_.setZero();
-
   }
 
   ~mi_impactModel() {}
 
   const ImpactModelParams & getParams() const
   {
-    return params_; 
+    return params_;
   }
 
   /*
@@ -85,12 +82,12 @@ public:
   {
     return coeFrictionDeduction_;
   }
-  
+
   inline bool useBodyJacobian() const
   {
-    return useBodyJacobian_; 
+    return useBodyJacobian_;
   }
-  
+
 
 
 */
@@ -102,7 +99,7 @@ public:
   {
     return deltaV_;
   }
-  /*! 
+  /*!
    * @return P*(J + J_dot*dt)
    */
   inline const Eigen::MatrixXd & getProjectorTwo() const
@@ -110,7 +107,7 @@ public:
     return reductionProjectorTwo_;
   }
 
-  /*! 
+  /*!
    * @return P*J
    */
   inline const Eigen::MatrixXd & getProjector() const
@@ -158,7 +155,6 @@ private:
   void updateJacobian_();
   Eigen::MatrixXd jacobian_;
   Eigen::MatrixXd jacobianDot_;
-
 
   ///< This is the impact normal direction in the inertial frame
 

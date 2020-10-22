@@ -2,15 +2,15 @@
 
 #include <mc_rbdyn/Robot.h>
 #include <mc_rbdyn/RobotModule.h>
-#include <RBDyn/Momentum.h>
 
-#include <assert.h>
-#include <map>
+#include <RBDyn/Momentum.h>
 
 #include "mi_equality.h"
 #include "mi_impactModel.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
+#include <assert.h>
+#include <map>
 
 namespace mc_impact
 {
@@ -27,14 +27,13 @@ public:
   /*!
       \param robot reference to the robot model used by the QP
       \param linearJacobian whether use the linear part of the Jacobian?
-      \param psdPtr pointer to the OSD model, where we extract the contact information 
+      \param psdPtr pointer to the OSD model, where we extract the contact information
       */
-  mi_balance(
-		  const std::shared_ptr<mi_osd> osdPtr,
-		  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-		  const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr
+  mi_balance(const std::shared_ptr<mi_osd> osdPtr,
+             const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+             const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr
 
-		  );
+  );
 
   ~mi_balance() {}
 
@@ -42,26 +41,21 @@ public:
   {
     return "CentroidalImpulseBalanceEqualityConstraint";
   }
- 
+
   /*!
    * This needs to be called in every iteration only once
    */
   void update() override;
 
- 
-  
   inline std::shared_ptr<rbd::CentroidalMomentumMatrix> getCmm() const
   {
     return cmmPtr_;
   }
 
 private:
-
-
   void reset_() override;
   const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels_;
 
   std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr_;
-
 };
 } // namespace mc_impact

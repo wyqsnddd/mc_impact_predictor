@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -24,15 +24,15 @@
 #include <mc_rbdyn/Robot.h>
 #include <mc_rbdyn/RobotModule.h>
 
-#include <chrono>
-
 #include <RBDyn/FA.h>
 #include <RBDyn/FD.h>
 #include <RBDyn/FK.h>
 #include <RBDyn/FV.h>
 #include <RBDyn/Jacobian.h>
 #include <RBDyn/Momentum.h>
+
 #include <assert.h>
+#include <chrono>
 #include <map>
 
 namespace mc_impact
@@ -85,7 +85,7 @@ public:
       \param linearJacobian whether use the linear part of the Jacobian?
       \param bodyJacobian whether use the linear part of the Jacobian?
       */
-  mi_osd(mc_rbdyn::Robot & robot, bool linearJacobian = true, bool bodyJacobian =true);
+  mi_osd(mc_rbdyn::Robot & robot, bool linearJacobian = true, bool bodyJacobian = true);
 
   ~mi_osd() {}
 
@@ -132,16 +132,14 @@ public:
 
   /*!
    * return the equivalent mass
-   * Robot arm (single kinematic chain): \f$ (J M J^\top)^{-1} \f$ 
+   * Robot arm (single kinematic chain): \f$ (J M J^\top)^{-1} \f$
    * Humanoid: (kinematic tree): the corresponding block from the operational space inertia matrix: lambda^{-1}.
    */
   inline const Eigen::MatrixXd getEquivalentMass(const std::string & eeName) const
   {
-    return  cache_.lambdaMatrixInv.block(nameToIndex_(eeName) * getJacobianDim(), nameToIndex_(eeName) * getJacobianDim(),
-                                        getJacobianDim(), getJacobianDim());
-
+    return cache_.lambdaMatrixInv.block(nameToIndex_(eeName) * getJacobianDim(),
+                                        nameToIndex_(eeName) * getJacobianDim(), getJacobianDim(), getJacobianDim());
   }
-
 
   /*!
     \return the Operational space inertia matrix: \f$ \Lambda(i , j) \f$
@@ -215,19 +213,19 @@ public:
    */
   void update();
 
-  /*! \brief Time to update the internal dynamics models. 
-   * \return time in microseconds. 
+  /*! \brief Time to update the internal dynamics models.
+   * \return time in microseconds.
    */
   inline double modelUpdateTime() const
   {
-    return modelUpdateTime_; 
+    return modelUpdateTime_;
   }
-  /*! \brief Time to solve the optimization problem. 
-   * \return time in microseconds. 
+  /*! \brief Time to solve the optimization problem.
+   * \return time in microseconds.
    */
   inline double computationTime() const
   {
-    return computationTime_; 
+    return computationTime_;
   }
   inline int getDof() const
   {
@@ -269,21 +267,21 @@ public:
    *  \param eeName of the end-effector where the force is applied
    *  \param reference point, e.g. the COM. By default, we use the origin of the inertial frame.
    *
-   *  The reference frame is the inertial frame 
+   *  The reference frame is the inertial frame
    */
-  Eigen::MatrixXd forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference = Eigen::Vector3d::Zero());
+  Eigen::MatrixXd forceGraspMatrix(const std::string eeName,
+                                   const Eigen::Vector3d & reference = Eigen::Vector3d::Zero());
 
-  
   const sva::ForceVecd & getSimulatedCentroidalMomentum()
   {
     return centroidalMomentum_;
   }
-  
 
   const sva::ForceVecd & getSimulatedCentroidalMomentumD()
   {
     return centroidalMomentumD_;
   }
+
 private:
   int robotDof_;
   int eeNum_;
@@ -293,7 +291,6 @@ private:
 
   bool linearJacobian_;
   bool bodyJacobian_;
-  
 
   std::shared_ptr<rbd::ForwardDynamics> FDPtr_;
 

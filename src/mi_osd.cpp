@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -28,7 +28,8 @@ mi_osd::mi_osd(mc_rbdyn::Robot & robot,
                //    std::shared_ptr<rbd::ForwardDynamics> & fdPtr,
                bool linearJacobian,
                bool bodyJacobian)
-: robot_(robot), linearJacobian_(linearJacobian), bodyJacobian_(bodyJacobian), computationTime_(0.0) //, FDPtr_(fdPtr) // robotPtr_(robotPtr),
+: robot_(robot), linearJacobian_(linearJacobian), bodyJacobian_(bodyJacobian),
+  computationTime_(0.0) //, FDPtr_(fdPtr) // robotPtr_(robotPtr),
 {
   std::cout << "The osd dynamics constructor is called " << std::endl;
   // Initilize the forward dynamics:
@@ -127,16 +128,17 @@ void mi_osd::update()
   // FDPtr_->computeH(getRobot().mb(), getRobot().mbc());
   // std::cout << "FD computed M ..." << std::endl;
   // std::cout << "Updating componentUpdateOsdDataCache_ ..." << std::endl;
-  
-  // Update the Centroidal Momentum and its derivative: 
-  
+
+  // Update the Centroidal Momentum and its derivative:
+
   centroidalMomentum_ = rbd::sComputeCentroidalMomentum(getRobot().mb(), getRobot().mbc(), getRobot().com());
 
-  centroidalMomentumD_ = rbd::sComputeCentroidalMomentumDot(getRobot().mb(), getRobot().mbc(), getRobot().com(), getRobot().comVelocity());
+  centroidalMomentumD_ =
+      rbd::sComputeCentroidalMomentumDot(getRobot().mb(), getRobot().mbc(), getRobot().com(), getRobot().comVelocity());
 
   auto stopModelUpdate = std::chrono::high_resolution_clock::now();
-  
-  auto durationModelUpdate = std::chrono::duration_cast< std::chrono::microseconds>(stopModelUpdate - startUpdate);
+
+  auto durationModelUpdate = std::chrono::duration_cast<std::chrono::microseconds>(stopModelUpdate - startUpdate);
 
   modelUpdateTime_ = static_cast<double>(durationModelUpdate.count());
 
@@ -146,7 +148,6 @@ void mi_osd::update()
 
   auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopUpdate - startUpdate);
   computationTime_ = static_cast<double>(durationStruct.count());
-
 }
 const int & mi_osd::nameToIndex_(const std::string & eeName) const
 {
@@ -182,18 +183,19 @@ void mi_osd::updateCache_()
 
     Eigen::MatrixXd tempJacobian;
     Eigen::MatrixXd tempJacobianDot;
-    if(useBodyJacobian()){
-       tempJacobian = it->second.jacPtr->bodyJacobian(getRobot().mb(), getRobot().mbc());
-       tempJacobianDot = it->second.jacPtr->bodyJacobianDot(getRobot().mb(), getRobot().mbc());
-    }else{
-       tempJacobian = it->second.jacPtr->jacobian(getRobot().mb(), getRobot().mbc());
-       tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
-
+    if(useBodyJacobian())
+    {
+      tempJacobian = it->second.jacPtr->bodyJacobian(getRobot().mb(), getRobot().mbc());
+      tempJacobianDot = it->second.jacPtr->bodyJacobianDot(getRobot().mb(), getRobot().mbc());
+    }
+    else
+    {
+      tempJacobian = it->second.jacPtr->jacobian(getRobot().mb(), getRobot().mbc());
+      tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
     }
 
-    //Eigen::MatrixXd tempJacobian = it->second.jacPtr->jacobian(getRobot().mb(), getRobot().mbc());
-    //Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
-
+    // Eigen::MatrixXd tempJacobian = it->second.jacPtr->jacobian(getRobot().mb(), getRobot().mbc());
+    // Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
 
     Eigen::MatrixXd tempFullJacobian, tempFullJacobianDot;
     tempFullJacobian.resize(getJacobianDim(), getDof());
@@ -304,7 +306,6 @@ bool mi_osd::addEndeffector_(std::string eeName)
   }
 }
 
-
 Eigen::Matrix3d mi_osd::crossMatrix(const Eigen::Vector3d & input)
 {
 
@@ -324,46 +325,48 @@ Eigen::Matrix3d mi_osd::crossMatrix(const Eigen::Vector3d & input)
 
 Eigen::MatrixXd mi_osd::forceGraspMatrix(const std::string eeName, const Eigen::Vector3d & reference)
 {
-   Eigen::MatrixXd graspMatrx;
-   graspMatrx.resize(6, 3);
-   graspMatrx.setZero();
+  Eigen::MatrixXd graspMatrx;
+  graspMatrx.resize(6, 3);
+  graspMatrx.setZero();
 
   // Transform of the endEffector.
   auto X_0_c = getRobot().bodyPosW(eeName);
 
   // R_0_pi
-  auto rotation= X_0_c.rotation();
-  // P_pi_com   
+  auto rotation = X_0_c.rotation();
+  // P_pi_com
   auto translation = X_0_c.translation() - reference;
 
-
   // Old-implementation:
-  //auto rotationTranspose = X_0_c.rotation().transpose();
-  //auto translation = X_0_c.translation() - reference;
+  // auto rotationTranspose = X_0_c.rotation().transpose();
+  // auto translation = X_0_c.translation() - reference;
 
-  if(useBodyJacobian()){
-  // the impulse(force) are aligned in the local frame
-  
-    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation)* rotation;
-    graspMatrx.block<3, 3>(3, 0) = rotation; 
+  if(useBodyJacobian())
+  {
+    // the impulse(force) are aligned in the local frame
+
+    graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation) * rotation;
+    graspMatrx.block<3, 3>(3, 0) = rotation;
 
     // Old-implementation:
-   // graspMatrx.block<3, 3>(3, 0) = rotationTranspose; 
-    //graspMatrx.block<3, 3>(0, 0) = -rotationTranspose * crossMatrix(translation);
-  }else{
-   // the impulse(force) are aligned to the inertial frame
-    
+    // graspMatrx.block<3, 3>(3, 0) = rotationTranspose;
+    // graspMatrx.block<3, 3>(0, 0) = -rotationTranspose * crossMatrix(translation);
+  }
+  else
+  {
+    // the impulse(force) are aligned to the inertial frame
+
     graspMatrx.block<3, 3>(0, 0) = crossMatrix(translation);
     graspMatrx.block<3, 3>(3, 0).setIdentity();
 
     // Old-implementation:
-    //graspMatrx.block<3, 3>(3, 0).setIdentity();
-    //graspMatrx.block<3, 3>(0, 0) = - crossMatrix(translation);
+    // graspMatrx.block<3, 3>(3, 0).setIdentity();
+    // graspMatrx.block<3, 3>(0, 0) = - crossMatrix(translation);
   }
   /*
   if(getOsd_()->useBodyJacobian()){
   // the impulse(force) are aligned in the local frame
-    graspMatrx.block<3, 3>(0, 0) = rotationTranspose; 
+    graspMatrx.block<3, 3>(0, 0) = rotationTranspose;
 
     graspMatrx.block<3, 3>(3, 0) = -rotationTranspose * crossMatrix(translation);
   }else{
@@ -374,9 +377,7 @@ Eigen::MatrixXd mi_osd::forceGraspMatrix(const std::string eeName, const Eigen::
   }
   */
   return graspMatrx;
-
 }
-
 
 void mi_osd::printInfo()
 {

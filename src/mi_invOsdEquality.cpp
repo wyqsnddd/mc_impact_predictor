@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -37,8 +37,8 @@ void mi_invOsdEquality::reset_()
   int dim = getOsd_()->getJacobianDim();
 
   // Arnaud: this assert fails
-  //std::cout<<"nOsdEe: "<< nOsdEe << ", numEe_: "<<numEe_<<std::endl;
-  //assert(nOsdEe <= numEe_);
+  // std::cout<<"nOsdEe: "<< nOsdEe << ", numEe_: "<<numEe_<<std::endl;
+  // assert(nOsdEe <= numEe_);
 
   A_.resize(nOsdEe * dim, dof + dim * (nOsdEe));
   A_.setZero();

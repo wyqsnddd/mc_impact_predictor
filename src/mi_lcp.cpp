@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -35,7 +35,7 @@ mi_lcp::mi_lcp(const mc_rbdyn::Robot & simRobot,
                int dim,
                const std::string & solverName,
                double convergenceThreshold)
-: simRobot_(simRobot), realRobot_(realRobot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName), 
+: simRobot_(simRobot), realRobot_(realRobot), osdPtr_(osdPtr), dim_(dim), solverName_(solverName),
   convergenceThreshold_(convergenceThreshold), structTime_(0.0)
 
 {
@@ -101,7 +101,7 @@ void mi_lcp::update()
 {
   // We restrict the calculation to the surface normal direction
   // The number of contact is:
-  
+
   auto startStruct = std::chrono::high_resolution_clock::now();
 
   std::size_t contactNum = osdPtr_->getContactNum();
@@ -154,15 +154,16 @@ void mi_lcp::update(const std::map<std::string, Eigen::Vector3d> & contactSurfac
   auto stopStruct = std::chrono::high_resolution_clock::now();
   auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopStruct - startStruct);
 
-  structTime_ = static_cast<double>(durationStruct.count()) - solver_.solverTime;;
+  structTime_ = static_cast<double>(durationStruct.count()) - solver_.solverTime;
+  ;
 }
 
 std::vector<double> & LcpSolver::solveLCP(const Eigen::MatrixXd & H,
-                                           const Eigen::VectorXd & d,
-                                           const std::string & solverName,
-                                           double convergenceThreshold)
+                                          const Eigen::VectorXd & d,
+                                          const std::string & solverName,
+                                          double convergenceThreshold)
 {
-  
+
   auto startSolve = std::chrono::high_resolution_clock::now();
   int numVar = static_cast<int>(d.size());
   // std::cout<<"LCP:: The number of variables is: "<<numVar<<std::endl;
@@ -203,7 +204,6 @@ std::vector<double> & LcpSolver::solveLCP(const Eigen::MatrixXd & H,
   // If the result is not in this range, then it failed
   if(!(nlopt::SUCCESS <= result && result <= nlopt::XTOL_REACHED))
     throw std::runtime_error("nlopt failed to solve the problem");
-
 
   auto stopSolve = std::chrono::high_resolution_clock::now();
   auto durationSolve = std::chrono::duration_cast<std::chrono::microseconds>(stopSolve - startSolve);

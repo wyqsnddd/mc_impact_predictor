@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -29,9 +29,9 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
                                const struct qpEstimatorParameter params)
 : simRobot_(simRobot), osdPtr_(osdPtr), params_(params), solverTime_(0), structTime_(0.0)
 {
-	
+
   // (0) Initialize the centroidal momentum calculator
-  //cmmPtr_ ->sComputeMatrix(osdPtr_->getRobot().mb(), osdPtr_->getRobot().mbc(), osdPtr_->getRobot().com());
+  // cmmPtr_ ->sComputeMatrix(osdPtr_->getRobot().mb(), osdPtr_->getRobot().mbc(), osdPtr_->getRobot().com());
 
   cmmPtr_ = std::make_shared<rbd::CentroidalMomentumMatrix>(osdPtr_->getRobot().mb());
   // (1) initilize the Impact models
@@ -42,13 +42,13 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
     params.coeF = params_.coeFrictionDeduction;
     params.iBodyName = idx->first;
     params.inertial_surfaceNormal = idx->second;
-    params.coeR =  params_.coeRes;
-    params.timeStep =  params_.timeStep;
-    params.iDuration =  params_.impactDuration;
-    params.dim =  params_.dim;
-    params.useBodyJacobian =  params_.impactModelBodyJacobian;
+    params.coeR = params_.coeRes;
+    params.timeStep = params_.timeStep;
+    params.iDuration = params_.impactDuration;
+    params.dim = params_.dim;
+    params.useBodyJacobian = params_.impactModelBodyJacobian;
 
-    impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>( getSimRobot(), params);
+    impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>(getSimRobot(), params);
   }
   // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
   /*
@@ -65,25 +65,24 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   }
 
   */
- 
+
   // Try to use all the end-effectors from the OSD
-  for(auto & ee: getOsd()->getEes())
+  for(auto & ee : getOsd()->getEes())
   {
     bool isOsdEe = true;
     addEndeffector_(ee, isOsdEe);
   }
 
   if(params_.useJsd)
-    eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_));
+    eqConstraints_.emplace_back(
+        std::make_shared<mc_impact::mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_));
 
   if(params_.useOsd)
     eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_invOsdEquality>(getOsd(), static_cast<int>(getImpactModels().size())));
 
   if(params_.useImpulseBalance)
-    eqConstraints_.emplace_back(
-        std::make_shared<mc_impact::mi_balance>(getOsd(), getImpactModels(), cmmPtr_));
-
+    eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_balance>(getOsd(), getImpactModels(), cmmPtr_));
 
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
@@ -126,22 +125,17 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   newTwoDimModelParams.useVirtualContact = false;
   newTwoDimModelParams.useComVel = false;
   twoDimFidModelPtr_ = std::make_shared<mc_impact::TwoDimModelBridge>(getSimRobot(), newTwoDimModelParams);
-
-
-
-
 }
-
 
 mi_qpEstimator::~mi_qpEstimator()
 {
-  if(logEntries_.size()>0)
+  if(logEntries_.size() > 0)
   {
     assert(hostCtlPtr_ != nullptr);
     removeImpulseEstimations_();
   }
 
-  if(guiEntries_.size()>0)
+  if(guiEntries_.size() > 0)
   {
     assert(hostCtlPtr_ != nullptr);
     removeMcRtcGuiItems();
@@ -189,15 +183,13 @@ void mi_qpEstimator::initializeQP_()
   jacobianTwoDeltaAlpha_.resize(getDof(), getDof());
   jacobianTwoDeltaAlpha_.setZero();
 
-
   jacobianDeltaTau_.resize(getDof(), getDof());
   jacobianDeltaTau_.setZero();
 
   // Resize each element of vector_A_dagger_, where each of them correspond to one impact
-  for(auto & A_dagger : vector_A_dagger_ )
+  for(auto & A_dagger : vector_A_dagger_)
   {
-    A_dagger.resize(
-        getDof() + getEstimatorParams().dim * getEeNum(), 3);
+    A_dagger.resize(getDof() + getEstimatorParams().dim * getEeNum(), 3);
 
     A_dagger.setZero();
   }
@@ -205,10 +197,10 @@ void mi_qpEstimator::initializeQP_()
 }
 
 void mi_qpEstimator::solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
-                                const Eigen::VectorXd & p_,
-                                const Eigen::MatrixXd & C_,
-                                const Eigen::VectorXd & cu_,
-                                Eigen::VectorXd & solution)
+                                        const Eigen::VectorXd & p_,
+                                        const Eigen::MatrixXd & C_,
+                                        const Eigen::VectorXd & cu_,
+                                        Eigen::VectorXd & solution)
 {
   Eigen::MatrixXd kkt;
   int kktDim = getNumVar_() + static_cast<int>(C_.rows());
@@ -217,7 +209,7 @@ void mi_qpEstimator::solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
   kkt.setZero();
 
   kkt.block(0, 0, getNumVar_(), getNumVar_()) = Q_;
-  //kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(), getNumVar_());
+  // kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(), getNumVar_());
 
   // kkt.block(0, 0, getNumVar_(), getNumVar_())=  kkt.block(0, 0, getNumVar_(), getNumVar_())*2;
 
@@ -269,7 +261,7 @@ void mi_qpEstimator::solveEqQp_(const Eigen::MatrixXd & Q_,
   kkt.resize(kktDim, kktDim);
   kkt.setZero();
 
-  //kkt.block(0, 0, getNumVar_(), getNumVar_()) = Q_;
+  // kkt.block(0, 0, getNumVar_(), getNumVar_()) = Q_;
   kkt.block(0, 0, getNumVar_(), getNumVar_()).setIdentity(getNumVar_(), getNumVar_());
 
   // kkt.block(0, 0, getNumVar_(), getNumVar_())=  kkt.block(0, 0, getNumVar_(), getNumVar_())*2;
@@ -317,26 +309,21 @@ void mi_qpEstimator::updateImpactModels_()
     idx->second->update();
   }
 
-
-  if (getOsd()->useBodyJacobian())
+  if(getOsd()->useBodyJacobian())
   {
-     // The two dim model by defaults computes in the inertial frame
-     // Convert the body frame variables to the inertial frame
-     const Eigen::Matrix3d & rotation =  getSimRobot().bodyPosW("r_wrist").rotation();
-     twoDimFidModelPtr_->update(rotation * getImpactModel("r_wrist")->getSurfaceNormal(),
-      	       rotation * getImpactModel("r_wrist")->getEeVelocity());
+    // The two dim model by defaults computes in the inertial frame
+    // Convert the body frame variables to the inertial frame
+    const Eigen::Matrix3d & rotation = getSimRobot().bodyPosW("r_wrist").rotation();
+    twoDimFidModelPtr_->update(rotation * getImpactModel("r_wrist")->getSurfaceNormal(),
+                               rotation * getImpactModel("r_wrist")->getEeVelocity());
   }
   else
   {
-     // Inertial Frame
-     twoDimFidModelPtr_->update(getImpactModel("r_wrist")->getSurfaceNormal(),
-      	       getImpactModel("r_wrist")->getEeVelocity());
-
+    // Inertial Frame
+    twoDimFidModelPtr_->update(getImpactModel("r_wrist")->getSurfaceNormal(),
+                               getImpactModel("r_wrist")->getEeVelocity());
   }
-
 }
-
-
 
 void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
 {
@@ -346,16 +333,11 @@ void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vect
     //(getImpactModel(const_cast<std::string & >(idx->first)))->update(idx->second);
     (getImpactModel(idx->first))->update(idx->second);
   }
-
-
-
-
 }
 void mi_qpEstimator::update()
 {
   updateImpactModels_();
   update_();
-
 }
 
 void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
@@ -373,49 +355,48 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
 }
 
 void mi_qpEstimator::cmmQ_()
-{ 
-  
+{
+
   int dim = getOsd()->getJacobianDim();
   Eigen::MatrixXd tempA;
-  tempA.resize(6, getDof() + dim*getEeNum());
+  tempA.resize(6, getDof() + dim * getEeNum());
   tempA.setZero();
 
-  // Directly get the cmm matrix as the constraints has been updated already. 
-  
-  const Eigen::MatrixXd &  cmmMatrix = cmmPtr_->matrix();
-  tempA.block(0 , 0, 6, getDof()) = cmmMatrix;
+  // Directly get the cmm matrix as the constraints has been updated already.
+
+  const Eigen::MatrixXd & cmmMatrix = cmmPtr_->matrix();
+  tempA.block(0, 0, 6, getDof()) = cmmMatrix;
 
   // Go through the contact bodies:
-  for(auto & ee:getOsd()->getContactEes())
+  for(auto & ee : getOsd()->getContactEes())
   {
     int eeIndex = getOsd()->nameToIndex_(ee);
-    tempA.block(0, getDof() + eeIndex * dim, 6, dim).setIdentity(); 
-    //tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
+    tempA.block(0, getDof() + eeIndex * dim, 6, dim).setIdentity();
+    // tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
   }
   // Go through the impact bodies:
-  for(auto & impactModel : impactModels_) 
+  for(auto & impactModel : impactModels_)
   {
     int eeIndex = getOsd()->nameToIndex_(impactModel.first);
 
-    tempA.block(0, getDof() + eeIndex* dim, 6, dim).setIdentity();
-    //tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = getOsd()->getJacobian(impactModel.first);
+    tempA.block(0, getDof() + eeIndex * dim, 6, dim).setIdentity();
+    // tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = getOsd()->getJacobian(impactModel.first);
   }
 
-
-  Q_ = tempA.transpose()*tempA + Eigen::MatrixXd::Identity(getDof() + dim*getEeNum(), getDof() + dim*getEeNum())*0.05;
-
+  Q_ = tempA.transpose() * tempA
+       + Eigen::MatrixXd::Identity(getDof() + dim * getEeNum(), getDof() + dim * getEeNum()) * 0.05;
 }
 void mi_qpEstimator::eomQ_()
-{ 
-  
+{
+
   // The spatial vector case is not defined.
   int dim = getOsd()->getJacobianDim();
 
   Eigen::MatrixXd tempA;
-  tempA.resize(getDof(), getDof() + dim*getEeNum());
+  tempA.resize(getDof(), getDof() + dim * getEeNum());
   tempA.setZero();
 
-  tempA.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix();
+  tempA.block(0, 0, getDof(), getDof()) = getOsd()->getMassMatrix();
 
   // Go through all the end-effectors
   /*
@@ -428,61 +409,56 @@ void mi_qpEstimator::eomQ_()
   */
 
   // Go through the contact bodies:
-  for(auto & ee:getOsd()->getContactEes())
+  for(auto & ee : getOsd()->getContactEes())
   {
 
     int eeIndex = getOsd()->nameToIndex_(ee);
-    tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = - getOsd()->getJacobian(ee).transpose();
-    //tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
+    tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = -getOsd()->getJacobian(ee).transpose();
+    // tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
   }
 
   // Go through the impact bodies:
-  for(auto & impactModel : impactModels_) 
+  for(auto & impactModel : impactModels_)
   {
     int eeIndex = getOsd()->nameToIndex_(impactModel.first);
 
-    tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = - getOsd()->getJacobian(impactModel.first).transpose();
-    //tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = getOsd()->getJacobian(impactModel.first);
+    tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = -getOsd()->getJacobian(impactModel.first).transpose();
+    // tempA.block(0, getDof() + eeIndex* dim, getDof(), dim) = getOsd()->getJacobian(impactModel.first);
   }
 
-  Q_ = tempA.transpose()*tempA + Eigen::MatrixXd::Identity(getDof() + dim*getEeNum(), getDof() + dim*getEeNum())*0.05;
-
-
+  Q_ = tempA.transpose() * tempA
+       + Eigen::MatrixXd::Identity(getDof() + dim * getEeNum(), getDof() + dim * getEeNum()) * 0.05;
 }
 void mi_qpEstimator::updateObjective_(const int & choice)
 {
 
-
   switch(choice)
-	{
-	// Default: Minimize sum of momentum: (M*\Delta_q_dot)^2 + \sum impulse 
-	case 0:
-	  Q_.block(0 , 0, getDof(), getDof()) = getOsd()->getMassMatrix().transpose() * getOsd()->getMassMatrix() + Eigen::MatrixXd::Identity(getDof(), getDof())*0.01;
+  {
+    // Default: Minimize sum of momentum: (M*\Delta_q_dot)^2 + \sum impulse
+    case 0:
+      Q_.block(0, 0, getDof(), getDof()) = getOsd()->getMassMatrix().transpose() * getOsd()->getMassMatrix()
+                                           + Eigen::MatrixXd::Identity(getDof(), getDof()) * 0.01;
 
-	  break;
-	// Minimize centroidal momentum jump;
-	case 1:
-	  cmmQ_();
-	  break;
-	// Minimize the equations-of-motion error: M*\Delta_q_dot = \sum J^\top impulse 
-	case 2:
-	  eomQ_();
-	  break;
+      break;
+    // Minimize centroidal momentum jump;
+    case 1:
+      cmmQ_();
+      break;
+    // Minimize the equations-of-motion error: M*\Delta_q_dot = \sum J^\top impulse
+    case 2:
+      eomQ_();
+      break;
 
-	  // Exception
-	default: 
-	  throw std::runtime_error("The choice of Objective: is not set!");
-	}
-
-
-
-
+      // Exception
+    default:
+      throw std::runtime_error("The choice of Objective: is not set!");
+  }
 }
 void mi_qpEstimator::update_()
 {
 
   // Update the CMM matrix
-  cmmPtr_ ->sComputeMatrix(osdPtr_->getRobot().mb(), osdPtr_->getRobot().mbc(), osdPtr_->getRobot().com());
+  cmmPtr_->sComputeMatrix(osdPtr_->getRobot().mb(), osdPtr_->getRobot().mbc(), osdPtr_->getRobot().com());
 
   auto startStruct = std::chrono::high_resolution_clock::now();
   int count = 0;
@@ -497,7 +473,7 @@ void mi_qpEstimator::update_()
     // Lower bounds: lb == ub for equalities
     cl_.segment(count, eq->nrEq()) = eq->bEq();
 
-    // Upper bounds: 
+    // Upper bounds:
     cu_.segment(count, eq->nrEq()) = eq->bEq();
 
     count += eq->nrEq();
@@ -508,7 +484,7 @@ void mi_qpEstimator::update_()
   solutionVariables.setZero();
 
   auto stopStruct = std::chrono::high_resolution_clock::now();
-  
+
   auto durationStruct = std::chrono::duration_cast<std::chrono::microseconds>(stopStruct - startStruct);
 
   structTime_ = static_cast<double>(durationStruct.count());
@@ -524,7 +500,8 @@ void mi_qpEstimator::update_()
     if(getEstimatorParams().testWeightedQp)
     {
       solveWeightedEqQp_(Q_, p_, C_, cu_, solutionVariables);
-    }else
+    }
+    else
     {
       solveEqQp_(Q_, p_, C_, cu_, solutionVariables);
     }
@@ -534,10 +511,10 @@ void mi_qpEstimator::update_()
   {
     solver_.solve(xl_, xu_, Q_, p_, C_, cl_, cu_);
     solutionVariables = solver_.result();
-    //solveWeightedEqQp_(Q_, p_, C_, cu_, solutionVariables);
+    // solveWeightedEqQp_(Q_, p_, C_, cu_, solutionVariables);
   }
 
-  objectiveValue_ = solutionVariables.transpose()*Q_*solutionVariables;
+  objectiveValue_ = solutionVariables.transpose() * Q_ * solutionVariables;
 
   auto stopSolve = std::chrono::high_resolution_clock::now();
   auto durationSolve = std::chrono::duration_cast<std::chrono::microseconds>(stopSolve - startSolve);
@@ -548,9 +525,9 @@ void mi_qpEstimator::update_()
   // Eigen::MatrixXd tempJac = getImpactModel()->getProjector();
   jointVelJump_ = solutionVariables.segment(0, getDof());
 
-  double mass_inv = 1.0/getSimRobot().mass();
+  double mass_inv = 1.0 / getSimRobot().mass();
 
-  const Eigen::MatrixXd &  cmmMatrix = getCmm()->matrix();
+  const Eigen::MatrixXd & cmmMatrix = getCmm()->matrix();
 
   comVelJump_ = mass_inv * cmmMatrix.block(3, 0, 3, getDof()) * jointVelJump_;
 
@@ -562,7 +539,7 @@ void mi_qpEstimator::update_()
   jacobianDeltaTau_.setZero();
 
   readEeJacobiansSolution_(solutionVariables);
-  
+
   if(getEstimatorParams().useLagrangeMultiplier)
   {
     unsigned int iiA = 0;
@@ -607,7 +584,6 @@ void mi_qpEstimator::update_()
    */
 
   calcPerturbedWrench_();
-
 }
 
 const endEffector & mi_qpEstimator::getEndeffector(const std::string & name)
@@ -709,64 +685,64 @@ void mi_qpEstimator::print() const
   coeR: "<<getImpactModel()->getCoeRes()<<", coeF: "<<getImpactModel()->getCoeFricDe()<<", impact duration:
   "<<getImpactModel()->getImpactDuration()<<". "<<std::endl;
 */
-  std::cout << red<<"The QP estimator: "<< getEstimatorParams().name<<" has an OSD model with the end-effectors: "<<cyan;
+  std::cout << red << "The QP estimator: " << getEstimatorParams().name
+            << " has an OSD model with the end-effectors: " << cyan;
   for(auto idx = getOsd()->getEes().begin(); idx != getOsd()->getEes().end(); ++idx)
   {
     std::cout << *idx << " ";
   }
-  std::cout << reset<< std::endl;
+  std::cout << reset << std::endl;
 
-  std::cout <<red <<"The QP estimator: "<< getEstimatorParams().name <<" has an  OSD model  with established contacts: "<< green;
+  std::cout << red << "The QP estimator: " << getEstimatorParams().name
+            << " has an  OSD model  with established contacts: " << green;
   for(auto idx = getOsd()->getContactEes().begin(); idx != getOsd()->getContactEes().end(); ++idx)
   {
     std::cout << *idx << " ";
   }
-  std::cout << reset <<std::endl;
+  std::cout << reset << std::endl;
 }
 void mi_qpEstimator::calcPerturbedWrench_()
 {
-//for(auto & idx: endEffectors_)
-  for(auto & idx: endEffectors_)
+  // for(auto & idx: endEffectors_)
+  for(auto & idx : endEffectors_)
   {
     idx.second.perturbedWrench.force().setZero();
     idx.second.perturbedWrench.couple().setZero();
-for(auto & ii:getImpactModels())
+    for(auto & ii : getImpactModels())
     {
       // If this end-effector is applying an impact, we continue without calculating
-      if(ii.first == idx.first )
-        continue;
+      if(ii.first == idx.first) continue;
 
       sva::PTransformd X_0_ii = getSimRobot().bodyPosW(ii.first);
       sva::PTransformd X_0_idx = getSimRobot().bodyPosW(idx.first);
 
       // Impact frame w.r.t. the idx end-effector frame.
-      sva::PTransformd X_ii_idx = X_0_idx*X_0_ii.inv();
+      sva::PTransformd X_ii_idx = X_0_idx * X_0_ii.inv();
 
-     // sva::PTransformd X_ii_idx = getSimRobot().bodyPosW(ii.first).inv();
+      // sva::PTransformd X_ii_idx = getSimRobot().bodyPosW(ii.first).inv();
 
       sva::ForceVecd tempWrench;
       tempWrench.force().setZero();
       tempWrench.force() = getEndeffector(ii.first).estimatedAverageImpulsiveForce;
       tempWrench.couple().setZero();
 
-      idx.second.perturbedWrench +=  X_ii_idx.dualMul(tempWrench);
-
+      idx.second.perturbedWrench += X_ii_idx.dualMul(tempWrench);
     }
 
-    //std::cout<<"qpEstimator: The converted wrench of "<<idx.first<<" is: "<< idx.second.perturbedWrench.vector().transpose()<<std::endl;
-
+    // std::cout<<"qpEstimator: The converted wrench of "<<idx.first<<" is: "<<
+    // idx.second.perturbedWrench.vector().transpose()<<std::endl;
   }
 }
 
 void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVariables)
 {
 
-  // We fill the following for each end-effector:  
+  // We fill the following for each end-effector:
   // (a) force Jump Jacobian
   // (b) impulse
   // (c) force Jump
   //
-  // We also fill: 
+  // We also fill:
   // Joint torque Jump
 
   amJumpJacobian_.setZero();
@@ -855,26 +831,27 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
 
       // std::cout<<"the impulse difference is: "<<(tempEe.estimatedImpulse -
       // tempA_dagger_ee*getImpactModel()->getEeVelocityJump()).norm()<<std::endl;
-     // Transform of the endEffector.
+      // Transform of the endEffector.
 
       auto X_0_c = getSimRobot().bodyPosW(idx->first);
       auto translation = X_0_c.translation() - getSimRobot().com();
       // R_0_pi
-      auto rotation= X_0_c.rotation();
+      auto rotation = X_0_c.rotation();
 
       Eigen::Matrix3d torqueMatrix = getOsd()->crossMatrix(translation);
-      Eigen::Matrix3d forceMatrix = Eigen::Matrix3d::Identity();  
+      Eigen::Matrix3d forceMatrix = Eigen::Matrix3d::Identity();
 
-      if(getOsd()->useBodyJacobian()){
-        torqueMatrix = torqueMatrix * rotation; 
-	forceMatrix = rotation; 
+      if(getOsd()->useBodyJacobian())
+      {
+        torqueMatrix = torqueMatrix * rotation;
+        forceMatrix = rotation;
       }
 
-      // delta_t * (1/delta_t * J * dq) = Impulse 
+      // delta_t * (1/delta_t * J * dq) = Impulse
       amJump_ += torqueMatrix * idx->second.estimatedImpulse;
-      amJumpJacobian_ +=  torqueMatrix * idx->second.jacobianDeltaF;
+      amJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF;
       lmJump_ += forceMatrix * idx->second.estimatedImpulse;
-      lmJumpJacobian_ +=  forceMatrix * idx->second.jacobianDeltaF; 
+      lmJumpJacobian_ += forceMatrix * idx->second.jacobianDeltaF;
 
     } // end of Lagrange Multipliers
 
@@ -890,107 +867,94 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
     // std::cout<<"test "<<std::endl;
 
   } // end of the for end-effector loop.
-
 }
 
 void mi_qpEstimator::logImpulseEstimations()
 {
 
   const std::string & qpName = getEstimatorParams().name;
-  logEntries_.emplace_back(qpName + "_"+ "JointVelJump");
+  logEntries_.emplace_back(qpName + "_" + "JointVelJump");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getJointVelJump(); });
 
-  logEntries_.emplace_back(qpName + "_"+ "COMVelJump");
+  logEntries_.emplace_back(qpName + "_" + "COMVelJump");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getCOMVelJump(); });
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentum_simRobot");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getOsd()->getSimulatedCentroidalMomentum(); });
+  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentum_simRobot");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                      [this]() { return getOsd()->getSimulatedCentroidalMomentum(); });
 
+  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumD_simRobot");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                      [this]() { return getOsd()->getSimulatedCentroidalMomentumD(); });
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumD_simRobot");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getOsd()->getSimulatedCentroidalMomentumD(); });
-
-
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear");
+  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_linear");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getLMJump(); });
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular");
+  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_angular");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getAMJump(); });
 
-  
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_linear_debug");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
-
+  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_linear_debug");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() {
     Eigen::VectorXd robotJointVel = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
-    return static_cast<Eigen::Vector3d>(getJacobianDeltaLM()*robotJointVel);});
+    return static_cast<Eigen::Vector3d>(getJacobianDeltaLM() * robotJointVel);
+  });
 
-  logEntries_.emplace_back(qpName + "_"+ "CentroidalMomentumJump_angular_debug");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { 
+  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_angular_debug");
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() {
+    return static_cast<Eigen::Vector3d>(getJacobianDeltaAM() * getImpactModels().begin()->second->getJointVel());
+  });
 
-    return static_cast<Eigen::Vector3d>(getJacobianDeltaAM()*getImpactModels().begin()->second->getJointVel());
-    });
-    
-
-
-  logEntries_.emplace_back(qpName + "_"+ "Objective");
+  logEntries_.emplace_back(qpName + "_" + "Objective");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObj(); });
 
-
-  logEntries_.emplace_back(qpName + "_"+ "JointTorqueJump");
+  logEntries_.emplace_back(qpName + "_" + "JointTorqueJump");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getTauJump(); });
 
-  // (1) Loop over the end-effectors: 
-  
-  for (auto & ee:getOsd()->getEes())
+  // (1) Loop over the end-effectors:
+
+  for(auto & ee : getOsd()->getEes())
   {
     // (1.1) Force jump
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]()-> Eigen::VectorXd {
-	return getEndeffector(ee).estimatedAverageImpulsiveForce;
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]() -> Eigen::VectorXd {
+      return getEndeffector(ee).estimatedAverageImpulsiveForce;
     });
 
     // This one should be the same with 'ForceJump'
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump_debug");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]()-> Eigen::VectorXd {
-	return getEndeffector(ee).checkForce;
-    });
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                        [this, ee]() -> Eigen::VectorXd { return getEndeffector(ee).checkForce; });
 
-
-    // (1.2) Ee velocity jump 
+    // (1.2) Ee velocity jump
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "eeVelJump");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]()-> Eigen::VectorXd {
-	return getEndeffector(ee).eeVJump;
-    });
-
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                        [this, ee]() -> Eigen::VectorXd { return getEndeffector(ee).eeVJump; });
   }
 
-  
-  // (2) Loop over the impact bodies: 
-  for (auto & eePair:getImpactModels())
+  // (2) Loop over the impact bodies:
+  for(auto & eePair : getImpactModels())
   {
     const std::string & eeName = eePair.first;
     // (2.1) Estimated end-effector induced impulse joint torque
     logEntries_.emplace_back(qpName + "_" + eeName + "_" + "jointTorqueJump");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, eeName]()-> Eigen::VectorXd {
-	return getImpactModel(eeName)->getJacobian().transpose()
-                             * getHostCtl_()->robot().bodyWrench(eeName).force();
-	    
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, eeName]() -> Eigen::VectorXd {
+      return getImpactModel(eeName)->getJacobian().transpose() * getHostCtl_()->robot().bodyWrench(eeName).force();
     });
 
     // (2.2) Predicted ee velocity jump (using coefficient of restitution)
-    logEntries_.emplace_back(qpName + "_" + eeName + "_"+ "ImpactModel_eeVelJump");
+    logEntries_.emplace_back(qpName + "_" + eeName + "_" + "ImpactModel_eeVelJump");
     getHostCtl_()->logger().addLogEntry(logEntries_.back(),
-                       [this, eeName]() { return getImpactModel(eeName)->getEeVelocityJump(); });
+                                        [this, eeName]() { return getImpactModel(eeName)->getEeVelocityJump(); });
 
-    // (2.3) ee velocity 
-    logEntries_.emplace_back(qpName + "_" + eeName + "_"+ "ImpactModel_eeVel");
+    // (2.3) ee velocity
+    logEntries_.emplace_back(qpName + "_" + eeName + "_" + "ImpactModel_eeVel");
     getHostCtl_()->logger().addLogEntry(logEntries_.back(),
-                       [this, eeName]() { return getImpactModel(eeName)->getEeVelocity(); });
+                                        [this, eeName]() { return getImpactModel(eeName)->getEeVelocity(); });
 
-    // (2.4) impact normal orientation 
-    logEntries_.emplace_back(qpName + "_" + eeName + "_"+ "ImpactModel_impactNormal");
+    // (2.4) impact normal orientation
+    logEntries_.emplace_back(qpName + "_" + eeName + "_" + "ImpactModel_impactNormal");
     getHostCtl_()->logger().addLogEntry(logEntries_.back(),
-                       [this, eeName]() { return getImpactModel(eeName)->getSurfaceNormal(); });
+                                        [this, eeName]() { return getImpactModel(eeName)->getSurfaceNormal(); });
   }
 
   // Log the frictional impact dynamics entries.
@@ -1005,29 +969,29 @@ void mi_qpEstimator::removeImpulseEstimations_()
 
   for(auto & name : logEntries_)
   {
-    getHostCtl_()->logger().removeLogEntry(name); 
+    getHostCtl_()->logger().removeLogEntry(name);
   }
 }
 
 void mi_qpEstimator::addMcRtcGuiItems()
 {
 
-  mc_rtc::gui::ArrowConfig surfaceXConfig({0., (153.0/255.0), (153.0/255.0)});
+  mc_rtc::gui::ArrowConfig surfaceXConfig({0., (153.0 / 255.0), (153.0 / 255.0)});
   surfaceXConfig.start_point_scale = 0.0;
   surfaceXConfig.end_point_scale = 0.0;
 
   double arrowLengthScale = 0.01;
 
-  // Loop over all the end-effectors:  
-  
-  for (auto & eeName:getOsd()->getEes())
+  // Loop over all the end-effectors:
+
+  for(auto & eeName : getOsd()->getEes())
   {
-  
-  guiEntries_.emplace_back(eeName  + "_ForceJump");
-   
-  getHostCtl_()->gui()->addElement(
+
+    guiEntries_.emplace_back(eeName + "_ForceJump");
+
+    getHostCtl_()->gui()->addElement(
         {getEstimatorParams().name},
-   mc_rtc::gui::Arrow(guiEntries_.back(), surfaceXConfig,
+        mc_rtc::gui::Arrow(guiEntries_.back(), surfaceXConfig,
                            [this, eeName]() -> Eigen::Vector3d {
                              // start of the arrow
                              auto X_0_s = getHostCtl_()->robot().bodyPosW(eeName);
@@ -1036,25 +1000,27 @@ void mi_qpEstimator::addMcRtcGuiItems()
                            [this, eeName, arrowLengthScale]() -> Eigen::Vector3d {
                              // End of the arrow
                              auto X_0_s = getHostCtl_()->robot().bodyPosW(eeName);
-			     // Note that (1) the forceJump is defined in the local frame. 
-			     // (2) the rotaiton =  X_0_s.rotation().transpose();
-			     // (3) We are plotting the forceJump in the inertial frame. 
-			     
+                             // Note that (1) the forceJump is defined in the local frame.
+                             // (2) the rotaiton =  X_0_s.rotation().transpose();
+                             // (3) We are plotting the forceJump in the inertial frame.
+
                              Eigen::Vector3d eeForceJump;
 
-			     if(getOsd()->useBodyJacobian())
-			     {
-			         // Force are computed in the body frame.
-                                 eeForceJump = X_0_s.translation() + arrowLengthScale * X_0_s.rotation().transpose()*getEndeffector(eeName).estimatedAverageImpulsiveForce;
-			     }
-			     else
-			     {
-				 // Force are computed in the inertial frame
-                                 eeForceJump = X_0_s.translation() + arrowLengthScale * getEndeffector(eeName).estimatedAverageImpulsiveForce;
-			     }
+                             if(getOsd()->useBodyJacobian())
+                             {
+                               // Force are computed in the body frame.
+                               eeForceJump = X_0_s.translation()
+                                             + arrowLengthScale * X_0_s.rotation().transpose()
+                                                   * getEndeffector(eeName).estimatedAverageImpulsiveForce;
+                             }
+                             else
+                             {
+                               // Force are computed in the inertial frame
+                               eeForceJump = X_0_s.translation()
+                                             + arrowLengthScale * getEndeffector(eeName).estimatedAverageImpulsiveForce;
+                             }
                              return eeForceJump;
                            }));
-  
   }
 }
 

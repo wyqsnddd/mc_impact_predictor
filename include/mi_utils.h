@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -22,26 +22,25 @@
 #pragma once
 
 #include <mc_rbdyn/Robots.h>
-#include <Eigen/Dense>
-#include <iostream>
-#include <map>
 
-#include <assert.h>  
+#include <Eigen/Dense>
+#include <assert.h>
+#include <iostream>
 #include <limits>
+#include <map>
 
 namespace mc_impact
 {
 
-#ifndef COLOUR_PRINT 
-#define COLOUR_PRINT 
+#ifndef COLOUR_PRINT
+#  define COLOUR_PRINT
 const std::string red("\033[0;31m");
 const std::string green("\033[1;32m");
 const std::string yellow("\033[1;33m");
 const std::string cyan("\033[0;36m");
 const std::string magenta("\033[0;35m");
 const std::string reset("\033[0m");
-# endif
-
+#endif
 
 struct qpEstimatorParameter
 {
@@ -59,12 +58,12 @@ struct qpEstimatorParameter
   bool osdBodyJacobian = true;
   bool useJsd = false;
   bool useOsd = false;
-  bool useImpulseBalance= false;
+  bool useImpulseBalance = false;
   bool testWeightedQp = false;
-  // 0: The default option which minimize the sum of momentum 
-  // 1: Momentum conservation using the Spatial Jacobian 
-  // 2: Momentum conservation using the Body Jacobian 
-  int objectiveChoice = 0; 
+  // 0: The default option which minimize the sum of momentum
+  // 1: Momentum conservation using the Spatial Jacobian
+  // 2: Momentum conservation using the Body Jacobian
+  int objectiveChoice = 0;
   std::string name = "qp Estimator";
 };
 
@@ -82,8 +81,15 @@ struct endEffector
   sva::ForceVecd perturbedWrench;
 };
 
-enum class ImpactModelType {OneDimModel, TwoDimModel};
-enum class TwoDimModelCase {PushWall};
+enum class ImpactModelType
+{
+  OneDimModel,
+  TwoDimModel
+};
+enum class TwoDimModelCase
+{
+  PushWall
+};
 
 struct ImpactModelParams
 {
@@ -98,10 +104,9 @@ struct ImpactModelParams
   ImpactModelType impactModel = ImpactModelType::OneDimModel;
 }; // End of the ImpactModelParams.
 
-
 inline bool areSame(double a, double b)
 {
-    return fabs(a - b) < 1e-3;
+  return fabs(a - b) < 1e-3;
 }
 
 } // namespace mc_impact

@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -37,7 +37,7 @@ mi_jsdEquality::mi_jsdEquality(const std::shared_ptr<mi_osd> & osdPtr,
   */
   reset_();
 
-  std::cout<<red<<"Initialized the joint space dynamics equality constraint"<<reset<<std::endl;
+  std::cout << red << "Initialized the joint space dynamics equality constraint" << reset << std::endl;
 }
 
 void mi_jsdEquality::reset_()

@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -22,9 +22,9 @@
 #pragma once
 #include "mi_osd.h"
 #include <Eigen/StdVector>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
-#include <chrono>
 #include <math.h>
 #include <nlopt.hpp>
 
@@ -78,21 +78,22 @@ public:
   {
     return dim_;
   }
-  /*! \brief Time to construct the building blocks in each iteration. 
-   * \return time in microseconds. 
+  /*! \brief Time to construct the building blocks in each iteration.
+   * \return time in microseconds.
    */
   inline double structTime() const
   {
-    return structTime_; 
+    return structTime_;
   }
 
-  /*! \brief Time to solve the optimization problem. 
-   * \return time in microseconds. 
+  /*! \brief Time to solve the optimization problem.
+   * \return time in microseconds.
    */
   inline double solverTime() const
   {
-    return solver_.solverTime; 
+    return solver_.solverTime;
   }
+
 protected:
   void update_(const Eigen::MatrixXd & Jacobian, const Eigen::MatrixXd & JacobianDot);
 
@@ -119,6 +120,5 @@ protected:
   double convergenceThreshold_;
 
   double structTime_;
-
 };
 } // namespace mc_impact

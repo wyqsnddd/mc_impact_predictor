@@ -1,8 +1,8 @@
 /* Copyright 2019 CNRS-UM LIRMM
  *
- * \author Yuquan Wang, Arnaud Tanguy 
+ * \author Yuquan Wang, Arnaud Tanguy
  *
- * 
+ *
  *
  * mc_impact_predictor is free software: you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public License as
@@ -21,37 +21,34 @@
 
 #pragma once
 #include <Eigen/StdVector>
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <math.h>
-#include <chrono>
 //# include <Eigen/QR>
-#include <mc_rbdyn/Robots.h>
-
 #include <mc_control/fsm/Controller.h>
+#include <mc_prediction/ImpactDynamicsModelInterface.h>
+#include <mc_rbdyn/Robots.h>
 
 #include <RBDyn/Momentum.h>
 
+#include "mi_balance.h"
 #include "mi_impactModel.h"
 #include "mi_iniEquality.h"
 #include "mi_invOsdEquality.h"
 #include "mi_jsdEquality.h"
-#include "mi_balance.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
-
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
-
-#include <mc_prediction/ImpactDynamicsModelInterface.h>
 
 namespace mc_impact
 {
 
 class mi_qpEstimator
 /*!
- * \brief Estimates the post-impact state jumps. 
+ * \brief Estimates the post-impact state jumps.
  */
 {
 public:
@@ -95,18 +92,20 @@ public:
   }
 
   /*!
-   * \return the Jacobian of the angular momentum derivative jump: \f$ \Delta \dot{L} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{L}} \dot{q}_{k+1}  $\f 
+   * \return the Jacobian of the angular momentum derivative jump: \f$ \Delta \dot{L} = \frac{1}{\delta t}
+   * \mathcal{J}_{\Delta \dot{L}} \dot{q}_{k+1}  $\f
    */
   inline const Eigen::MatrixXd & getJacobianDeltaAM()
   {
-    return amJumpJacobian_; 
+    return amJumpJacobian_;
   }
   /*!
-   * \return the Jacobian of the liner momentum derivative jump: \f$ \Delta \dot{P} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{P}} \dot{q}_{k+1}  $\f 
+   * \return the Jacobian of the liner momentum derivative jump: \f$ \Delta \dot{P} = \frac{1}{\delta t}
+   * \mathcal{J}_{\Delta \dot{P}} \dot{q}_{k+1}  $\f
    */
   inline const Eigen::MatrixXd & getJacobianDeltaLM()
   {
-    return lmJumpJacobian_; 
+    return lmJumpJacobian_;
   }
 
   inline const Eigen::VectorXd & getTauJump() const
@@ -119,22 +118,21 @@ public:
     return jointVelJump_;
   }
 
-  /*! \return COM velocity jump \f$ \Delta \dot{c} $\f 
+  /*! \return COM velocity jump \f$ \Delta \dot{c} $\f
    */
   inline const Eigen::Vector3d & getCOMVelJump()
   {
     return comVelJump_;
   }
 
-  /*! \return linear momentum derivative jump \f$ \Delta \dot{P} $\f 
+  /*! \return linear momentum derivative jump \f$ \Delta \dot{P} $\f
    */
   inline const Eigen::Vector3d & getLMJump()
   {
     return lmJump_;
   }
 
-
-  /*! \return angular momentum derivative jump \f$ \Delta \dot{L} $\f 
+  /*! \return angular momentum derivative jump \f$ \Delta \dot{L} $\f
 
    */
   inline const Eigen::Vector3d & getAMJump()
@@ -163,30 +161,33 @@ public:
     return static_cast<int>(endEffectors_.size());
   }
 
-  /*! \brief Time to construct the building blocks in each iteration. 
-   * \return time in microseconds. 
+  /*! \brief Time to construct the building blocks in each iteration.
+   * \return time in microseconds.
    */
   inline double structTime() const
   {
-    return structTime_; 
+    return structTime_;
   }
 
-  /*! \brief Time to solve the optimization problem. 
-   * \return time in microseconds. 
+  /*! \brief Time to solve the optimization problem.
+   * \return time in microseconds.
    */
   inline double solverTime() const
   {
-    return solverTime_; 
+    return solverTime_;
   }
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
-  
+
     if(hostCtlPtr_ == nullptr)
     {
       hostCtlPtr_ = ctlPtr;
       twoDimFidModelPtr_->setHostCtl(hostCtlPtr_);
-    }else{
-      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name + " is already set!");
+    }
+    else
+    {
+      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
+                               + " is already set!");
     }
   }
 
@@ -202,7 +203,7 @@ public:
 
   inline double getObj() const
   {
-   return objectiveValue_; 
+    return objectiveValue_;
   }
 
   inline std::shared_ptr<rbd::CentroidalMomentumMatrix> getCmm() const
@@ -211,9 +212,9 @@ public:
   }
   inline std::shared_ptr<mc_impact::TwoDimModelBridge> getFidModel() const
   {
-    return  twoDimFidModelPtr_;
+    return twoDimFidModelPtr_;
   }
-	
+
 private:
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
@@ -232,14 +233,17 @@ private:
   {
     if(hostCtlPtr_ != nullptr)
     {
-      return hostCtlPtr_; 
-    }else{
-      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name + " is not set!");
+      return hostCtlPtr_;
+    }
+    else
+    {
+      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
+                               + " is not set!");
     }
   }
 
   void updateObjective_(const int & choice);
-  // Minimize the equations of motion error: M*\Delta_q_dot = \sum J^\top impulse 
+  // Minimize the equations of motion error: M*\Delta_q_dot = \sum J^\top impulse
   void eomQ_();
 
   // Minimize the Centroidal-momentum jump: (cmmMatrix*\Delta_q_dot)^2
@@ -272,11 +276,10 @@ private:
   std::vector<std::shared_ptr<mi_equality>> eqConstraints_;
 
   void solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
-                  const Eigen::VectorXd & p_,
-                  const Eigen::MatrixXd & C_,
-                  const Eigen::VectorXd & cu_,
-                  Eigen::VectorXd & solution);
-
+                          const Eigen::VectorXd & p_,
+                          const Eigen::MatrixXd & C_,
+                          const Eigen::VectorXd & cu_,
+                          Eigen::VectorXd & solution);
 
   void solveEqQp_(const Eigen::MatrixXd & Q_,
                   const Eigen::VectorXd & p_,
