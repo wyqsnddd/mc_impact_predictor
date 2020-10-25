@@ -10,6 +10,7 @@ set(mc_impact_predictor_src
   ImpactDynamicsModelInterface.cpp
   mi_fid_impulse.cpp
   mi_contactConstraint.cpp
+  mi_unilateralContactConstraint.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})

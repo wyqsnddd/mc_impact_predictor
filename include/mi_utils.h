@@ -61,6 +61,7 @@ struct qpEstimatorParameter
   bool useImpulseBalance = false;
   bool useFidImpulse = false;
   bool useContactConstraint = false;
+  bool useUnilateralContactConstraint = false;
   bool testWeightedQp = false;
   // 0: The default option which minimize the sum of momentum
   // 1: Momentum conservation using the Spatial Jacobian
@@ -77,6 +78,8 @@ struct endEffector
   Eigen::Vector3d estimatedImpulse;
   Eigen::Vector3d estimatedAverageImpulsiveForce;
   Eigen::Vector3d checkForce;
+  Eigen::Vector3d rssForce;
+
   Eigen::MatrixXd jacobianDeltaF;
 
   // The other impulses transformed to the local contact frame

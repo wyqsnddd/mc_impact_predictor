@@ -29,7 +29,7 @@ namespace mc_impact
 {
 
 class mi_contactConstraint : public mi_equality
-/** \brief Specify the joint space impulse equation: [M, 0, -J_i^T, ...] [\delta q_dot, I_1,\ldots, I_m ]^T
+/** \brief Specify the contact constraint: J \Delta \dot{q}  = 0
  */
 {
 public:

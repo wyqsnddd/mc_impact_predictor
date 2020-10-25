@@ -37,7 +37,7 @@ mi_contactConstraint::mi_contactConstraint(const std::shared_ptr<mi_osd> & osdPt
   */
   reset_();
 
-  std::cout << red << "Initialized the joint space dynamics equality constraint" << reset << std::endl;
+  std::cout << red << "Initialized the contact equality constraint" << reset << std::endl;
 }
 
 void mi_contactConstraint::reset_()

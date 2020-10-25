@@ -99,7 +99,8 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   if(params_.useContactConstraint)
     eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_contactConstraint>(getOsd(), getImpactModels(), endEffectors_));
 
-
+  if(params_.useUnilateralContactConstraint)
+    eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_unilateralContactConstraint>(getOsd(), getImpactModels(), endEffectors_));
 
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
@@ -661,17 +662,13 @@ bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fr
   }
 
   // addOptVariables_(eeName, getDim());
-  Eigen::Vector3d tempForce;
-  // tempForce.resize(getImpactModel()->getDim());
-  tempForce.setZero();
+  Eigen::Vector3d tempForce = Eigen::Vector3d::Zero();
 
   Eigen::MatrixXd tempJ;
   tempJ.resize(getEstimatorParams().dim, getDof());
   tempJ.setZero();
 
-  sva::ForceVecd tempWrench;
-  tempWrench.force().setZero();
-  tempWrench.couple().setZero();
+  sva::ForceVecd tempWrench = sva::ForceVecd::Zero();
 
   int eeIndex = 0;
 
@@ -680,8 +677,7 @@ bool mi_qpEstimator::addEndeffector_(const std::string & eeName, const bool & fr
   else
     eeIndex = static_cast<int>(endEffectors_.size());
 
-  // optVariables_[name] = {dim, optVariables_.size() };
-  endEffectors_[eeName] = {eeIndex, tempForce, tempForce, tempForce, tempForce, tempJ, tempWrench};
+  endEffectors_[eeName] = {eeIndex, tempForce, tempForce, tempForce, tempForce, tempForce, tempJ, tempWrench};
 
   std::cout << "Qp Estimator: Adding end-effector: " << eeName << ", with index: " << eeIndex << std::endl;
   return true;
@@ -778,6 +774,7 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
     idx->second.estimatedImpulse = solutionVariables.segment(getDof() + location, getEstimatorParams().dim);
 
     idx->second.estimatedAverageImpulsiveForce = idx->second.estimatedImpulse * inv_dt;
+    idx->second.rssForce = inv_dt * getOsd()->getEquivalentMass(idx->first) * getOsd()->getJacobian(idx->first) * getJointVelJump();  
     Eigen::MatrixXd tempJ;
 
     // The Jacobian may exist in two places
@@ -810,7 +807,6 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
 
       idx->second.jacobianDeltaF.resize(3, getDof());
       idx->second.jacobianDeltaF.setZero();
-      idx->second.checkForce.setZero();
 
       // for (int i?i = 0; ii< static_cast<int>(impactModels_.size()); ++ii )
       unsigned int iiA = 0;
@@ -941,13 +937,13 @@ void mi_qpEstimator::logImpulseEstimations()
   {
     // (1.1) Force jump
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]() -> Eigen::VectorXd {
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]() -> Eigen::Vector3d {
       return getEndeffector(ee).estimatedAverageImpulsiveForce;
     });
 
     // Impulse
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "Impulse");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]() -> Eigen::VectorXd {
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]() -> Eigen::Vector3d {
       return getEndeffector(ee).estimatedImpulse;
     });
 
@@ -955,12 +951,17 @@ void mi_qpEstimator::logImpulseEstimations()
     // This one should be the same with 'ForceJump'
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump_debug");
     getHostCtl_()->logger().addLogEntry(logEntries_.back(),
-                                        [this, ee]() -> Eigen::VectorXd { return getEndeffector(ee).checkForce; });
+                                        [this, ee]() -> Eigen::Vector3d { return getEndeffector(ee).checkForce; });
+
+    logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump_debug_rss");
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                        [this, ee]() -> Eigen::Vector3d { return getEndeffector(ee).rssForce; });
+
 
     // (1.2) Ee velocity jump
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "eeVelJump");
     getHostCtl_()->logger().addLogEntry(logEntries_.back(),
-                                        [this, ee]() -> Eigen::VectorXd { return getEndeffector(ee).eeVJump; });
+                                        [this, ee]() -> Eigen::Vector3d { return getEndeffector(ee).eeVJump; });
   }
 
   // (2) Loop over the impact bodies:
@@ -969,7 +970,7 @@ void mi_qpEstimator::logImpulseEstimations()
     const std::string & eeName = eePair.first;
     // (2.1) Estimated end-effector induced impulse joint torque
     logEntries_.emplace_back(qpName + "_" + eeName + "_" + "jointTorqueJump");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, eeName]() -> Eigen::VectorXd {
+    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, eeName]() -> Eigen::Vector3d {
       return getImpactModel(eeName)->getJacobian().transpose() * getHostCtl_()->robot().bodyWrench(eeName).force();
     });
 
