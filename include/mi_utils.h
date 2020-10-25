@@ -59,6 +59,8 @@ struct qpEstimatorParameter
   bool useJsd = false;
   bool useOsd = false;
   bool useImpulseBalance = false;
+  bool useFidImpulse = false;
+  bool useContactConstraint = false;
   bool testWeightedQp = false;
   // 0: The default option which minimize the sum of momentum
   // 1: Momentum conservation using the Spatial Jacobian

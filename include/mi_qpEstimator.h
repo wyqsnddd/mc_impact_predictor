@@ -41,6 +41,8 @@
 #include "mi_jsdEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
+#include "mi_fid_impulse.h"
+#include "mi_contactConstraint.h"
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
 
@@ -247,7 +249,8 @@ private:
   // Minimize the equations of motion error: M*\Delta_q_dot = \sum J^\top impulse
   void eomQ_();
 
-  // Minimize the Centroidal-momentum jump: (cmmMatrix*\Delta_q_dot)^2
+  // Minimize the Centroidal-momentum jump: (cmmMatrix*\Delta_q_dot)^2 + centroidal frame impulse
+
   void cmmQ_();
 
   bool osdContactEe_(const std::string & eeName);

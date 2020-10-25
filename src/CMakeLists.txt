@@ -8,6 +8,8 @@ set(mc_impact_predictor_src
   mi_impactModel.cpp
   mi_balance.cpp
   ImpactDynamicsModelInterface.cpp
+  mi_fid_impulse.cpp
+  mi_contactConstraint.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})

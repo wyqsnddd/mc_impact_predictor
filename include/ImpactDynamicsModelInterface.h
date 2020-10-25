@@ -134,6 +134,14 @@ public:
   void printPIParams();
   void printResult();
 
+
+  /*! \return the moment of inertia of the entire robot in its centroidal frame.
+   */
+  const Eigen::Matrix3d & getRobotCentroidalInertia()
+  {
+    return rCentroidalInertia_; 
+  }
+
 protected:
   TwoDimModelBridgeParams params_;
   // bool useVirtualContact_;
