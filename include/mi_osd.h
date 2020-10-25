@@ -102,7 +102,8 @@ public:
   void resetDataStructure();
 
   /*!
-   *  \return the Operational space inertia matrix: \f$ \Lambda \f$
+   *  \return the operational-space inertia matrix: 
+     \f$ \Lambda  = (J M^{-1} J^\top)^{-1}\f$
    */
   inline const Eigen::MatrixXd & getLambdaMatrix() const
   {
@@ -123,8 +124,9 @@ public:
     return contactEndeffectors_.size();
   }
   /*!
-      \return the inverse of the Operational space inertia matrix: \f$ \Lambda^{-1} = JM^{-1}J^\top \f$
-      */
+   *  \return the inverse of the operational-space inertia matrix: 
+   *  \f$ \Lambda^{-1} = JM^{-1}J^\top \f$
+   */
   inline const Eigen::MatrixXd & getLambdaMatrixInv() const
   {
     return cache_.lambdaMatrixInv;
@@ -132,12 +134,12 @@ public:
 
   /*!
    * return the equivalent mass
-   * Robot arm (single kinematic chain): \f$ (J M J^\top)^{-1} \f$
-   * Humanoid: (kinematic tree): the corresponding block from the operational space inertia matrix: lambda^{-1}.
+   * \brief Robot arm (single kinematic chain): \f$ (J M^{-1} J^\top)^{-1} \f$
+   * Humanoid: (kinematic tree): the corresponding block from the operational space inertia matrix: lambda.
    */
   inline const Eigen::MatrixXd getEquivalentMass(const std::string & eeName) const
   {
-    return cache_.lambdaMatrixInv.block(nameToIndex_(eeName) * getJacobianDim(),
+    return cache_.lambdaMatrix.block(nameToIndex_(eeName) * getJacobianDim(),
                                         nameToIndex_(eeName) * getJacobianDim(), getJacobianDim(), getJacobianDim());
   }
 
@@ -146,7 +148,7 @@ public:
   */
   const Eigen::MatrixXd getLambdaMatrix(int rowInt, int columnInt) const
   {
-    return cache_.lambdaMatrix.block(rowInt * getEeNum(), columnInt * getEeNum(), 6, 6);
+    return cache_.lambdaMatrix.block(rowInt * static_cast<int>(getEeNum()), columnInt * static_cast<int>(getEeNum()), 6, 6);
   }
   const int & nameToIndex_(const std::string & eeName) const;
 
@@ -171,10 +173,9 @@ public:
   }
 
   /*!
-      \return
-      \f$  \tilde{\Lambda}_{m}= ( \sum^{m}_{i=1}\Lambda_{mi}J_i ) \bar{J}_m \f$
-  };
-      */
+   * \return
+   * \f$  \tilde{\Lambda}_{m}= ( \sum^{m}_{i=1}\Lambda_{mi}J_i ) \bar{J}_m \f$
+   */
   inline const Eigen::MatrixXd & getEffectiveLambdaMatrix(const std::string & eeName) const
   {
     return cache_.effectiveLambdaMatrices[static_cast<unsigned long>(nameToIndex_(eeName))];
@@ -187,8 +188,8 @@ public:
 */
 
   /*!
-      \return  the dynamically consistent Jacobian inverse of the endeffector m : \f$ \bar{J}_m = ( (
-     \sum^{m}_{i=1}\Lambda_{mi}J_i )M^{-1})^\top.\f$
+      \return  the dynamically consistent Jacobian inverse of the endeffector m: 
+      \f$ \bar{J}_m = ( (\sum^{m}_{i=1}\Lambda_{mi}J_i )M^{-1})^\top.\f$
       */
   inline const Eigen::MatrixXd & getDcJacobianInv(const std::string eeName) const
   {
@@ -231,7 +232,7 @@ public:
   {
     return robotDof_;
   }
-  inline int getEeNum() const
+  inline size_t getEeNum() const
   {
     return eeNum_;
   }
@@ -284,7 +285,7 @@ public:
 
 private:
   int robotDof_;
-  int eeNum_;
+  size_t eeNum_;
   osdDataCache cache_;
   int jacobianDim_;
   mc_rbdyn::Robot & robot_;

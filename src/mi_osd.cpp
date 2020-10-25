@@ -85,7 +85,7 @@ void mi_osd::resetDataStructure()
   cache_.lambdaMatrix.setZero();
   cache_.lambdaMatrixInv.setZero();
   cache_.invMassMatrix.setZero();
-  for(int ii = 0; ii < getEeNum(); ii++)
+  for(size_t ii = 0; ii < getEeNum(); ii++)
   {
     cache_.dcJacobianInvs[ii].resize(getDof(), getJacobianDim());
     cache_.effectiveLambdaMatrices[ii].resize(getJacobianDim(), getDof());
@@ -103,10 +103,10 @@ void mi_osd::initializeDataStructure(const int EeNum)
   cache_.lambdaMatrix.resize(EeNum * getJacobianDim(), EeNum * getJacobianDim());
   cache_.lambdaMatrixInv.resize(EeNum * getJacobianDim(), EeNum * getJacobianDim());
 
-  cache_.dcJacobianInvs.resize(EeNum);
-  cache_.effectiveLambdaMatrices.resize(EeNum);
+  cache_.dcJacobianInvs.resize(static_cast<size_t>(EeNum));
+  cache_.effectiveLambdaMatrices.resize(static_cast<size_t>(EeNum));
   /// Get the robot end-effectors
-  for(int ii = 0; ii < getEeNum(); ii++)
+  for(size_t ii = 0; ii < getEeNum(); ii++)
   {
     cache_.dcJacobianInvs[ii].resize(getDof(), getJacobianDim());
     cache_.effectiveLambdaMatrices[ii].resize(getJacobianDim(), getDof());
@@ -194,9 +194,6 @@ void mi_osd::updateCache_()
       tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
     }
 
-    // Eigen::MatrixXd tempJacobian = it->second.jacPtr->jacobian(getRobot().mb(), getRobot().mbc());
-    // Eigen::MatrixXd tempJacobianDot = it->second.jacPtr->jacobianDot(getRobot().mb(), getRobot().mbc());
-
     Eigen::MatrixXd tempFullJacobian, tempFullJacobianDot;
     tempFullJacobian.resize(getJacobianDim(), getDof());
     tempFullJacobianDot.resize(getJacobianDim(), getDof());
@@ -217,12 +214,6 @@ void mi_osd::updateCache_()
     cache_.osdJacobian.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobian;
     cache_.osdJacobianDot.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobianDot;
 
-    /*
-        cache_.osdJacobian.block(ii * getJacobianDim() + it->second.contactDirection, 0, 1, getDof()) =
-       tempFullJacobian.block(it->second.containerIndex, 0, 1, getDof()); cache_.osdJacobianDot.block(ii *
-       getJacobianDim() + it->second.contactDirection, 0, 1, getDof()) =
-       tempFullJacobianDot.block(it->second.containerIndex, 0, 1, getDof());
-    */
   }
 
   // (2) Update the OSD Innertia matrix
@@ -245,10 +236,10 @@ void mi_osd::updateCache_()
     }
 */
   // (3) Update the dynamically consistent Jacobian inverse:
-  for(int ii = 0; ii < getEeNum(); ii++)
+  for(size_t ii = 0; ii < getEeNum(); ii++)
   {
     cache_.effectiveLambdaMatrices[ii] =
-        cache_.lambdaMatrix.block(ii * getJacobianDim(), 0, getJacobianDim(), getEeNum() * getJacobianDim())
+        cache_.lambdaMatrix.block(static_cast<int>(ii) * getJacobianDim(), 0, getJacobianDim(), static_cast<int>(getEeNum()) * getJacobianDim())
         * cache_.osdJacobian;
 
     cache_.dcJacobianInvs[ii] = (cache_.effectiveLambdaMatrices[ii] * getInvMassMatrix()).transpose();
