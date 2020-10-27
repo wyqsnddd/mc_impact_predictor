@@ -61,11 +61,12 @@ void mi_fid_impulse::update()
 
   const Eigen::MatrixXd & cmmMatrix = cmmPtr_->matrix();
 
-  //A_.block(0, 0, 6, dof) = cmmMatrix;
+  A_.block(0, 0, 6, dof) = cmmMatrix;
 
   // (1) Fill the contact:
 
   
+  /*
   // for(auto idx = getOsd_()->getContactEes().begin(); idx != getOsd_()->getContactEes().end(); ++idx)
   for(auto & contact : getOsd_()->getContactEes())
   {
@@ -86,6 +87,7 @@ void mi_fid_impulse::update()
     A_.block(0, dof + eeIndex * dim, 6, dim) = eeGraspMatrix;
   }
   
+  */
 }
 
 } // namespace mc_impact
