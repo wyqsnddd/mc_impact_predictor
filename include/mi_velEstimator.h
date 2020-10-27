@@ -21,6 +21,7 @@
 
 #pragma once
 #include <Eigen/StdVector>
+#include <Eigen/Dense>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -44,22 +45,20 @@
 #include "mi_fid_impulse.h"
 #include "mi_contactConstraint.h"
 #include "mi_unilateralContactConstraint.h"
-#include <Eigen/Dense>
-#include <eigen-lssol/LSSOL_QP.h>
 
 namespace mc_impact
 {
 
-class mi_qpEstimator
+class mi_velEstimator
 /*!
  * \brief Estimates the post-impact state jumps.
  */
 {
 public:
-  mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
+  mi_velEstimator(const mc_rbdyn::Robot & simRobot,
                  const std::shared_ptr<mi_osd> osdPtr,
-                 const struct qpEstimatorParameter params);
-  ~mi_qpEstimator();
+                 const struct velEstimatorParameter params);
+  ~mi_velEstimator();
   void update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
   void update();
 
@@ -73,10 +72,6 @@ public:
     return getOsd()->getDof();
   }
 
-  inline double getQweight() const
-  {
-    return params_.Qweight;
-  }
   inline const Eigen::MatrixXd & getJacobianTwoDeltaAlpha()
   {
     return jacobianTwoDeltaAlpha_;
@@ -95,21 +90,23 @@ public:
     return getEndeffector(eeName).jacobianDeltaF;
   }
 
-  inline const Eigen::Vector3d & getImpulse(const std::string & eeName)
-  {
-    return getEndeffector(eeName).estimatedImpulse;
-  }
   /*!
-   * \return the Jacobian of the angular momentum derivative jump: \f$ \Delta \dot{L} = \frac{1}{\delta t}
-   * \mathcal{J}_{\Delta \dot{L}} \dot{q}_{k+1}  $\f
+   * \return the Jacobian of the angular momentum derivative jump 
+   *
+   \\ clang-format off
+   \f$ \Delta \dot{L} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{L}} \dot{q}_{k+1}  $\f
+   \\ clang-format on 
    */
   inline const Eigen::MatrixXd & getJacobianDeltaAM()
   {
     return amJumpJacobian_;
   }
   /*!
-   * \return the Jacobian of the liner momentum derivative jump: \f$ \Delta \dot{P} = \frac{1}{\delta t}
-   * \mathcal{J}_{\Delta \dot{P}} \dot{q}_{k+1}  $\f
+   * \return the Jacobian of the liner momentum derivative jump: 
+   *
+   \\ clang-format off
+   \f$ \Delta \dot{P} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{P}} \dot{q}_{k+1}  $\f
+   \\ clang-format on
    */
   inline const Eigen::MatrixXd & getJacobianDeltaLM()
   {
@@ -194,7 +191,7 @@ public:
     }
     else
     {
-      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
+      throw std::runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
                                + " is already set!");
     }
   }
@@ -208,11 +205,6 @@ public:
    *   Require to set the host fsm controller first
    **/
   void logImpulseEstimations();
-
-  inline double getObj() const
-  {
-    return objectiveValue_;
-  }
 
   inline std::shared_ptr<rbd::CentroidalMomentumMatrix> getCmm() const
   {
@@ -228,6 +220,7 @@ private:
   const std::shared_ptr<mi_osd> osdPtr_;
   endEffector & getEndeffector_(const std::string & name);
   qpEstimatorParameter params_;
+
   void update_();
 
   std::vector<std::string> guiEntries_;
@@ -245,18 +238,10 @@ private:
     }
     else
     {
-      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
+      throw std::runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
                                + " is not set!");
     }
   }
-
-  void updateObjective_(const int & choice);
-  // Minimize the equations of motion error: M*\Delta_q_dot = \sum J^\top impulse
-  void eomQ_();
-
-  // Minimize the Centroidal-momentum jump: (cmmMatrix*\Delta_q_dot)^2 + centroidal frame impulse
-
-  void cmmQ_();
 
   bool osdContactEe_(const std::string & eeName);
   void updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
@@ -269,18 +254,11 @@ private:
 
   void initializeQP_();
 
-  Eigen::MatrixXd Q_;
-
-  Eigen::MatrixXd C_;
-
   Eigen::VectorXd cl_, cu_;
 
-  Eigen::VectorXd p_;
-
-  double objectiveValue_ = 0.0;
-
   Eigen::VectorXd xl_, xu_;
-  Eigen::LSSOL_QP solver_;
+
+  Eigen::MatrixXd Q_;
 
   std::vector<std::shared_ptr<mi_equality>> eqConstraints_;
 
@@ -337,4 +315,5 @@ private:
 
   std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_;
 };
+
 } // namespace mc_impact
