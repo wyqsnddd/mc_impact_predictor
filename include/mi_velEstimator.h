@@ -33,18 +33,23 @@
 
 #include <RBDyn/Momentum.h>
 
+#include <eigen-lssol/LSSOL_QP.h>
+
 #include "ImpactDynamicsModelInterface.h"
 
-#include "mi_balance.h"
 #include "mi_impactModel.h"
 #include "mi_iniEquality.h"
-#include "mi_invOsdEquality.h"
-#include "mi_jsdEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 #include "mi_fid_impulse.h"
 #include "mi_contactConstraint.h"
 #include "mi_unilateralContactConstraint.h"
+
+
+#include "mi_velIniEquality.h"
+#include "mi_velBalance.h"
+#include "mi_velInvOsdEquality.h"
+#include "mi_velJsdEquality.h"
 
 namespace mc_impact
 {
@@ -57,7 +62,8 @@ class mi_velEstimator
 public:
   mi_velEstimator(const mc_rbdyn::Robot & simRobot,
                  const std::shared_ptr<mi_osd> osdPtr,
-                 const struct velEstimatorParameter params);
+		 const std::shared_ptr<mi_qpEstimator> qpEstimator,
+                 const struct qpEstimatorParameter params);
   ~mi_velEstimator();
   void update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
   void update();
@@ -181,6 +187,10 @@ public:
   {
     return solverTime_;
   }
+  inline double getQweight() const
+  {
+    return params_.Qweight;
+  }
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
 
@@ -218,6 +228,13 @@ public:
 private:
   const mc_rbdyn::Robot & simRobot_;
   const std::shared_ptr<mi_osd> osdPtr_;
+  const std::shared_ptr<mi_qpEstimator> getQpEstimator_()
+  {
+    return qpEstimator_;
+  }
+
+  const std::shared_ptr<mi_qpEstimator> qpEstimator_;
+
   endEffector & getEndeffector_(const std::string & name);
   qpEstimatorParameter params_;
 
@@ -258,7 +275,11 @@ private:
 
   Eigen::VectorXd xl_, xu_;
 
+  Eigen::LSSOL_QP solver_;
+
   Eigen::MatrixXd Q_;
+  Eigen::MatrixXd C_;
+  Eigen::VectorXd p_;
 
   std::vector<std::shared_ptr<mi_equality>> eqConstraints_;
 
@@ -275,7 +296,6 @@ private:
                   Eigen::VectorXd & solution);
 
   void readEeJacobiansSolution_(const Eigen::VectorXd & solutionVariables);
-  void calcPerturbedWrench_();
 
   inline int getNumVar_() const
   {
@@ -314,6 +334,7 @@ private:
   double structTime_;
 
   std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_;
+
 };
 
 } // namespace mc_impact

@@ -124,12 +124,6 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   */
   vector_A_dagger_.resize(params.impactNameAndNormals.size());
 
-  amJumpJacobian_.resize(3, getDof());
-  amJumpJacobian_.setZero();
-
-  lmJumpJacobian_.resize(3, getDof());
-  lmJumpJacobian_.setZero();
-
   std::cout << "Created QP estimator constraint. " << std::endl;
 
   initializeQP_();
@@ -757,12 +751,6 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
   // We also fill:
   // Joint torque Jump
 
-  amJumpJacobian_.setZero();
-  lmJumpJacobian_.setZero();
-
-  amJump_.setZero();
-  lmJump_.setZero();
-
   for(auto idx = endEffectors_.begin(); idx != endEffectors_.end(); ++idx)
   {
     int eeIndex = nameToIndex_(idx->first);
@@ -859,12 +847,6 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
         forceMatrix = rotation;
       }
 
-      // delta_t * (1/delta_t * J * dq) = Impulse
-      amJump_ += torqueMatrix * idx->second.estimatedImpulse;
-      amJumpJacobian_ += torqueMatrix * idx->second.jacobianDeltaF;
-      lmJump_ += forceMatrix * idx->second.estimatedImpulse;
-      lmJumpJacobian_ += forceMatrix * idx->second.jacobianDeltaF;
-
     } // end of Lagrange Multipliers
 
     // tempEe.jacobianDeltaF = tempA_dagger_ee;
@@ -907,23 +889,6 @@ void mi_qpEstimator::logImpulseEstimations()
  });
 
 
-
-  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_linear");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getLMJump(); });
-
-  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_angular");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getAMJump(); });
-
-  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_linear_debug");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() {
-    Eigen::VectorXd robotJointVel = rbd::dofToVector(simRobot_.mb(), simRobot_.mbc().alpha);
-    return static_cast<Eigen::Vector3d>(getJacobianDeltaLM() * robotJointVel);
-  });
-
-  logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_angular_debug");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() {
-    return static_cast<Eigen::Vector3d>(getJacobianDeltaAM() * getImpactModels().begin()->second->getJointVel());
-  });
 
   logEntries_.emplace_back(qpName + "_" + "Objective");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObj(); });

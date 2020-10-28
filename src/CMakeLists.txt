@@ -11,6 +11,11 @@ set(mc_impact_predictor_src
   mi_fid_impulse.cpp
   mi_contactConstraint.cpp
   mi_unilateralContactConstraint.cpp
+  mi_velIniEquality.cpp
+  mi_velEstimator.cpp
+  mi_velBalance.cpp
+  mi_velInvOsdEquality.cpp
+  mi_velJsdEquality.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
