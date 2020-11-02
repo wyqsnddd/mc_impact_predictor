@@ -69,12 +69,8 @@ void mi_velInvOsdEquality::update()
 
     b_.segment(location, dim) = getQpEstimator()->getImpulse(*idx); 
 
-    // A_.block(location, 0, dim, dof) = getOsd_()->getEffectiveLambdaMatrix(*idx);
-    // A_.block(location, dof + location, dim, dim) = -tempId;
   }
 
-  // Arnaud this assignement has the wrong size!
-  // (9x52) <- (9x9)
    b_ = -getOsd_()->getLambdaMatrixInv() * b_;
 }
 

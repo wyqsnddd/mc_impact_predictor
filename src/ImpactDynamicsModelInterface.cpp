@@ -191,8 +191,15 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
     // std::cout<<"The number of velCases are: "<< velCases_.size()<<std::endl;
 
     double c0, c1, cov00, cov01, cov11, sumsq;
+    /*
     gsl_fit_linear(contactVelGrids, 1, comVelJumpGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
                    &c0, &c1, &cov00, &cov01, &cov11, &sumsq);
+		   */
+
+    c0 = 0.0;
+    gsl_fit_mul(contactVelGrids, 1, comVelJumpGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
+                   &c1, &cov11, &sumsq);
+
 
     robotPostImpactStates_.c0 = c0;
     robotPostImpactStates_.c1 = c1;
