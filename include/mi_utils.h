@@ -61,7 +61,10 @@ struct qpEstimatorParameter
   bool useImpulseBalance = false;
   bool useFidImpulse = false;
   bool useContactConstraint = false;
+  // The inequalities: 
   bool useUnilateralContactConstraint = false;
+  bool useFrictionCone = false; ///< Restrict the impulse inside the friction cone.
+
   bool testWeightedQp = false;
   // 0: The default option which minimize the sum of momentum
   // 1: Momentum conservation using the Spatial Jacobian

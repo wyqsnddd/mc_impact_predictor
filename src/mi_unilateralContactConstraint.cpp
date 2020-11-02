@@ -27,7 +27,7 @@ namespace mc_impact
 mi_unilateralContactConstraint::mi_unilateralContactConstraint(const std::shared_ptr<mi_osd> & osdPtr,
                                const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
                                const std::map<std::string, endEffector> & endEffectors)
-: mi_equality(osdPtr), impactModels_(impactModels), endEffectors_(endEffectors)
+: mi_inEquality(osdPtr), impactModels_(impactModels), endEffectors_(endEffectors)
 {
   /*
   for (auto idx = impactModels_.begin(); idx!= impactModels_.end();++idx)
@@ -51,13 +51,13 @@ void mi_unilateralContactConstraint::reset_()
   int nContact = nEe - nImpact;
 
   int jacDim = getOsd_()->getJacobianDim();
-  int constriantDim = 1; 
+  int constraintDim = 1; 
 
-  A_.resize(constriantDim * nContact, dof + jacDim * nEe);
+  A_.resize(constraintDim * nContact, dof + jacDim * nEe);
   A_.setZero();
 
   // b_ will stay zero
-  b_.resize(constriantDim * nContact);
+  b_.resize(constraintDim * nContact);
   b_.setZero();
 }
 
@@ -82,11 +82,15 @@ void mi_unilateralContactConstraint::update()
 
   // Fill the contact bodies 
 
+
   int count = 0;
   for(auto idx = getOsd_()->getContactEes().begin(); idx != getOsd_()->getContactEes().end(); ++idx)
   {
     // We use the x-axis row of the Jacobian.
-    A_.block(count * constraintDim, 0, constraintDim, dof) = getOsd_()->getJacobian(*idx).block(0, 0, constraintDim, dof);
+    //A_.block(count * constraintDim, 0, constraintDim, dof) = getOsd_()->getJacobian(*idx).block(0, 0, constraintDim, dof);
+    
+    // Suppose z is the contact normal direction
+    A_.block(count * constraintDim, 0, constraintDim, dof) = - getOsd_()->getJacobian(*idx).block(2, 0, constraintDim, dof);
     count++;
   }
 }

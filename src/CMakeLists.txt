@@ -16,6 +16,7 @@ set(mc_impact_predictor_src
   mi_velBalance.cpp
   mi_velInvOsdEquality.cpp
   mi_velJsdEquality.cpp
+  mi_frictionCone.cpp
 )
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})

@@ -39,14 +39,14 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
       idx != params.impactNameAndNormals.end(); ++idx)
   {
     ImpactModelParams params;
-    params.coeF = params_.coeFrictionDeduction;
+    params.coeF = getEstimatorParams().coeFrictionDeduction;
     params.iBodyName = idx->first;
     params.inertial_surfaceNormal = idx->second;
-    params.coeR = params_.coeRes;
-    params.timeStep = params_.timeStep;
-    params.iDuration = params_.impactDuration;
-    params.dim = params_.dim;
-    params.useBodyJacobian = params_.impactModelBodyJacobian;
+    params.coeR = getEstimatorParams().coeRes;
+    params.timeStep = getEstimatorParams().timeStep;
+    params.iDuration = getEstimatorParams().impactDuration;
+    params.dim = getEstimatorParams().dim;
+    params.useBodyJacobian = getEstimatorParams().impactModelBodyJacobian;
 
     impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>(getSimRobot(), params);
   }
@@ -82,25 +82,22 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
     addEndeffector_(ee, isOsdEe);
   }
 
-  if(params_.useJsd)
+  if(getEstimatorParams().useJsd)
     eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_jsdEquality>(getOsd(), getImpactModels(), endEffectors_));
 
-  if(params_.useOsd)
+  if(getEstimatorParams().useOsd)
     eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_invOsdEquality>(getOsd(), static_cast<int>(getImpactModels().size())));
 
-  if(params_.useImpulseBalance)
+  if(getEstimatorParams().useImpulseBalance)
     eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_balance>(getOsd(), getImpactModels(), cmmPtr_));
 
-  if(params_.useFidImpulse)
+  if(getEstimatorParams().useFidImpulse)
     eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_fid_impulse>(getOsd(), getImpactModels(), cmmPtr_, getFidModel()));
 
-  if(params_.useContactConstraint)
+  if(getEstimatorParams().useContactConstraint)
     eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_contactConstraint>(getOsd(), getImpactModels(), endEffectors_));
-
-  if(params_.useUnilateralContactConstraint)
-    eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_unilateralContactConstraint>(getOsd(), getImpactModels(), endEffectors_));
 
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
@@ -110,6 +107,19 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
     eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_iniEquality>(getOsd(), getImpactModel(idx->first), getEeNum()));
   }
+
+
+  if(getEstimatorParams().useUnilateralContactConstraint)
+    ieqConstraints_.emplace_back(std::make_shared<mc_impact::mi_unilateralContactConstraint>(getOsd(), getImpactModels(), endEffectors_));
+
+  if(getEstimatorParams().useFrictionCone)
+    ieqConstraints_.emplace_back(std::make_shared<mc_impact::mi_frictionCone>(getOsd()));
+
+  if(getEstimatorParams().useLagrangeMultiplier&&(ieqConstraints_.size() > 0))
+  {
+    throw std::runtime_error("Looking for least squares solution when there are inequalities!!!");
+  }
+
   /*
     for (std::vector<std::string>::const_iterator idx = params.impactBodyNames.begin();
     idx!=params.impactBodyNames.end(); ++idx)
@@ -156,7 +166,13 @@ void mi_qpEstimator::initializeQP_()
     numEq_ += (*idx)->nrEq();
   }
 
-  solver_.resize(getNumVar_(), getNumEq_(), Eigen::lssol::QP2);
+  numIeq_ = 0;
+  for(auto idx = ieqConstraints_.begin(); idx != ieqConstraints_.end(); ++idx)
+  {
+    numIeq_ += (*idx)->nrIeq();
+  }
+
+  solver_.resize(getNumVar_(), getNumCon_(), Eigen::lssol::QP2);
 
   xl_.resize(getNumVar_());
   xu_.resize(getNumVar_());
@@ -169,11 +185,11 @@ void mi_qpEstimator::initializeQP_()
   Q_.resize(getNumVar_(), getNumVar_());
   Q_ = Q_.setIdentity() * getQweight();
 
-  C_.resize(getNumEq_(), getNumVar_());
+  C_.resize(getNumCon_(), getNumVar_());
   C_.setZero();
-  cu_.resize(getNumEq_());
+  cu_.resize(getNumCon_());
   cu_.setZero();
-  cl_.resize(getNumEq_());
+  cl_.resize(getNumCon_());
   cl_.setZero();
 
   jointVelJump_.resize(getDof());
@@ -472,6 +488,7 @@ void mi_qpEstimator::update_()
 
   auto startStruct = std::chrono::high_resolution_clock::now();
   int count = 0;
+
   // Update the constraints
   for(auto & eq : eqConstraints_)
   {
@@ -487,6 +504,23 @@ void mi_qpEstimator::update_()
     cu_.segment(count, eq->nrEq()) = eq->bEq();
 
     count += eq->nrEq();
+  }
+
+  // Update the inequality constraints
+  for(auto & ieq : ieqConstraints_)
+  {
+    ieq->update();
+
+    // Range space
+    C_.block(count, 0, ieq->nrIeq(), getNumVar_()) = ieq->AIeq();
+
+    // Lower bounds: lb == ub for equalities
+    cl_.segment(count, ieq->nrIeq()) = ieq->bIeq();
+
+    // Upper bounds:
+    cu_.segment(count, ieq->nrIeq()) = ieq->bIeq();
+
+    count += ieq->nrIeq();
   }
 
   Eigen::VectorXd solutionVariables;

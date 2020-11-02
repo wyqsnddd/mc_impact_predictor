@@ -20,41 +20,55 @@
  */
 
 #pragma once
-#include "mi_inEquality.h"
-#include "mi_impactModel.h"
 #include "mi_osd.h"
-#include "mi_utils.h"
 
 namespace mc_impact
 {
 
-class mi_unilateralContactConstraint : public mi_inEquality
-/** \brief Specify the unilateral contact constraint: contact velocity >= 0
- *  Suppose the contact normal is n 
- *  - (n^T * J * \Delta \dot{q})  <= 0
+class mi_inEquality
+/** \brief base class for the equality constraints
  */
 {
 public:
-  mi_unilateralContactConstraint(const std::shared_ptr<mi_osd> & osdPtr,
-                 const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-                 const std::map<std::string, endEffector> & endEffectors);
-  ~mi_unilateralContactConstraint() {}
+  mi_inEquality(const std::shared_ptr<mi_osd> & osdPtr) : osdPtr_(osdPtr) {}
+  ~mi_inEquality() {}
 
-  inline std::string nameIeq() const override
+  virtual inline std::string nameIeq() const
   {
-    return "JointSpaceDynamicsImpulseEqualityConstraint";
+    return "baseInequalityConstraint";
+  }
+  inline const Eigen::MatrixXd & AIeq() const
+  {
+    return A_;
+  }
+  inline const Eigen::VectorXd & bIeq() const
+  {
+    return b_;
+  }
+
+  inline int nrIeq() const
+  {
+    return static_cast<int>(b_.size());
   }
 
   /*!
     \param contactEe We use the end-effectors in contact to specify the jsd impulse equation
     */
-  void update() override;
+  virtual void update() = 0;
+  inline void printInfo()
+  {
+    std::cout << nameIeq() << " has Aieq size: (" << A_.rows() << ", " << A_.cols() << "), bieq size: (" << b_.rows()
+              << ", " << b_.cols() << ").  " << std::endl;
+  }
 
 protected:
-  void reset_() override;
-  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels_;
-  const std::map<std::string, endEffector> & endEffectors_;
-  int nameToIndex_(const std::string & eeName);
+  inline const std::shared_ptr<mi_osd> getOsd_() const
+  {
+    return osdPtr_;
+  }
+  virtual void reset_() = 0;
+  std::shared_ptr<mi_osd> osdPtr_;
+  Eigen::MatrixXd A_;
+  Eigen::VectorXd b_;
 };
-
 } // namespace mc_impact

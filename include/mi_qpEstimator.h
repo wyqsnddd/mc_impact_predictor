@@ -43,6 +43,7 @@
 #include "mi_utils.h"
 #include "mi_fid_impulse.h"
 #include "mi_contactConstraint.h"
+#include "mi_frictionCone.h"
 #include "mi_unilateralContactConstraint.h"
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
@@ -255,6 +256,9 @@ private:
 
   std::vector<std::shared_ptr<mi_equality>> eqConstraints_;
 
+  // Add the inequality entries
+  std::vector<std::shared_ptr<mi_inEquality>> ieqConstraints_;
+
   void solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
                           const Eigen::VectorXd & p_,
                           const Eigen::MatrixXd & C_,
@@ -281,6 +285,17 @@ private:
     return numEq_;
   }
   int numEq_;
+
+  inline int getNumIeq_() const
+  {
+    return numIeq_;
+  }
+  inline int getNumCon_() const
+  {
+    return getNumEq_() + getNumIeq_();
+  }
+  int numIeq_;
+
 
   std::map<std::string, endEffector> endEffectors_;
   Eigen::VectorXd jointVelJump_, tauJump_;
