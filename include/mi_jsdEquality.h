@@ -33,7 +33,7 @@ class mi_jsdEquality : public mi_equality
  */
 {
 public:
-  mi_jsdEquality(const std::shared_ptr<mi_osd> & osdPtr,
+  mi_jsdEquality(const std::shared_ptr<mi_osd> osdPtr,
                  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
                  const std::map<std::string, endEffector> & endEffectors);
   ~mi_jsdEquality() {}

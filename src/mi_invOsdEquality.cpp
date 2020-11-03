@@ -24,7 +24,7 @@
 namespace mc_impact
 {
 
-mi_invOsdEquality::mi_invOsdEquality(const std::shared_ptr<mi_osd> & osdPtr, const int & numEe)
+mi_invOsdEquality::mi_invOsdEquality(const std::shared_ptr<mi_osd> osdPtr, const int & numEe)
 : mi_equality(osdPtr), numEe_(numEe)
 {
   reset_();

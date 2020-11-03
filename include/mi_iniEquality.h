@@ -32,7 +32,7 @@ class mi_iniEquality : public mi_equality
  */
 {
 public:
-  mi_iniEquality(const std::shared_ptr<mi_osd> & osdPtr,
+  mi_iniEquality(const std::shared_ptr<mi_osd> osdPtr,
                  const std::shared_ptr<mi_impactModel> & impactPtr,
                  const int numEe);
   ~mi_iniEquality() {}

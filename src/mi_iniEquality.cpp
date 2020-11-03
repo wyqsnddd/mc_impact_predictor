@@ -24,7 +24,7 @@
 namespace mc_impact
 {
 
-mi_iniEquality::mi_iniEquality(const std::shared_ptr<mi_osd> & osdPtr,
+mi_iniEquality::mi_iniEquality(const std::shared_ptr<mi_osd> osdPtr,
                                const std::shared_ptr<mi_impactModel> & impactPtr,
                                const int numEe)
 : mi_equality(osdPtr), impactPtr_(impactPtr), numEe_(numEe)

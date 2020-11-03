@@ -32,7 +32,7 @@ namespace mc_impact
 class mi_velInvOsdEquality : public mi_equality
 {
 public:
-  mi_velInvOsdEquality(const std::shared_ptr<mi_osd> & osdPtr, 
+  mi_velInvOsdEquality(const std::shared_ptr<mi_osd> osdPtr, 
 		  const std::shared_ptr<mi_qpEstimator> qpEstimator,
 		  const int & numEe);
   ~mi_velInvOsdEquality() {}

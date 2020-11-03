@@ -30,7 +30,7 @@ class mi_inEquality
  */
 {
 public:
-  mi_inEquality(const std::shared_ptr<mi_osd> & osdPtr) : osdPtr_(osdPtr) {}
+  mi_inEquality(const std::shared_ptr<mi_osd> osdPtr) : osdPtr_(osdPtr) {}
   ~mi_inEquality() {}
 
   virtual inline std::string nameIeq() const

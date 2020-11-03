@@ -30,7 +30,7 @@ namespace mc_impact
 class mi_invOsdEquality : public mi_equality
 {
 public:
-  mi_invOsdEquality(const std::shared_ptr<mi_osd> & osdPtr, const int & numEe);
+  mi_invOsdEquality(const std::shared_ptr<mi_osd> osdPtr, const int & numEe);
   ~mi_invOsdEquality() {}
 
   inline std::string nameEq() const override

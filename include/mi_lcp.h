@@ -57,7 +57,7 @@ class mi_lcp
 public:
   mi_lcp(const mc_rbdyn::Robot & simRobot,
          const mc_rbdyn::Robot & realRobot,
-         const std::shared_ptr<mi_osd> & osdPtr,
+         const std::shared_ptr<mi_osd> osdPtr,
          int dim,
          const std::string & solverName,
          double convergenceThreshold);

@@ -24,7 +24,7 @@
 namespace mc_impact
 {
 
-mi_velInvOsdEquality::mi_velInvOsdEquality(const std::shared_ptr<mi_osd> & osdPtr,  
+mi_velInvOsdEquality::mi_velInvOsdEquality(const std::shared_ptr<mi_osd> osdPtr,  
 		const std::shared_ptr<mi_qpEstimator> qpEstimator,
 		const int & numEe)
 : mi_equality(osdPtr), qpEstimator_(qpEstimator), numEe_(numEe)

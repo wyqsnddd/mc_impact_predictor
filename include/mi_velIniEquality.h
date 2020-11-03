@@ -32,7 +32,7 @@ class mi_velIniEquality : public mi_equality
  */
 {
 public:
-  mi_velIniEquality(const std::shared_ptr<mi_osd> & osdPtr,
+  mi_velIniEquality(const std::shared_ptr<mi_osd> osdPtr,
                  const std::shared_ptr<mi_impactModel> & impactPtr,
                  const int numEe);
   ~mi_velIniEquality() {}

@@ -24,7 +24,7 @@
 namespace mc_impact
 {
 
-mi_velIniEquality::mi_velIniEquality(const std::shared_ptr<mi_osd> & osdPtr,
+mi_velIniEquality::mi_velIniEquality(const std::shared_ptr<mi_osd> osdPtr,
                                const std::shared_ptr<mi_impactModel> & impactPtr,
                                const int numEe)
 : mi_equality(osdPtr), impactPtr_(impactPtr), numEe_(numEe)
