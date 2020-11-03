@@ -511,8 +511,8 @@ void mi_qpEstimator::update_()
     // Range space
     C_.block(count, 0, ieq->nrIeq(), getNumVar_()) = ieq->AIeq();
 
-    // Lower bounds: lb == ub for equalities
-    cl_.segment(count, ieq->nrIeq()) = ieq->bIeq();
+    // Lower bounds are set to: -inf 
+    cl_.segment(count, ieq->nrIeq()) = Eigen::VectorXd::Ones(ieq->nrIeq()) * -std::numeric_limits<double>::infinity(); 
 
     // Upper bounds:
     cu_.segment(count, ieq->nrIeq()) = ieq->bIeq();

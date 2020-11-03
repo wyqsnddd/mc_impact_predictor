@@ -48,7 +48,7 @@ private:
   {
     return miu_; 
   }
-  double miu_; ///< The friction coefficient
+  double miu_ = 0.5; ///< The friction coefficient
 
 };
 } // namespace mc_impact

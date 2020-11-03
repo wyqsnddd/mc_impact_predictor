@@ -301,17 +301,26 @@ private:
 
   void readEeJacobiansSolution_(const Eigen::VectorXd & solutionVariables);
 
+  int numVar_ = 0;
+  int numEq_ = 0;
+  int numIeq_ = 0;
+
   inline int getNumVar_() const
   {
     return numVar_;
   }
-  int numVar_;
-
   inline int getNumEq_() const
   {
     return numEq_;
   }
-  int numEq_;
+    inline int getNumIeq_() const
+  {
+    return numIeq_;
+  }
+  inline int getNumCon_() const
+  {
+    return getNumEq_() + getNumIeq_();
+  }
 
   std::map<std::string, endEffector> endEffectors_;
   Eigen::VectorXd jointVelJump_, tauJump_;

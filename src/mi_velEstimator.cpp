@@ -125,7 +125,13 @@ void mi_velEstimator::initializeQP_()
     numEq_ += (*idx)->nrEq();
   }
 
-  solver_.resize(getNumVar_(), getNumEq_(), Eigen::lssol::QP2);
+  numIeq_ = 0;
+  for(auto idx = ieqConstraints_.begin(); idx != ieqConstraints_.end(); ++idx)
+  {
+    numIeq_ += (*idx)->nrIeq();
+  }
+
+  solver_.resize(getNumVar_(), getNumCon_(), Eigen::lssol::QP2);
 
   xl_.resize(getNumVar_());
   xu_.resize(getNumVar_());
@@ -138,11 +144,11 @@ void mi_velEstimator::initializeQP_()
   Q_.resize(getNumVar_(), getNumVar_());
   Q_ = Q_.setIdentity() * getQweight();
 
-  C_.resize(getNumEq_(), getNumVar_());
+  C_.resize(getNumCon_(), getNumVar_());
   C_.setZero();
-  cu_.resize(getNumEq_());
+  cu_.resize(getNumCon_());
   cu_.setZero();
-  cl_.resize(getNumEq_());
+  cl_.resize(getNumCon_());
   cl_.setZero();
 
   jointVelJump_.resize(getDof());
@@ -352,6 +358,23 @@ void mi_velEstimator::update_()
     cu_.segment(count, eq->nrEq()) = eq->bEq();
 
     count += eq->nrEq();
+  }
+
+  // Update the inequality constraints
+  for(auto & ieq : ieqConstraints_)
+  {
+    ieq->update();
+
+    // Range space
+    C_.block(count, 0, ieq->nrIeq(), getNumVar_()) = ieq->AIeq();
+
+    // Lower bounds are set to: -inf 
+    cl_.segment(count, ieq->nrIeq()) = Eigen::VectorXd::Ones(ieq->nrIeq()) * -std::numeric_limits<double>::infinity(); 
+
+    // Upper bounds:
+    cu_.segment(count, ieq->nrIeq()) = ieq->bIeq();
+
+    count += ieq->nrIeq();
   }
 
   Eigen::VectorXd solutionVariables;

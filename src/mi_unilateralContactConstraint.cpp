@@ -63,7 +63,7 @@ void mi_unilateralContactConstraint::update()
     //A_.block(count * constraintDim, 0, constraintDim, dof) = getOsd_()->getJacobian(*idx).block(0, 0, constraintDim, dof);
     
     // Suppose z is the contact normal direction, otherwise: n^T * Jac
-    A_.block(count * constraintDim, 0, constraintDim, dof) = - getOsd_()->getJacobian(*idx).block(2, 0, constraintDim, dof);
+    A_.block(count * constraintDim, 0, constraintDim, dof) = getOsd_()->getJacobian(*idx).block(2, 0, constraintDim, dof);
     count++;
   }
 }

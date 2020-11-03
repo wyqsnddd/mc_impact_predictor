@@ -273,17 +273,20 @@ private:
   void readEeJacobiansSolution_(const Eigen::VectorXd & solutionVariables);
   void calcPerturbedWrench_();
 
+  int numVar_ = 0;
+  int numEq_ = 0;
+  int numIeq_ = 0;
+
+
   inline int getNumVar_() const
   {
     return numVar_;
   }
-  int numVar_;
 
   inline int getNumEq_() const
   {
     return numEq_;
   }
-  int numEq_;
 
   inline int getNumIeq_() const
   {
@@ -293,7 +296,6 @@ private:
   {
     return getNumEq_() + getNumIeq_();
   }
-  int numIeq_;
 
 
   std::map<std::string, endEffector> endEffectors_;

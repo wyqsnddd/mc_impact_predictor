@@ -24,30 +24,43 @@ void mi_frictionCone::reset_()
   // 1: directional Jacobian
   // 3: linear Jacobian
   // 6: full Jacobian
-  int dim = getOsd_()->getJacobianDim();
+  int dim = 3; 
+  int rowNum = 5; 
+  
 
   // The dimension of A: is dim \times established contacts 
-  A_.resize(dim * nContacts, dof + dim * (nEe));
+  A_.resize(rowNum * nContacts, dof + dim * (nEe));
   A_.setZero();
 
   // b_ stays zero 
-  b_.resize(dim * nContacts);
+  b_.resize(rowNum * nContacts);
   b_.setZero();
 
   // Assume z-axis is the contact normal direction.
-  Eigen::Matrix3d matrixA = Eigen::Matrix3d::Identity();
+  Eigen::MatrixXd matrixA; 
+  matrixA.resize(rowNum, dim);
+  matrixA.setZero();
+
   // Ix - 1/miu*Iz <= 0
-  matrixA(0, 2) =  - 1/getMiu_();
+  matrixA(0, 0) = 1; 
+  matrixA(0, 2) = - 1/getMiu_();
+  // -Ix - 1/miu*Iz <= 0
+  matrixA(1, 0) = - 1; 
+  matrixA(1, 2) = - 1/getMiu_();
   // Iy - 1/miu*Iz <= 0
-  matrixA(1, 2) =  - 1/getMiu_();
+  matrixA(2, 1) = 1; 
+  matrixA(2, 2) = - 1/getMiu_();
+  matrixA(3, 1) = - 1; 
+  matrixA(3, 2) = - 1/getMiu_();
   // Iz >= 0
-  matrixA(2, 2) = -1;
+  //matrixA(4, 2) = 1;
   
   int count(0);
+
   for(auto & contact : getOsd_()->getContactEes())
   {
     int eeIndex = getOsd_()->nameToIndex_(contact);
-    A_.block(count * dim, dof + eeIndex * dim, dim, dim) = matrixA;
+    A_.block(count * rowNum, dof + eeIndex * dim, rowNum, dim) = matrixA;
     count++;
   }
 }
