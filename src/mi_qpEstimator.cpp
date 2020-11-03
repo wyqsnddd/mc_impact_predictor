@@ -109,9 +109,6 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   }
 
 
-  if(getEstimatorParams().useUnilateralContactConstraint)
-    ieqConstraints_.emplace_back(std::make_shared<mc_impact::mi_unilateralContactConstraint>(getOsd(), getImpactModels(), endEffectors_));
-
   if(getEstimatorParams().useFrictionCone)
     ieqConstraints_.emplace_back(std::make_shared<mc_impact::mi_frictionCone>(getOsd()));
 

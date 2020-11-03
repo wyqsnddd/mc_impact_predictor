@@ -29,15 +29,13 @@ namespace mc_impact
 {
 
 class mi_unilateralContactConstraint : public mi_inEquality
-/** \brief Specify the unilateral contact constraint: contact velocity >= 0
+/** \brief Specify the unilateral contact constraint: contact velocity <= 0
  *  Suppose the contact normal is n 
- *  - (n^T * J * \Delta \dot{q})  <= 0
+ *  (n^T * J * \Delta \dot{q})  <= 0
  */
 {
 public:
-  mi_unilateralContactConstraint(const std::shared_ptr<mi_osd> & osdPtr,
-                 const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-                 const std::map<std::string, endEffector> & endEffectors);
+  mi_unilateralContactConstraint(const std::shared_ptr<mi_osd> osdPtr);
   ~mi_unilateralContactConstraint() {}
 
   inline std::string nameIeq() const override
@@ -52,9 +50,6 @@ public:
 
 protected:
   void reset_() override;
-  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels_;
-  const std::map<std::string, endEffector> & endEffectors_;
-  int nameToIndex_(const std::string & eeName);
 };
 
 } // namespace mc_impact

@@ -283,6 +283,10 @@ private:
 
   std::vector<std::shared_ptr<mi_equality>> eqConstraints_;
 
+  // Add the inequality entries
+  std::vector<std::shared_ptr<mi_inEquality>> ieqConstraints_;
+
+
   void solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
                           const Eigen::VectorXd & p_,
                           const Eigen::MatrixXd & C_,

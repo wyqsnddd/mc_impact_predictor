@@ -87,6 +87,9 @@ mi_velEstimator::mi_velEstimator(const mc_rbdyn::Robot & simRobot,
     eqConstraints_.emplace_back(
         std::make_shared<mc_impact::mi_velIniEquality>(getOsd(), getImpactModel(idx->first), getEeNum()));
   }
+
+  if(getEstimatorParams().useUnilateralContactConstraint)
+    ieqConstraints_.emplace_back(std::make_shared<mc_impact::mi_unilateralContactConstraint>(getOsd()));
   
   vector_A_dagger_.resize(params.impactNameAndNormals.size());
 

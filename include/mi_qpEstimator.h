@@ -44,7 +44,6 @@
 #include "mi_fid_impulse.h"
 #include "mi_contactConstraint.h"
 #include "mi_frictionCone.h"
-#include "mi_unilateralContactConstraint.h"
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
 
