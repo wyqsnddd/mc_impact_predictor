@@ -5,8 +5,6 @@
 #include <RBDyn/Momentum.h>
 
 #include <TwoDimModel/TwoDimModel.h>
-#include <VirtualContactPoint/SolveSemiAxes.h>
-#include <VirtualContactPoint/VirtualContactPoint.h>
 
 // Header file for GNU Scientific Library: Least squares fit.
 #include <gsl/gsl_fit.h>
@@ -71,8 +69,8 @@ struct GradientApproximationParams
 struct TwoDimModelBridgeParams
 {
   std::string name = "TwoDimModel";
-  bool useVirtualContact = true;
-  bool useComVel = true;
+  //bool useVirtualContact = false;
+  bool useComVel = false;
   bool debug = false;
   bool gradientApproximation = true;
   GradientApproximationParams gradientParams;
@@ -105,7 +103,7 @@ public:
   }
   inline const TwoDimModelBridgeParams & getTwoDimModelBridgeParams()
   {
-    return params_;
+    return twoDimParams_;
   }
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
@@ -130,7 +128,7 @@ public:
   {
     return rAverageAngularVel_;
   }
-  void printVcParams();
+  //void printVcParams();
   void printPIParams();
   void printResult();
 
@@ -143,7 +141,7 @@ public:
   }
 
 protected:
-  TwoDimModelBridgeParams params_;
+  TwoDimModelBridgeParams twoDimParams_;
   // bool useVirtualContact_;
 
   double rotationAngle_;
@@ -179,8 +177,9 @@ protected:
 
   std::shared_ptr<FIDynamics::TwoDimModel> twoDimModelPtr_;
 
-  std::shared_ptr<FIDynamics::VirtualContactPoint> vcPtr_;
-  FIDynamics::VcParams vcParams_;
+  //std::shared_ptr<FIDynamics::VirtualContactPoint> vcPtr_;
+  //FIDynamics::VcParams vcParams_;
+  /*
   inline const FIDynamics::VcParams & getVcParams_()
   {
     return vcParams_;
@@ -188,8 +187,9 @@ protected:
 
   std::shared_ptr<FIDynamics::SolveSemiAxes> ssaPtr_;
 
+  */
   // Convert the 2D solution to 3D
-  void planarSolutionTo3D_();
+
 
   /*! \brief indicates what assumptions are used.
    */
@@ -197,6 +197,8 @@ protected:
   {
     return case_;
   }
+
+  void planarSolutionTo3D_();
 
   TwoDimModelCase case_ = TwoDimModelCase::PushWall;
   /*! \brief update the piParmas with the Push-Wall assumption: object mass and moment of inertia are infinite.

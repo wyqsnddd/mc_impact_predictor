@@ -55,7 +55,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
   newTwoDimModelParams.modelParams = getImpactModel("r_wrist")->getParams();
 
   newTwoDimModelParams.name = "PredictorTwoDimModelSimRobot";
-  newTwoDimModelParams.useVirtualContact = false;
+  //newTwoDimModelParams.useVirtualContact = false;
   newTwoDimModelParams.useComVel = false;
   twoDimFidModelPtr_ = std::make_shared<mc_impact::TwoDimModelBridge>(getSimRobot(), newTwoDimModelParams);
 

@@ -8,12 +8,13 @@ ImpactDynamicsModel::ImpactDynamicsModel(const mc_rbdyn::Robot & simRobot, const
   std::cout << green << "ImpactDynamicsModel is created." << reset << std::endl;
 }
 
-TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot, const TwoDimModelBridgeParams & params)
-: ImpactDynamicsModel(simRobot, params.modelParams), params_(params)
+TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot, const TwoDimModelBridgeParams & twoDimParams)
+: ImpactDynamicsModel(simRobot, twoDimParams.modelParams), twoDimParams_(twoDimParams)
 {
 
   // Initialize the virtual-contact-point calculator
 
+  /*
   if(getTwoDimModelBridgeParams().useVirtualContact)
   {
     // Initialize the semiaxes calculator
@@ -21,6 +22,7 @@ TwoDimModelBridge::TwoDimModelBridge(const mc_rbdyn::Robot & simRobot, const Two
     ssaPtr_.reset(new FIDynamics::SolveSemiAxes(getRobot().mass(), inertiaMatrix));
     vcPtr_.reset(new FIDynamics::VirtualContactPoint());
   }
+  */
 
   // Initialize the two-dim-model
   // Energetic coefficient of restitution
@@ -79,10 +81,12 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
 
   // Inertia should be the upper corner? check!
   // std::cout<<green<< "The centroidal inertia is: " << std::endl << centroidalInertia<< std::endl;
+  /*
   if(getTwoDimModelBridgeParams().useVirtualContact)
   {
     ssaPtr_->update(getRobot().mass(), rCentroidalInertia_);
   }
+  */
 
   // std::cout<<"ssa updated"<<std::endl;
   // clang-format off
@@ -97,18 +101,20 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
 */
   // clang-format on
   // (2) Update the virtual-contact model
-  vcParams_.com = getRobot().com();
+  //vcParams_.com = getRobot().com();
 
   // Use the value from the semi-axes-calculator
+  /*
   if(getTwoDimModelBridgeParams().useVirtualContact)
   {
     vcParams_.semiAxesVector << ssaPtr_->getSemiAxes()[0], ssaPtr_->getSemiAxes()[1], ssaPtr_->getSemiAxes()[2];
   }
+  */
 
   // Use the impact body translation
   sva::PTransformd X_0_ee = getRobot().bodyPosW(getParams().iBodyName);
-  vcParams_.eePosition = X_0_ee.translation();
-
+  params_.eePosition = X_0_ee.translation();
+  /*
   vcParams_.impactNormal = impactNormal;
   vcParams_.debug = false;
 
@@ -124,11 +130,13 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   {
     vc = vcParams_.eePosition;
   }
+  */
 
   // std::cout<<"The virtual point is: "<<vc.transpose()<<std::endl;
 
   // (3) Update the twoDim model
-  updatePiParams_(vcParams_.impactNormal, vc, impactLinearVel);
+  //updatePiParams_(vcParams_.impactNormal, vc, impactLinearVel);
+  updatePiParams_(impactNormal, getParams().eePosition, impactLinearVel);
 
   twoDimModelPtr_->updateParams(getPlanarImpactParams());
   // std::cout<<"twoDimModelPtr_->updated params "<<std::endl;
@@ -138,10 +146,12 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   // (4) Convert the twoDim model solution back to 3D:
   planarSolutionTo3D_();
 
+  /*
   if(getTwoDimModelBridgeParams().debug)
   {
     printVcParams();
   }
+  */
 
   // std::cout<<"converted solution to 3d"<<std::endl;
   if(getTwoDimModelBridgeParams().gradientApproximation)
@@ -165,7 +175,7 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
       {
         // Compute if it is not the nominal contact velocity
 
-        updatePiParams_(vcParams_.impactNormal, vc, contactVel);
+        updatePiParams_(impactNormal, getParams().eePosition, contactVel);
         // Reset the x component of the impact velocity
         twoDimModelPtr_->updateParams(getPlanarImpactParams());
         // std::cout<<"twoDimModelPtr_->updated params "<<std::endl;
@@ -252,6 +262,7 @@ void TwoDimModelBridge::printPIParams()
   std::cout << green << "The bat preimpact angular vel is: " << piParams_.batParams.preW << std::endl;
 }
 
+/*
 void TwoDimModelBridge::printVcParams()
 {
 
@@ -261,6 +272,7 @@ void TwoDimModelBridge::printVcParams()
 
   std::cout << "The impact normal is: " << vcParams_.impactNormal.transpose() << std::endl;
 }
+*/
 void TwoDimModelBridge::updatePiParams_(const Eigen::Vector3d & in,
                                         const Eigen::Vector3d vc,
                                         const Eigen::Vector3d & impactLinearVel)
@@ -373,6 +385,7 @@ void TwoDimModelBridge::planarSolutionTo3DPushWall_(PostImpactStates & input)
 
   //  Compute: wJump = (1 / getParams().inertia) * cross2(r, I_r);
   Eigen::Vector3d rb;
+  /*
   if(getTwoDimModelBridgeParams().useVirtualContact)
   {
     rb = vcPtr_->getVirtualContactPoint() - vcParams_.com;
@@ -381,6 +394,9 @@ void TwoDimModelBridge::planarSolutionTo3DPushWall_(PostImpactStates & input)
   {
     rb = vcParams_.eePosition - vcParams_.com;
   }
+  */
+
+  rb = getParams().eePosition - getRobot().com();
   input.anguleVelJump = rCentroidalInertia_.inverse() * rb.cross(input.impulse);
 
   input.anguleVel = rAverageAngularVel_ + input.anguleVelJump;
@@ -512,6 +528,7 @@ void TwoDimModelBridge::logImpulseEstimations()
   logEntries_.emplace_back(bridgeName + "_" + "average_linearVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return rAverageLinearVel_; });
 
+  /*
   if(getTwoDimModelBridgeParams().useVirtualContact)
   {
     logEntries_.emplace_back(bridgeName + "_" + "virtualContactPoint");
@@ -525,6 +542,7 @@ void TwoDimModelBridge::logImpulseEstimations()
     else
       return false;
   });
+  */
 
   logEntries_.emplace_back(bridgeName + "_" + "useComVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() {
