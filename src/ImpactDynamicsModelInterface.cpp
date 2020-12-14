@@ -339,7 +339,8 @@ void TwoDimModelBridge::paramUpdatePushWall_(const Eigen::Vector3d & impactLinea
 
   // std::cout<<green<<"The bat preimpact vel is: "<<piParams_.batParams.preVel<<std::endl;
   // Get the z-axis average angular velocity:
-  piParams_.batParams.preW = rAverageAngularVel_(2);
+  //piParams_.batParams.preW = rAverageAngularVel_(2);
+  piParams_.batParams.preW = 0.0; 
   // std::cout<<green<<"The bat preimpact angular vel is: "<<piParams_.batParams.preW<<std::endl;
 
   piParams_.batParams.name = "robot";
