@@ -106,8 +106,8 @@ struct ImpactModelParams
   bool useBodyJacobian = true;
   double iDuration = 0.005;
   double timeStep = 0.005;
-  double coeF = 0.2;
-  double coeR = 0.8;
+  double coeF = 0.8;
+  double coeR = 0.2;
   int dim = 3;
   ImpactModelType impactModel = ImpactModelType::OneDimModel;
   Eigen::Vector3d eePosition = Eigen::Vector3d::Zero(); ///< Impacting end-effector position 
