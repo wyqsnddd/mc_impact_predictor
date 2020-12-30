@@ -89,6 +89,7 @@ struct endEffector
   sva::ForceVecd perturbedWrench;
 };
 
+/*
 enum class ImpactModelType
 {
   OneDimModel,
@@ -113,6 +114,7 @@ struct ImpactModelParams
   Eigen::Vector3d eePosition = Eigen::Vector3d::Zero(); ///< Impacting end-effector position 
 }; // End of the ImpactModelParams.
 
+*/
 inline bool areSame(double a, double b)
 {
   return fabs(a - b) < 1e-3;

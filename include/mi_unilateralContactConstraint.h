@@ -21,7 +21,7 @@
 
 #pragma once
 #include "mi_inEquality.h"
-#include "mi_impactModel.h"
+#include "ImpactDynamics/OneDimImpactModel.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 

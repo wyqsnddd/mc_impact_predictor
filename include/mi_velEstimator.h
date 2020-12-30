@@ -35,9 +35,9 @@
 
 #include <eigen-lssol/LSSOL_QP.h>
 
-#include "ImpactDynamicsModelInterface.h"
+#include "ImpactDynamics/ImpactDynamicsModelInterface.h"
 
-#include "mi_impactModel.h"
+#include "ImpactDynamics/OneDimImpactModel.h"
 #include "mi_iniEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
@@ -61,6 +61,7 @@ class mi_velEstimator
 {
 public:
   mi_velEstimator(const mc_rbdyn::Robot & simRobot,
+		  const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_,
                  const std::shared_ptr<mi_osd> osdPtr,
 		 const std::shared_ptr<mi_qpEstimator> qpEstimator,
                  const struct qpEstimatorParameter params);
@@ -191,6 +192,7 @@ public:
   {
     return params_.Qweight;
   }
+  /*
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
 
@@ -205,6 +207,7 @@ public:
                                + " is already set!");
     }
   }
+  */
 
   /*! \brief Add the GUI entries
    *   Require to set the host fsm controller first
@@ -227,6 +230,8 @@ public:
 
 private:
   const mc_rbdyn::Robot & simRobot_;
+
+  const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_;
   const std::shared_ptr<mi_osd> osdPtr_;
   const std::shared_ptr<mi_qpEstimator> getQpEstimator_()
   {
@@ -346,7 +351,6 @@ private:
   double solverTime_;
   double structTime_;
 
-  std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_;
 
 };
 

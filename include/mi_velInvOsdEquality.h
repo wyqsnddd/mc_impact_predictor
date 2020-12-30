@@ -23,7 +23,7 @@
 
 #include "mi_qpEstimator.h"
 #include "mi_equality.h"
-#include "mi_impactModel.h"
+#include "ImpactDynamics/OneDimImpactModel.h"
 #include "mi_osd.h"
 
 namespace mc_impact

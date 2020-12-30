@@ -25,9 +25,10 @@ namespace mc_impact
 {
 
 mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
+		               const std::shared_ptr<mc_impact::McTwoDimModelBridge> fidModelPtr,
                                const std::shared_ptr<mi_osd> osdPtr,
                                const struct qpEstimatorParameter params)
-: simRobot_(simRobot), osdPtr_(osdPtr), params_(params), solverTime_(0), structTime_(0.0)
+: simRobot_(simRobot), twoDimFidModelPtr_(fidModelPtr), osdPtr_(osdPtr), params_(params), solverTime_(0), structTime_(0.0)
 {
 
   // (0) Initialize the centroidal momentum calculator
@@ -51,13 +52,12 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
     impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>(getSimRobot(), params);
   }
   // Initialize the TwoDim frictional impact dynamics model
-  TwoDimModelBridgeParams newTwoDimModelParams;
-  newTwoDimModelParams.modelParams = getImpactModel("r_wrist")->getParams();
+  //TwoDimModelBridgeParams newTwoDimModelParams;
+  //ImpactModelParams iModelParams = getImpactModel("r_wrist")->getParams();
 
-  newTwoDimModelParams.name = "PredictorTwoDimModelSimRobot";
+  //newTwoDimModelParams.name = "PredictorTwoDimModelSimRobot";
   //newTwoDimModelParams.useVirtualContact = false;
-  newTwoDimModelParams.useComVel = false;
-  twoDimFidModelPtr_ = std::make_shared<mc_impact::TwoDimModelBridge>(getSimRobot(), newTwoDimModelParams);
+  //twoDimFidModelPtr_ = std::make_shared<mc_impact::McTwoDimModelBridge>(getSimRobot(), newTwoDimModelParams);
 
   // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
   /*
@@ -326,6 +326,7 @@ void mi_qpEstimator::updateImpactModels_()
     idx->second->update();
   }
 
+    /*
   if(getOsd()->useBodyJacobian())
   {
     // The two dim model by defaults computes in the inertial frame
@@ -340,6 +341,7 @@ void mi_qpEstimator::updateImpactModels_()
     twoDimFidModelPtr_->update(getImpactModel("r_wrist")->getSurfaceNormal(),
                                getImpactModel("r_wrist")->getEeVelocity());
   }
+  */
 }
 
 void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)

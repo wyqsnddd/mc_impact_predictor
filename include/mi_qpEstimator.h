@@ -32,10 +32,10 @@
 
 #include <RBDyn/Momentum.h>
 
-#include "ImpactDynamicsModelInterface.h"
+#include "ImpactDynamics/McImpactDynamicsModelInterface.h"
+#include "ImpactDynamics/OneDimImpactModel.h"
 
 #include "mi_balance.h"
-#include "mi_impactModel.h"
 #include "mi_iniEquality.h"
 #include "mi_invOsdEquality.h"
 #include "mi_jsdEquality.h"
@@ -57,6 +57,7 @@ class mi_qpEstimator
 {
 public:
   mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
+		 const std::shared_ptr<mc_impact::McTwoDimModelBridge> fidModelPtr,
                  const std::shared_ptr<mi_osd> osdPtr,
                  const struct qpEstimatorParameter params);
   ~mi_qpEstimator();
@@ -155,6 +156,7 @@ public:
   {
     return solverTime_;
   }
+  /*
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
 
@@ -169,6 +171,7 @@ public:
                                + " is already set!");
     }
   }
+  */
 
   /*! \brief Add the GUI entries
    *   Require to set the host fsm controller first
@@ -189,13 +192,14 @@ public:
   {
     return cmmPtr_;
   }
-  inline std::shared_ptr<mc_impact::TwoDimModelBridge> getFidModel() const
+  inline std::shared_ptr<mc_impact::McTwoDimModelBridge> getFidModel() const
   {
     return twoDimFidModelPtr_;
   }
 
 private:
   const mc_rbdyn::Robot & simRobot_;
+  const std::shared_ptr<mc_impact::McTwoDimModelBridge> twoDimFidModelPtr_;
   const std::shared_ptr<mi_osd> osdPtr_;
   endEffector & getEndeffector_(const std::string & name);
   qpEstimatorParameter params_;
@@ -312,6 +316,5 @@ private:
   double solverTime_;
   double structTime_;
 
-  std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_;
 };
 } // namespace mc_impact

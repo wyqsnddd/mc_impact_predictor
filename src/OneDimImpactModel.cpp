@@ -19,7 +19,7 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#include "mi_impactModel.h"
+#include "ImpactDynamics/OneDimImpactModel.h"
 
 namespace mc_impact
 {

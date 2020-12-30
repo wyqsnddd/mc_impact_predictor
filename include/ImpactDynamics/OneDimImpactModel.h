@@ -25,7 +25,8 @@
 
 #include <RBDyn/Jacobian.h>
 
-#include "mi_utils.h"
+#include "utils.h"
+#include "../mi_utils.h"
 #include <Eigen/StdVector>
 #include <iostream>
 

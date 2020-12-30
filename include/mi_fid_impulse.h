@@ -6,9 +6,9 @@
 #include <RBDyn/Momentum.h>
 
 
-#include "ImpactDynamicsModelInterface.h"
+#include "ImpactDynamics/ImpactDynamicsModelInterface.h"
 #include "mi_equality.h"
-#include "mi_impactModel.h"
+#include "ImpactDynamics/OneDimImpactModel.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 #include <assert.h>
@@ -32,7 +32,7 @@ public:
   mi_fid_impulse(const std::shared_ptr<mi_osd> osdPtr,
 		  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
 		  const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
-		  const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimmodel 
+		  const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimModel 
   );
 
   ~mi_fid_impulse() {}

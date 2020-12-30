@@ -5,9 +5,10 @@ set(mc_impact_predictor_src
   mi_jsdEquality.cpp
   mi_invOsdEquality.cpp
   mi_iniEquality.cpp
-  mi_impactModel.cpp
+  OneDimImpactModel.cpp
   mi_balance.cpp
   ImpactDynamicsModelInterface.cpp
+  McImpactDynamicsModelInterface.cpp
   mi_fid_impulse.cpp
   mi_contactConstraint.cpp
   mi_unilateralContactConstraint.cpp
@@ -23,6 +24,8 @@ add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
 target_link_libraries(mc_impact_predictor PUBLIC mc_rtc::mc_rbdyn)
 target_link_libraries(mc_impact_predictor PUBLIC eigen-lssol::eigen-lssol)
 target_link_libraries(mc_impact_predictor PRIVATE nlopt::nlopt)
+target_link_libraries(mc_impact_predictor PUBLIC mc_dynamicStability::mc_dynamicStability)
+target_link_libraries(mc_impact_predictor PUBLIC RobotInterface::RobotInterface)
 target_link_libraries(mc_impact_predictor PUBLIC FIDynamics::FIDynamics)
 target_link_libraries(mc_impact_predictor PRIVATE GSL::gsl)
 #target_link_libraries(mc_impact_predictor PRIVATE FIDynamics::FIDynamics)

@@ -7,7 +7,7 @@ mi_fid_impulse::mi_fid_impulse(const std::shared_ptr<mi_osd> osdPtr,
 		const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
 
 		const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
-		const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimmodel) : mi_equality(osdPtr), impactModels_(impactModels), cmmPtr_(cmmPtr), twoDimFidModelPtr_(twoDimmodel) 
+		const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimModel) : mi_equality(osdPtr), impactModels_(impactModels), cmmPtr_(cmmPtr), twoDimFidModelPtr_(twoDimModel) 
 {
 
   reset_();
