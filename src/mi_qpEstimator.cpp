@@ -114,7 +114,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   if(getEstimatorParams().useLagrangeMultiplier&&(ieqConstraints_.size() > 0))
   {
-    throw std::runtime_error("Looking for least squares solution when there are inequalities!!!");
+    throw_runtime_error("Looking for least squares solution when there are inequalities!!!", __FILE__, __LINE__);
   }
 
   /*
@@ -363,10 +363,10 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
 {
   if(surfaceNormals.size() != impactModels_.size())
   {
-    throw std::runtime_error(std::string("mi_qpEstimator-update: surfaceNormals size(")
+    throw_runtime_error(std::string("mi_qpEstimator-update: surfaceNormals size(")
                              + std::to_string(static_cast<int>(surfaceNormals.size()))
                              + std::string(") does not match impact predictor impact number (")
-                             + std::to_string(impactModels_.size()) + std::string(")."));
+                             + std::to_string(impactModels_.size()) + std::string(")."), __FILE__, __LINE__);
   }
 
   updateImpactModels_(surfaceNormals);
@@ -476,7 +476,7 @@ void mi_qpEstimator::updateObjective_(const int & choice)
 
       // Exception
     default:
-      throw std::runtime_error("The choice of Objective: is not set!");
+      throw_runtime_error("The choice of Objective: is not set!", __FILE__, __LINE__);
   }
 }
 void mi_qpEstimator::update_()
@@ -649,7 +649,7 @@ endEffector & mi_qpEstimator::getEndeffector_(const std::string & name)
   }
   else
   {
-    throw std::runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."));
+    throw_runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."), __FILE__, __LINE__);
   }
 }
 
@@ -662,7 +662,7 @@ const std::shared_ptr<mc_impact::mi_impactModel> mi_qpEstimator::getImpactModel(
   }
   else
   {
-    throw std::runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."));
+    throw_runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."), __FILE__, __LINE__);
   }
 }
 
@@ -674,7 +674,7 @@ int mi_qpEstimator::nameToIndex_(const std::string & eeName)
   else
   {
     std::string error_msg = std::string("qpEstimator::nameToIndex_: ee-") + eeName + std::string(": does not exist.");
-    throw std::runtime_error(error_msg);
+    throw_runtime_error(error_msg, __FILE__, __LINE__);
   }
 }
 

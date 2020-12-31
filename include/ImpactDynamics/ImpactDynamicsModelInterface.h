@@ -9,6 +9,7 @@
 #include <gsl/gsl_multifit.h>
 #include <gsl/gsl_randist.h>
 
+#include "../mi_utils.h"
 #include "utils.h"
 
 namespace mc_impact 

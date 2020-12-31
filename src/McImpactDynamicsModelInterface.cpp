@@ -86,7 +86,7 @@ void McTwoDimModelBridge::logImpulseEstimations()
       case FIDynamics::EventSequence::SpecialSolution:
         return 4;
       default:
-        throw std::runtime_error("impact event sequence is not defined");
+        throw_runtime_error("impact event sequence is not defined", __FILE__, __LINE__);
     }
   });
   /*

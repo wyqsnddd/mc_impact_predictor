@@ -92,8 +92,8 @@ const Eigen::VectorXd & mi_lcp::getPredictedContactForce(const std::string & bod
   }
   else
   {
-    throw std::runtime_error(std::string("getPredictedContactForce : '") + bodyName
-                             + std::string("' is not in the container."));
+    throw_runtime_error(std::string("getPredictedContactForce : '") + bodyName
+                             + std::string("' is not in the container."), __FILE__, __LINE__);
   }
 }
 

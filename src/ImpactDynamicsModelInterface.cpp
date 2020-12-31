@@ -83,8 +83,19 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const Eigen
   // clang-format on
   // Use the impact body translation
   //sva::PTransformd X_0_ee = getRobot()->bodyPosW(getParams().iBodyName);
-  sva::PTransformd X_0_ee = getRobot()->bodyPosW(getParams().iSurfaceName);
+  auto type = getRobot()->getImplementationType();
 
+  sva::PTransformd X_0_ee;
+
+  if(type == "McRobot")
+  {
+     X_0_ee =  getRobot()->bodyPosW(getParams().iBodyName);
+  }else if(type == "DartRobot"){
+     X_0_ee =  getRobot()->bodyPosW(getParams().iSurfaceName);
+  }else
+  {
+    throw_runtime_error("", __FILE__, __LINE__) ;
+  }
   // std::cout<<"vc parameters updated"<<std::endl;
 
   params_.eePosition = X_0_ee.translation();
@@ -467,7 +478,7 @@ void TwoDimModelBridge::computeMaxContactVel_(const Eigen::Vector3d & impactNorm
   
   if(params.strongBounds.maxContactVel<=0.0 || params.weakBounds.maxContactVel<=0.0)
   {
-    throw std::runtime_error("maxContactVel is negative!!!");
+    throw_runtime_error("maxContactVel is negative!!!", __FILE__, __LINE__);
   }
   //std::cout<<"twodim: c0 is: "<<c0<< std::endl;
   //std::cout<<"twodim: c1 is: "<<c1<< std::endl;
@@ -535,7 +546,7 @@ void TwoDimModelBridge::velSaturation_(double & inputVel)
 {
  if(inputVel < 0.0)
  {
-   throw std::runtime_error("TwoDimModelBridge::The input vel is negative!");
+   throw_runtime_error("TwoDimModelBridge::The input vel is negative!", __FILE__, __LINE__);
  }
 
  if(inputVel >= getTwoDimModelBridgeParams().gradientParams.upperVelBound)
@@ -644,7 +655,7 @@ void TwoDimModelBridge::updatePiParams_(const Eigen::Vector3d & in,
       paramUpdatePushWall_(impactLinearVel);
       break;
     default:
-      throw std::runtime_error("The assumptions are not set for the TwoDimModelBridge.");
+      throw_runtime_error("The assumptions are not set for the TwoDimModelBridge.", __FILE__, __LINE__);
   }
 }
 
@@ -777,7 +788,7 @@ void TwoDimModelBridge::planarSolutionTo3D_()
       planarSolutionTo3DPushWall_();
       break;
     default:
-      throw std::runtime_error("The assumptions are not set for the TwoDimModelBridge.");
+      throw_runtime_error("The assumptions are not set for the TwoDimModelBridge.", __FILE__, __LINE__);
   }
 }
 
@@ -787,8 +798,8 @@ const PostImpactStates & TwoDimModelBridge::getObjectPostImpactStates()
   {
     case TwoDimModelCase::PushWall:
       // In this case the object(wall)  is supposed to be stationary.
-      throw std::runtime_error(
-          "In the PushWall case, the wall is stationary. Thus there is no need to check its post-impact states.");
+      throw_runtime_error(
+          "In the PushWall case, the wall is stationary. Thus there is no need to check its post-impact states.", __FILE__, __LINE__);
     default:
       return objectPostImpactStates_;
   }

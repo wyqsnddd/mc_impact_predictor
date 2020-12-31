@@ -156,14 +156,13 @@ public:
   {
     return solverTime_;
   }
-  /*
+  
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
 
     if(hostCtlPtr_ == nullptr)
     {
       hostCtlPtr_ = ctlPtr;
-      twoDimFidModelPtr_->setHostCtl(hostCtlPtr_);
     }
     else
     {
@@ -171,7 +170,7 @@ public:
                                + " is already set!");
     }
   }
-  */
+  
 
   /*! \brief Add the GUI entries
    *   Require to set the host fsm controller first
@@ -220,8 +219,8 @@ private:
     }
     else
     {
-      throw std::runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
-                               + " is not set!");
+      throw_runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
+                               + " is not set!", __FILE__, __LINE__);
     }
   }
 

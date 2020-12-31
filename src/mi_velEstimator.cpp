@@ -330,10 +330,10 @@ void mi_velEstimator::update(const std::map<std::string, Eigen::Vector3d> & surf
 {
   if(surfaceNormals.size() != impactModels_.size())
   {
-    throw std::runtime_error(std::string("mi_velEstimator-update: surfaceNormals size(")
+    throw_runtime_error(std::string("mi_velEstimator-update: surfaceNormals size(")
                              + std::to_string(static_cast<int>(surfaceNormals.size()))
                              + std::string(") does not match impact predictor impact number (")
-                             + std::to_string(impactModels_.size()) + std::string(")."));
+                             + std::to_string(impactModels_.size()) + std::string(")."), __FILE__, __LINE__);
   }
 
   updateImpactModels_(surfaceNormals);
@@ -467,7 +467,7 @@ endEffector & mi_velEstimator::getEndeffector_(const std::string & name)
   }
   else
   {
-    throw std::runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."));
+    throw_runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."), __FILE__, __LINE__);
   }
 }
 
@@ -480,7 +480,7 @@ const std::shared_ptr<mc_impact::mi_impactModel> mi_velEstimator::getImpactModel
   }
   else
   {
-    throw std::runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."));
+    throw_runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."), __FILE__, __LINE__);
   }
 }
 
@@ -492,7 +492,7 @@ int mi_velEstimator::nameToIndex_(const std::string & eeName)
   else
   {
     std::string error_msg = std::string("qpEstimator::nameToIndex_: ee-") + eeName + std::string(": does not exist.");
-    throw std::runtime_error(error_msg);
+    throw_runtime_error(error_msg, __FILE__, __LINE__);
   }
 }
 

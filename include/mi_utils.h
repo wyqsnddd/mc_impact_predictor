@@ -120,4 +120,10 @@ inline bool areSame(double a, double b)
   return fabs(a - b) < 1e-3;
 }
 
+inline void throw_runtime_error(std::string msg, std::string file = __FILE__, std::size_t line = __LINE__)
+{
+  throw std::runtime_error(msg + " line: " + std::to_string(line) + " file: " + file);
+
+}
+
 } // namespace mc_impact

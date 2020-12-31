@@ -192,14 +192,13 @@ public:
   {
     return params_.Qweight;
   }
-  /*
+  
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
 
     if(hostCtlPtr_ == nullptr)
     {
       hostCtlPtr_ = ctlPtr;
-      twoDimFidModelPtr_->setHostCtl(hostCtlPtr_);
     }
     else
     {
@@ -207,7 +206,7 @@ public:
                                + " is already set!");
     }
   }
-  */
+  
 
   /*! \brief Add the GUI entries
    *   Require to set the host fsm controller first
@@ -260,8 +259,8 @@ private:
     }
     else
     {
-      throw std::runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
-                               + " is not set!");
+      throw_runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
+                               + " is not set!", __FILE__, __LINE__);
     }
   }
 

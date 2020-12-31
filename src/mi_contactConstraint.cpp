@@ -69,7 +69,7 @@ int mi_contactConstraint::nameToIndex_(const std::string & eeName)
   {
     std::string error_msg =
         std::string("mi_contactConstraint::nameToIndex_: ee-") + eeName + std::string(": does not exist.");
-    throw std::runtime_error(error_msg);
+    throw_runtime_error(error_msg, __FILE__, __LINE__);
   }
 }
 

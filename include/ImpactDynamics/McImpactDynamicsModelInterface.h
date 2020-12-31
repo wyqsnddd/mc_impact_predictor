@@ -33,7 +33,7 @@ class McTwoDimModelBridge : public TwoDimModelBridge
     }
     else
     {
-      throw std::runtime_error("The host fsm controller is already set!");
+      throw_runtime_error("The host fsm controller is already set!", __FILE__, __LINE__);
     }
   }
   void logImpulseEstimations();
@@ -50,7 +50,7 @@ class McTwoDimModelBridge : public TwoDimModelBridge
     }
     else
     {
-      throw std::runtime_error("The host fsm controller is not set!");
+      throw_runtime_error("The host fsm controller is not set!", __FILE__, __LINE__);
     }
   }
 	
