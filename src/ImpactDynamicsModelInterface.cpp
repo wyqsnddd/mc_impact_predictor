@@ -181,7 +181,26 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, const std::
 
   mcZMPAreaPtr_->computeZMPBound(-cvj_normal, params.zmpLowerBound, params.zmpUpperBound);
 
-  computeMaxContactVel_(impactNormal, params.zmpLowerBound, params.zmpUpperBound, params);
+  params.zmpUpperDistance = params.zmpUpperBound.norm();
+  // If the upper and lower bound are in the same quadrant, then they have the same positive sign, otherwise the lower bound has the negative sign.
+   int sameQuadrant = [](const Eigen::Vector2d & lower, const Eigen::Vector2d & upper)->int{  
+  bool sameX = sgn(upper.x()) == sgn(lower.x());
+
+  bool sameY = sgn(upper.y()) == sgn(lower.y());
+
+  if (sameX && sameY)
+  {
+    return 1;
+  }
+  else 
+  {
+    return -1;
+  }
+  }(params.zmpLowerBound, params.zmpUpperBound);
+
+  params.zmpLowerDistance = sameQuadrant * params.zmpLowerBound.norm();
+
+  computeMaxContactVel_(impactNormal, params.zmpLowerDistance, params.zmpUpperDistance, params);
 }
 
 void TwoDimModelBridge::computeGradient_(const Eigen::Vector3d & impactNormal, StandingStabilityParams & params)
@@ -393,22 +412,13 @@ void TwoDimModelBridge::gradientApproximationMulti_(
 
 
 
-void TwoDimModelBridge::computeMaxContactVel_(const Eigen::Vector3d & impactNormal, const Eigen::Vector2d & zmpLowerBound, const Eigen::Vector2d & zmpUpperBound, StandingStabilityParams & params)
+void TwoDimModelBridge::computeMaxContactVel_(const Eigen::Vector3d & impactNormal, const double & zmpLowerDistance, const double & zmpUpperDistance, StandingStabilityParams & params)
 {
-  //robotPostImpactStates_.c0 = c0;
-  //robotPostImpactStates_.c1 = c1;
-
-  double zmpUpperBoundNorm = zmpUpperBound.norm();
-  double zmpLowerBoundNorm = - zmpLowerBound.norm();
-  //params.zmpUpperBoundNorm = 0.1; 
-  //params.zmpLowerBoundNorm = - 0.1; 
-
-
   // Compute the strong stability bounds: 
   params.omega = getRobot()->omega();
 
-  params.strongBounds.maxCOMVel = (zmpUpperBoundNorm) * params.omega;
-  params.strongBounds.minCOMVel = (zmpLowerBoundNorm) * params.omega;
+  params.strongBounds.maxCOMVel = (zmpUpperDistance) * params.omega;
+  params.strongBounds.minCOMVel = (zmpLowerDistance) * params.omega;
 
   auto v1 = (1.0/params.c1) * (params.strongBounds.maxCOMVel - params.pseudoCOMVel);
   auto v2 = (1.0/params.c1) * (params.strongBounds.minCOMVel - params.pseudoCOMVel); 
@@ -443,8 +453,8 @@ void TwoDimModelBridge::computeMaxContactVel_(const Eigen::Vector3d & impactNorm
   auto dGain = -(params.pOne+ params.pTwo) / params.omega;
 
   //auto projectedCOM = static_cast<double>(impactNormal.transpose() * projectToGround_(getRobot()->com()));
-  params.weakBounds.maxCOMVel = (zmpUpperBoundNorm ) / dGain;
-  params.weakBounds.minCOMVel = (zmpLowerBoundNorm ) / dGain;
+  params.weakBounds.maxCOMVel = (zmpUpperDistance) / dGain;
+  params.weakBounds.minCOMVel = (zmpLowerDistance) / dGain;
 
   auto w_v1 = (1.0/params.c1) * (params.weakBounds.maxCOMVel - params.pseudoCOMVel);
   auto w_v2 = (1.0/params.c1) * (params.weakBounds.minCOMVel - params.pseudoCOMVel); 
@@ -544,10 +554,12 @@ void TwoDimModelBridge::computeMaxContactVel_(const Eigen::Vector3d & impactNorm
 
 void TwoDimModelBridge::velSaturation_(double & inputVel)
 {
+ /*
  if(inputVel < 0.0)
  {
    throw_runtime_error("TwoDimModelBridge::The input vel is negative!", __FILE__, __LINE__);
  }
+ */
 
  if(inputVel >= getTwoDimModelBridgeParams().gradientParams.upperVelBound)
  {

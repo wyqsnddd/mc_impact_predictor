@@ -86,6 +86,9 @@ struct StandingStabilityParams
   Eigen::Vector2d  zmpLowerBound = Eigen::Vector2d::Zero();
   Eigen::Vector2d  zmpUpperBound = Eigen::Vector2d::Zero();
 
+  double  zmpLowerDistance = 0.0;
+  double  zmpUpperDistance = 0.0; 
+
   //double zmpLowerBoundNorm = -0.1; 
   //double zmpUpperBoundNorm= 0.1; 
 
@@ -311,7 +314,7 @@ protected:
 
 /*! \brief Computes the maximum feasible contact vel along the given impact normal.  The ZMP bound along the impact normal is also known.
  */
-  void computeMaxContactVel_(const Eigen::Vector3d & impactNormal, const Eigen::Vector2d & zmpLowerBound, const Eigen::Vector2d & zmpUpperBound, StandingStabilityParams & params);
+  void computeMaxContactVel_(const Eigen::Vector3d & impactNormal, const double & zmpLowerDistance, const double & zmpUpperDistance, StandingStabilityParams & params);
 
 
 }; // end of the TwoDimModelBridge
