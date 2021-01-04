@@ -21,7 +21,7 @@ class McTwoDimModelBridge : public TwoDimModelBridge
 
   virtual ~McTwoDimModelBridge() {
   
-    std::cout<<RobotInterface::info<<"Destructing McTwoDimModelBridge." <<RobotInterface::reset<<std::endl;
+    std::cout<<RoboticsUtils::info<<"Destructing McTwoDimModelBridge." <<RoboticsUtils::reset<<std::endl;
   }
 
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
@@ -33,7 +33,7 @@ class McTwoDimModelBridge : public TwoDimModelBridge
     }
     else
     {
-      throw_runtime_error("The host fsm controller is already set!", __FILE__, __LINE__);
+      RoboticsUtils::throw_runtime_error("The host fsm controller is already set!", __FILE__, __LINE__);
     }
   }
   void logImpulseEstimations();
@@ -50,7 +50,7 @@ class McTwoDimModelBridge : public TwoDimModelBridge
     }
     else
     {
-      throw_runtime_error("The host fsm controller is not set!", __FILE__, __LINE__);
+      RoboticsUtils::throw_runtime_error("The host fsm controller is not set!", __FILE__, __LINE__);
     }
   }
 	

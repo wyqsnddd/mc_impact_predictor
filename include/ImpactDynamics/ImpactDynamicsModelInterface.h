@@ -1,16 +1,18 @@
 #pragma once
 
-#include <TwoDimModel/TwoDimModel.h>
-#include <McDynamicStability/McZMPArea.h>
+#include <RoboticsUtils/utils.h>
 #include <RobotInterface/RobotInterface.h>
+#include <TwoDimModel/TwoDimModel.h>
 
 // Header file for GNU Scientific Library: Least squares fit.
 #include <gsl/gsl_fit.h>
 #include <gsl/gsl_multifit.h>
 #include <gsl/gsl_randist.h>
 
+
 #include "../mi_utils.h"
 #include "utils.h"
+
 
 namespace mc_impact 
 {
@@ -70,44 +72,6 @@ struct TwoDimModelBridgeParams
   //ImpactModelParams modelParams;
 };
 
-struct StandingStabilityBounds
-{
-  double maxContactVel = 0.0;
-  double minContactVel = 0.0;
-
-  double maxCOMVel = 0.0;
-  double minCOMVel = 0.0;
-
-};
-
-
-struct StandingStabilityParams
-{
-  Eigen::Vector2d  zmpLowerBound = Eigen::Vector2d::Zero();
-  Eigen::Vector2d  zmpUpperBound = Eigen::Vector2d::Zero();
-
-  double  zmpLowerDistance = 0.0;
-  double  zmpUpperDistance = 0.0; 
-
-  //double zmpLowerBoundNorm = -0.1; 
-  //double zmpUpperBoundNorm= 0.1; 
-
-  ///< Direction of the post-impact com-Velocity jump
-  Eigen::Vector3d jumpDirection = Eigen::Vector3d::Zero();
-
-  double pseudoCOMVel = 0.05; 
-
-  double c1 = 0.0;
-  double omega = 0.0;
-
-  double pOne = -1.0;
-  double pTwo = -0.2;
-
-  StandingStabilityBounds weakBounds;
-  StandingStabilityBounds strongBounds;
-
-};
-
 
 class ImpactDynamicsModel
 {
@@ -116,7 +80,7 @@ public:
  const ImpactModelParams & params);
 
   virtual ~ImpactDynamicsModel() {
-    std::cout<<RobotInterface::info<<"Destructing ImpactDynamicsModel." <<RobotInterface::reset<<std::endl;
+    std::cout<<RoboticsUtils::info<<"Destructing ImpactDynamicsModel." <<RoboticsUtils::reset<<std::endl;
   }
 
   virtual const PostImpactStates & getRobotPostImpactStates();
@@ -133,7 +97,7 @@ public:
   }
 
   virtual void update(const Eigen::Vector3d & impactNormal, const Eigen::Vector3d & impactLinearVel) = 0;
-  virtual void update(const Eigen::Vector3d & impactNormal, const std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>> mcZMPAreaPtr_, StandingStabilityParams & params) = 0;
+  //virtual void update(const Eigen::Vector3d & impactNormal, const std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>> mcZMPAreaPtr_, StandingStabilityParams & params) = 0;
   // virtual void update() = 0;
   
   /*! \brief Set the friction coefficient. 
@@ -168,13 +132,13 @@ public:
 		  const TwoDimModelBridgeParams & brigeParams);
 
   virtual ~TwoDimModelBridge() {
-    std::cout<<RobotInterface::info<<"Destructing TwoDimModelBridge." <<RobotInterface::reset<<std::endl;
+    std::cout<<RoboticsUtils::info<<"Destructing TwoDimModelBridge." <<RoboticsUtils::reset<<std::endl;
   }
   const PostImpactStates & getObjectPostImpactStates() override;
 
   void update(const Eigen::Vector3d & impactNormal, const Eigen::Vector3d & impactLinearVel) override;
 
-  void update(const Eigen::Vector3d & impactNormal, const std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>> mcZMPAreaPtr_, StandingStabilityParams & params) override;
+  //void update(const Eigen::Vector3d & impactNormal, const std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>> mcZMPAreaPtr_, StandingStabilityParams & params) override;
 
   /*
   inline const Eigen::Vector3d & getImpulse()
@@ -230,6 +194,12 @@ public:
   {
     params_.iSurfaceName= iSurface;
   }
+
+  /*! \brief Compute the gradient of the post-impact COM velocity jump w.r.t. the contact velocity: c * comVelocity = contactVelocity
+ */
+  void computeGradient(const Eigen::Vector3d & impactNormal, Eigen::Vector3d & jumpDirection, double & c1);
+
+
 protected:
   TwoDimModelBridgeParams bridgeParams_;
 
@@ -295,6 +265,18 @@ protected:
 		  fittingParams & params
 		  );
 
+  void gradientApproximationCalc_(
+		  const Eigen::Vector3d & impactNormal, 
+		  double & c1);
+
+
+  void gradientApproximation_(
+		  const double * contactVelGrids, 
+		  const double * comVGrids,
+		  fittingParams & params
+		  );
+
+
   std::vector<double> caurseContactVelocityGrids_;
 
   // std::vector<double> fineContactVelocityGrids_;
@@ -306,15 +288,6 @@ protected:
 
   void negativeCalc_(const double & c1, const double & zmpLowerBoundNorm, const double & zmpUpperBoundNorm, double & maxContactVel, double & minContactVel);
   void positiveCalc_(const double & c1, const double & zmpLowerBoundNorm, const double & zmpUpperBoundNorm, double & maxContactVel, double & minContactVel);
-
-  void velSaturation_(double & inputVel);
-  /*! \brief Compute the gradient of the post-impact COM velocity jump w.r.t. the contact velocity
- */
-  void computeGradient_(const Eigen::Vector3d & impactNormal, StandingStabilityParams & params);
-
-/*! \brief Computes the maximum feasible contact vel along the given impact normal.  The ZMP bound along the impact normal is also known.
- */
-  void computeMaxContactVel_(const Eigen::Vector3d & impactNormal, const double & zmpLowerDistance, const double & zmpUpperDistance, StandingStabilityParams & params);
 
 
 }; // end of the TwoDimModelBridge

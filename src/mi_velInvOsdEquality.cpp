@@ -35,7 +35,7 @@ mi_velInvOsdEquality::mi_velInvOsdEquality(const std::shared_ptr<mi_osd> osdPtr,
 void mi_velInvOsdEquality::reset_()
 {
   int dof = getOsd_()->getDof();
-  int nOsdEe = getOsd_()->getEeNum();
+  int nOsdEe = static_cast<int>(getOsd_()->getEeNum());
   int dim = getOsd_()->getJacobianDim();
 
   // Arnaud: this assert fails

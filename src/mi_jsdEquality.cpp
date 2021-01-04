@@ -37,7 +37,7 @@ mi_jsdEquality::mi_jsdEquality(const std::shared_ptr<mi_osd> osdPtr,
   */
   reset_();
 
-  std::cout << red << "Initialized the joint space dynamics equality constraint" << reset << std::endl;
+  std::cout << RoboticsUtils::info << "Initialized the joint space dynamics equality constraint" << RoboticsUtils::reset << std::endl;
 }
 
 void mi_jsdEquality::reset_()
@@ -66,7 +66,7 @@ int mi_jsdEquality::nameToIndex_(const std::string & eeName)
   {
     std::string error_msg =
         std::string("mi_jsdEquality::nameToIndex_: ee-") + eeName + std::string(": does not exist.");
-    throw_runtime_error(error_msg, __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(error_msg, __FILE__, __LINE__);
   }
 }
 

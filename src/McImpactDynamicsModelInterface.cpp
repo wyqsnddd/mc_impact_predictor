@@ -9,7 +9,7 @@ McTwoDimModelBridge::McTwoDimModelBridge(
 : TwoDimModelBridge(robotPtr, params, bridgeParams)
 {
 
-  std::cout << RobotInterface::info << "McTwoDimModelBridge is created." << RobotInterface::reset << std::endl;
+  std::cout << RoboticsUtils::info << "McTwoDimModelBridge is created." << RoboticsUtils::reset << std::endl;
 }
 
 void McTwoDimModelBridge::logImpulseEstimations()
@@ -63,7 +63,7 @@ void McTwoDimModelBridge::logImpulseEstimations()
   logEntries_.emplace_back(bridgeName + "_" + "robot_postImpact_impulse");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().impulse; });
 
-  std::cout << green << "The impulse is: " << getRobotPostImpactStates().impulse << std::endl;
+  std::cout << RoboticsUtils::info << "The impulse is: " << getRobotPostImpactStates().impulse << std::endl;
 
   logEntries_.emplace_back(bridgeName + "_" + "average_angularVel");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return rAverageAngularVel_; });
@@ -86,7 +86,7 @@ void McTwoDimModelBridge::logImpulseEstimations()
       case FIDynamics::EventSequence::SpecialSolution:
         return 4;
       default:
-        throw_runtime_error("impact event sequence is not defined", __FILE__, __LINE__);
+        RoboticsUtils::throw_runtime_error("impact event sequence is not defined", __FILE__, __LINE__);
     }
   });
   /*

@@ -20,14 +20,17 @@
  */
 
 #pragma once
-#include "mi_osd.h"
-#include "mi_utils.h"
 #include <Eigen/StdVector>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <math.h>
 #include <nlopt.hpp>
+
+#include <RoboticsUtils/utils.h>
+
+#include "mi_osd.h"
+#include "mi_utils.h"
 
 namespace mc_impact
 {

@@ -11,7 +11,7 @@ mi_velBalance::mi_velBalance(const std::shared_ptr<mi_osd> osdPtr,
 
   reset_();
 
-  std::cout << red << "Initialized the momentum balance constraint" << reset << std::endl;
+  std::cout << RoboticsUtils::alarm << "Initialized the momentum balance constraint" << RoboticsUtils::reset << std::endl;
 }
 
 void mi_velBalance::reset_()

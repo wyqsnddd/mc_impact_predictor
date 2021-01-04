@@ -11,7 +11,7 @@ mi_balance::mi_balance(const std::shared_ptr<mi_osd> osdPtr,
 
   reset_();
 
-  std::cout << red << "Initialized the impulse balance constraint" << reset << std::endl;
+  std::cout << RoboticsUtils::info<< "Initialized the impulse balance constraint" << RoboticsUtils::reset << std::endl;
 }
 
 void mi_balance::reset_()

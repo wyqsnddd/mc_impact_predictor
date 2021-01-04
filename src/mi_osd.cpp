@@ -159,7 +159,7 @@ const int & mi_osd::nameToIndex_(const std::string & eeName) const
   {
     // std::cout << "Link " << eeName << " is missing." << std::endl;
     std::string error_msg = std::string("OSD::nameToIndex_: link-") + eeName + std::string(": does not exist.");
-    throw_runtime_error(error_msg, __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(error_msg, __FILE__, __LINE__);
   }
 }
 void mi_osd::updateCache_()

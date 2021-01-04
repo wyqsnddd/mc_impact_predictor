@@ -37,7 +37,7 @@ mi_contactConstraint::mi_contactConstraint(const std::shared_ptr<mi_osd> osdPtr,
   */
   reset_();
 
-  std::cout << red << "Initialized the contact equality constraint" << reset << std::endl;
+  std::cout << RoboticsUtils::hlight << "Initialized the contact equality constraint" << RoboticsUtils::reset << std::endl;
 }
 
 void mi_contactConstraint::reset_()
@@ -69,7 +69,7 @@ int mi_contactConstraint::nameToIndex_(const std::string & eeName)
   {
     std::string error_msg =
         std::string("mi_contactConstraint::nameToIndex_: ee-") + eeName + std::string(": does not exist.");
-    throw_runtime_error(error_msg, __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(error_msg, __FILE__, __LINE__);
   }
 }
 

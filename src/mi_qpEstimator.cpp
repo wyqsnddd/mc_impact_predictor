@@ -114,7 +114,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   if(getEstimatorParams().useLagrangeMultiplier&&(ieqConstraints_.size() > 0))
   {
-    throw_runtime_error("Looking for least squares solution when there are inequalities!!!", __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error("Looking for least squares solution when there are inequalities!!!", __FILE__, __LINE__);
   }
 
   /*
@@ -363,7 +363,7 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
 {
   if(surfaceNormals.size() != impactModels_.size())
   {
-    throw_runtime_error(std::string("mi_qpEstimator-update: surfaceNormals size(")
+    RoboticsUtils::throw_runtime_error(std::string("mi_qpEstimator-update: surfaceNormals size(")
                              + std::to_string(static_cast<int>(surfaceNormals.size()))
                              + std::string(") does not match impact predictor impact number (")
                              + std::to_string(impactModels_.size()) + std::string(")."), __FILE__, __LINE__);
@@ -476,7 +476,7 @@ void mi_qpEstimator::updateObjective_(const int & choice)
 
       // Exception
     default:
-      throw_runtime_error("The choice of Objective: is not set!", __FILE__, __LINE__);
+      RoboticsUtils::throw_runtime_error("The choice of Objective: is not set!", __FILE__, __LINE__);
   }
 }
 void mi_qpEstimator::update_()
@@ -649,7 +649,7 @@ endEffector & mi_qpEstimator::getEndeffector_(const std::string & name)
   }
   else
   {
-    throw_runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."), __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."), __FILE__, __LINE__);
   }
 }
 
@@ -662,7 +662,7 @@ const std::shared_ptr<mc_impact::mi_impactModel> mi_qpEstimator::getImpactModel(
   }
   else
   {
-    throw_runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."), __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."), __FILE__, __LINE__);
   }
 }
 
@@ -674,7 +674,7 @@ int mi_qpEstimator::nameToIndex_(const std::string & eeName)
   else
   {
     std::string error_msg = std::string("qpEstimator::nameToIndex_: ee-") + eeName + std::string(": does not exist.");
-    throw_runtime_error(error_msg, __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(error_msg, __FILE__, __LINE__);
   }
 }
 
@@ -724,21 +724,21 @@ void mi_qpEstimator::print() const
   coeR: "<<getImpactModel()->getCoeRes()<<", coeF: "<<getImpactModel()->getCoeFricDe()<<", impact duration:
   "<<getImpactModel()->getImpactDuration()<<". "<<std::endl;
 */
-  std::cout << red << "The QP estimator: " << getEstimatorParams().name
-            << " has an OSD model with the end-effectors: " << cyan;
+  std::cout << RoboticsUtils::info << "The QP estimator: " << getEstimatorParams().name
+            << " has an OSD model with the end-effectors: " << RoboticsUtils::hlight;
   for(auto idx = getOsd()->getEes().begin(); idx != getOsd()->getEes().end(); ++idx)
   {
     std::cout << *idx << " ";
   }
-  std::cout << reset << std::endl;
+  std::cout << RoboticsUtils::reset << std::endl;
 
-  std::cout << red << "The QP estimator: " << getEstimatorParams().name
-            << " has an  OSD model  with established contacts: " << green;
+  std::cout << RoboticsUtils::alarm << "The QP estimator: " << getEstimatorParams().name
+            << " has an  OSD model  with established contacts: " << RoboticsUtils::info;
   for(auto idx = getOsd()->getContactEes().begin(); idx != getOsd()->getContactEes().end(); ++idx)
   {
     std::cout << *idx << " ";
   }
-  std::cout << reset << std::endl;
+  std::cout << RoboticsUtils::reset << std::endl;
 }
 void mi_qpEstimator::calcPerturbedWrench_()
 {

@@ -20,6 +20,7 @@
  */
 
 #pragma once
+#include <RoboticsUtils/utils.h>
 #include "mi_osd.h"
 
 namespace mc_impact

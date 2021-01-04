@@ -8,7 +8,7 @@ mi_frictionCone::mi_frictionCone(const std::shared_ptr<mi_osd> osdPtr): mi_inEqu
 
   reset_();
 
-  std::cout << red << "Initialized the fulfilling friction cone constraint" << reset << std::endl;
+  std::cout << RoboticsUtils::alarm << "Initialized the fulfilling friction cone constraint" << RoboticsUtils::reset << std::endl;
 }
 
 void mi_frictionCone::reset_()

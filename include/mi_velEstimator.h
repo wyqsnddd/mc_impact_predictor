@@ -202,8 +202,8 @@ public:
     }
     else
     {
-      throw std::runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
-                               + " is already set!");
+      RoboticsUtils::throw_runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
+                               + " is already set!", __FILE__, __LINE__);
     }
   }
   
@@ -259,7 +259,7 @@ private:
     }
     else
     {
-      throw_runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
+      RoboticsUtils::throw_runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
                                + " is not set!", __FILE__, __LINE__);
     }
   }

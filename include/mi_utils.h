@@ -32,16 +32,6 @@
 namespace mc_impact
 {
 
-#ifndef COLOUR_PRINT
-#  define COLOUR_PRINT
-const std::string red("\033[0;31m");
-const std::string green("\033[1;32m");
-const std::string yellow("\033[1;33m");
-const std::string cyan("\033[0;36m");
-const std::string magenta("\033[0;35m");
-const std::string reset("\033[0m");
-#endif
-
 struct qpEstimatorParameter
 {
   double Qweight = 20;
@@ -115,15 +105,5 @@ struct ImpactModelParams
 }; // End of the ImpactModelParams.
 
 */
-inline bool areSame(double a, double b)
-{
-  return fabs(a - b) < 1e-3;
-}
-
-inline void throw_runtime_error(std::string msg, std::string file = __FILE__, std::size_t line = __LINE__)
-{
-  throw std::runtime_error(msg + " line: " + std::to_string(line) + " file: " + file);
-
-}
 
 } // namespace mc_impact

@@ -29,7 +29,7 @@ mi_unilateralContactConstraint::mi_unilateralContactConstraint(const std::shared
   
   reset_();
 
-  std::cout << red << "Initialized the unilateral contact inequality constraint" << reset << std::endl;
+  std::cout << RoboticsUtils::hlight << "Initialized the unilateral contact inequality constraint" << RoboticsUtils::reset << std::endl;
 }
 
 void mi_unilateralContactConstraint::reset_()

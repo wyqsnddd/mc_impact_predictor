@@ -92,7 +92,7 @@ const Eigen::VectorXd & mi_lcp::getPredictedContactForce(const std::string & bod
   }
   else
   {
-    throw_runtime_error(std::string("getPredictedContactForce : '") + bodyName
+    RoboticsUtils::throw_runtime_error(std::string("getPredictedContactForce : '") + bodyName
                              + std::string("' is not in the container."), __FILE__, __LINE__);
   }
 }
@@ -203,7 +203,7 @@ std::vector<double> & LcpSolver::solveLCP(const Eigen::MatrixXd & H,
 
   // If the result is not in this range, then it failed
   if(!(nlopt::SUCCESS <= result && result <= nlopt::XTOL_REACHED))
-    throw std::runtime_error("nlopt failed to solve the problem");
+    RoboticsUtils::throw_runtime_error("nlopt failed to solve the problem", __FILE__, __LINE__);
 
   auto stopSolve = std::chrono::high_resolution_clock::now();
   auto durationSolve = std::chrono::duration_cast<std::chrono::microseconds>(stopSolve - startSolve);

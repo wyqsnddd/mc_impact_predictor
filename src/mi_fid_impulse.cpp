@@ -12,7 +12,7 @@ mi_fid_impulse::mi_fid_impulse(const std::shared_ptr<mi_osd> osdPtr,
 
   reset_();
 
-  std::cout << red << "Initialized the fid impulse constraint" << reset << std::endl;
+  std::cout << RoboticsUtils::hlight << "Initialized the fid impulse constraint" << RoboticsUtils::reset << std::endl;
 }
 
 void mi_fid_impulse::reset_()

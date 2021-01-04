@@ -35,6 +35,8 @@
 #include <chrono>
 #include <map>
 
+#include <RoboticsUtils/utils.h>
+
 #include "mi_utils.h"
 
 namespace mc_impact
