@@ -22,6 +22,7 @@ set(mc_impact_predictor_src
 
 add_library(mc_impact_predictor SHARED ${mc_impact_predictor_src})
 target_link_libraries(mc_impact_predictor PUBLIC mc_rtc::mc_rbdyn)
+target_link_libraries(mc_impact_predictor PUBLIC mc_rtc::mc_control)
 target_link_libraries(mc_impact_predictor PUBLIC eigen-lssol::eigen-lssol)
 target_link_libraries(mc_impact_predictor PRIVATE nlopt::nlopt)
 target_link_libraries(mc_impact_predictor PUBLIC RoboticsUtils::RoboticsUtils)
