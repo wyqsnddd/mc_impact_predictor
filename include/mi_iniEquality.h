@@ -20,8 +20,8 @@
  */
 
 #pragma once
-#include "mi_equality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_equality.h"
 
 namespace mc_impact
 {

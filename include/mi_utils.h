@@ -51,7 +51,7 @@ struct qpEstimatorParameter
   bool useImpulseBalance = false;
   bool useFidImpulse = false;
   bool useContactConstraint = false;
-  // The inequalities: 
+  // The inequalities:
   bool useUnilateralContactConstraint = false;
   bool useFrictionCone = false; ///< Restrict the impulse inside the friction cone.
 
@@ -101,7 +101,7 @@ struct ImpactModelParams
   double coeR = 0.2;
   int dim = 3;
   ImpactModelType impactModel = ImpactModelType::OneDimModel;
-  Eigen::Vector3d eePosition = Eigen::Vector3d::Zero(); ///< Impacting end-effector position 
+  Eigen::Vector3d eePosition = Eigen::Vector3d::Zero(); ///< Impacting end-effector position
 }; // End of the ImpactModelParams.
 
 */

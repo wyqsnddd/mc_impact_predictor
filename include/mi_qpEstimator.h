@@ -34,16 +34,15 @@
 
 #include "ImpactDynamics/McImpactDynamicsModelInterface.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
-
 #include "mi_balance.h"
+#include "mi_contactConstraint.h"
+#include "mi_fid_impulse.h"
+#include "mi_frictionCone.h"
 #include "mi_iniEquality.h"
 #include "mi_invOsdEquality.h"
 #include "mi_jsdEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
-#include "mi_fid_impulse.h"
-#include "mi_contactConstraint.h"
-#include "mi_frictionCone.h"
 #include <Eigen/Dense>
 #include <eigen-lssol/LSSOL_QP.h>
 
@@ -57,7 +56,7 @@ class mi_qpEstimator
 {
 public:
   mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
-		 const std::shared_ptr<mc_impact::McTwoDimModelBridge> fidModelPtr,
+                 const std::shared_ptr<mc_impact::McTwoDimModelBridge> fidModelPtr,
                  const std::shared_ptr<mi_osd> osdPtr,
                  const struct qpEstimatorParameter params);
   ~mi_qpEstimator();
@@ -100,8 +99,6 @@ public:
   {
     return getEndeffector(eeName).estimatedImpulse;
   }
-  
-  
 
   inline const Eigen::VectorXd & getTauJump() const
   {
@@ -156,7 +153,7 @@ public:
   {
     return solverTime_;
   }
-  
+
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
 
@@ -167,10 +164,10 @@ public:
     else
     {
       RoboticsUtils::throw_runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
-                               + " is already set!", __FILE__, __LINE__);
+                                             + " is already set!",
+                                         __FILE__, __LINE__);
     }
   }
-  
 
   /*! \brief Add the GUI entries
    *   Require to set the host fsm controller first
@@ -220,7 +217,8 @@ private:
     else
     {
       RoboticsUtils::throw_runtime_error("The host fsm controller of the qpestimator: " + getEstimatorParams().name
-                               + " is not set!", __FILE__, __LINE__);
+                                             + " is not set!",
+                                         __FILE__, __LINE__);
     }
   }
 
@@ -280,7 +278,6 @@ private:
   int numEq_ = 0;
   int numIeq_ = 0;
 
-
   inline int getNumVar_() const
   {
     return numVar_;
@@ -300,7 +297,6 @@ private:
     return getNumEq_() + getNumIeq_();
   }
 
-
   std::map<std::string, endEffector> endEffectors_;
   Eigen::VectorXd jointVelJump_, tauJump_;
 
@@ -314,6 +310,5 @@ private:
 
   double solverTime_;
   double structTime_;
-
 };
 } // namespace mc_impact

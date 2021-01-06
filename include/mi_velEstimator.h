@@ -20,8 +20,8 @@
  */
 
 #pragma once
-#include <Eigen/StdVector>
 #include <Eigen/Dense>
+#include <Eigen/StdVector>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -33,23 +33,19 @@
 
 #include <RBDyn/Momentum.h>
 
-#include <eigen-lssol/LSSOL_QP.h>
-
 #include "ImpactDynamics/ImpactDynamicsModelInterface.h"
-
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_contactConstraint.h"
+#include "mi_fid_impulse.h"
 #include "mi_iniEquality.h"
 #include "mi_osd.h"
-#include "mi_utils.h"
-#include "mi_fid_impulse.h"
-#include "mi_contactConstraint.h"
 #include "mi_unilateralContactConstraint.h"
-
-
-#include "mi_velIniEquality.h"
+#include "mi_utils.h"
 #include "mi_velBalance.h"
+#include "mi_velIniEquality.h"
 #include "mi_velInvOsdEquality.h"
 #include "mi_velJsdEquality.h"
+#include <eigen-lssol/LSSOL_QP.h>
 
 namespace mc_impact
 {
@@ -61,10 +57,10 @@ class mi_velEstimator
 {
 public:
   mi_velEstimator(const mc_rbdyn::Robot & simRobot,
-		  const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_,
-                 const std::shared_ptr<mi_osd> osdPtr,
-		 const std::shared_ptr<mi_qpEstimator> qpEstimator,
-                 const struct qpEstimatorParameter params);
+                  const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimFidModelPtr_,
+                  const std::shared_ptr<mi_osd> osdPtr,
+                  const std::shared_ptr<mi_qpEstimator> qpEstimator,
+                  const struct qpEstimatorParameter params);
   ~mi_velEstimator();
   void update(const std::map<std::string, Eigen::Vector3d> & surfaceNormals);
   void update();
@@ -98,18 +94,18 @@ public:
   }
 
   /*!
-   * \return the Jacobian of the angular momentum derivative jump 
+   * \return the Jacobian of the angular momentum derivative jump
    *
    \\ clang-format off
    \f$ \Delta \dot{L} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{L}} \dot{q}_{k+1}  $\f
-   \\ clang-format on 
+   \\ clang-format on
    */
   inline const Eigen::MatrixXd & getJacobianDeltaAM()
   {
     return amJumpJacobian_;
   }
   /*!
-   * \return the Jacobian of the liner momentum derivative jump: 
+   * \return the Jacobian of the liner momentum derivative jump:
    *
    \\ clang-format off
    \f$ \Delta \dot{P} = \frac{1}{\delta t} \mathcal{J}_{\Delta \dot{P}} \dot{q}_{k+1}  $\f
@@ -192,7 +188,7 @@ public:
   {
     return params_.Qweight;
   }
-  
+
   inline void setHostCtl(mc_control::fsm::Controller * ctlPtr)
   {
 
@@ -203,10 +199,10 @@ public:
     else
     {
       RoboticsUtils::throw_runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
-                               + " is already set!", __FILE__, __LINE__);
+                                             + " is already set!",
+                                         __FILE__, __LINE__);
     }
   }
-  
 
   /*! \brief Add the GUI entries
    *   Require to set the host fsm controller first
@@ -260,7 +256,8 @@ private:
     else
     {
       RoboticsUtils::throw_runtime_error("The host fsm controller of the velEstimator: " + getEstimatorParams().name
-                               + " is not set!", __FILE__, __LINE__);
+                                             + " is not set!",
+                                         __FILE__, __LINE__);
     }
   }
 
@@ -290,7 +287,6 @@ private:
   // Add the inequality entries
   std::vector<std::shared_ptr<mi_inEquality>> ieqConstraints_;
 
-
   void solveWeightedEqQp_(const Eigen::MatrixXd & Q_,
                           const Eigen::VectorXd & p_,
                           const Eigen::MatrixXd & C_,
@@ -317,7 +313,7 @@ private:
   {
     return numEq_;
   }
-    inline int getNumIeq_() const
+  inline int getNumIeq_() const
   {
     return numIeq_;
   }
@@ -349,8 +345,6 @@ private:
 
   double solverTime_;
   double structTime_;
-
-
 };
 
 } // namespace mc_impact

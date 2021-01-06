@@ -5,10 +5,9 @@
 
 #include <RBDyn/Momentum.h>
 
-
 #include "ImpactDynamics/ImpactDynamicsModelInterface.h"
-#include "mi_equality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_equality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 #include <assert.h>
@@ -17,7 +16,7 @@
 namespace mc_impact
 {
 
-class mi_fid_impulse: public mi_equality
+class mi_fid_impulse : public mi_equality
 
 /** \brief Equalize the centroidal momentum jump to the sum of the predicted impulse.
  */
@@ -30,10 +29,9 @@ public:
       \param psdPtr pointer to the OSD model, where we extract the contact information
       */
   mi_fid_impulse(const std::shared_ptr<mi_osd> osdPtr,
-		  const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-		  const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
-		  const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimModel 
-  );
+                 const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+                 const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
+                 const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimModel);
 
   ~mi_fid_impulse() {}
 

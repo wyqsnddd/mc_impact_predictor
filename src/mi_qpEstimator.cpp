@@ -25,10 +25,11 @@ namespace mc_impact
 {
 
 mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
-		               const std::shared_ptr<mc_impact::McTwoDimModelBridge> fidModelPtr,
+                               const std::shared_ptr<mc_impact::McTwoDimModelBridge> fidModelPtr,
                                const std::shared_ptr<mi_osd> osdPtr,
                                const struct qpEstimatorParameter params)
-: simRobot_(simRobot), twoDimFidModelPtr_(fidModelPtr), osdPtr_(osdPtr), params_(params), solverTime_(0), structTime_(0.0)
+: simRobot_(simRobot), twoDimFidModelPtr_(fidModelPtr), osdPtr_(osdPtr), params_(params), solverTime_(0),
+  structTime_(0.0)
 {
 
   // (0) Initialize the centroidal momentum calculator
@@ -52,12 +53,12 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
     impactModels_[idx->first] = std::make_shared<mc_impact::mi_impactModel>(getSimRobot(), params);
   }
   // Initialize the TwoDim frictional impact dynamics model
-  //TwoDimModelBridgeParams newTwoDimModelParams;
-  //ImpactModelParams iModelParams = getImpactModel("r_wrist")->getParams();
+  // TwoDimModelBridgeParams newTwoDimModelParams;
+  // ImpactModelParams iModelParams = getImpactModel("r_wrist")->getParams();
 
-  //newTwoDimModelParams.name = "PredictorTwoDimModelSimRobot";
-  //newTwoDimModelParams.useVirtualContact = false;
-  //twoDimFidModelPtr_ = std::make_shared<mc_impact::McTwoDimModelBridge>(getSimRobot(), newTwoDimModelParams);
+  // newTwoDimModelParams.name = "PredictorTwoDimModelSimRobot";
+  // newTwoDimModelParams.useVirtualContact = false;
+  // twoDimFidModelPtr_ = std::make_shared<mc_impact::McTwoDimModelBridge>(getSimRobot(), newTwoDimModelParams);
 
   // (2) Add the end-effectors: first OSD endeffectors, then the impact model endeffectors
   /*
@@ -94,10 +95,12 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
     eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_balance>(getOsd(), getImpactModels(), cmmPtr_));
 
   if(getEstimatorParams().useFidImpulse)
-    eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_fid_impulse>(getOsd(), getImpactModels(), cmmPtr_, getFidModel()));
+    eqConstraints_.emplace_back(
+        std::make_shared<mc_impact::mi_fid_impulse>(getOsd(), getImpactModels(), cmmPtr_, getFidModel()));
 
   if(getEstimatorParams().useContactConstraint)
-    eqConstraints_.emplace_back(std::make_shared<mc_impact::mi_contactConstraint>(getOsd(), getImpactModels(), endEffectors_));
+    eqConstraints_.emplace_back(
+        std::make_shared<mc_impact::mi_contactConstraint>(getOsd(), getImpactModels(), endEffectors_));
 
   for(std::map<std::string, Eigen::Vector3d>::const_iterator idx = params.impactNameAndNormals.begin();
       idx != params.impactNameAndNormals.end(); ++idx)
@@ -108,13 +111,13 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
         std::make_shared<mc_impact::mi_iniEquality>(getOsd(), getImpactModel(idx->first), getEeNum()));
   }
 
-
   if(getEstimatorParams().useFrictionCone)
     ieqConstraints_.emplace_back(std::make_shared<mc_impact::mi_frictionCone>(getOsd()));
 
-  if(getEstimatorParams().useLagrangeMultiplier&&(ieqConstraints_.size() > 0))
+  if(getEstimatorParams().useLagrangeMultiplier && (ieqConstraints_.size() > 0))
   {
-    RoboticsUtils::throw_runtime_error("Looking for least squares solution when there are inequalities!!!", __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error("Looking for least squares solution when there are inequalities!!!", __FILE__,
+                                       __LINE__);
   }
 
   /*
@@ -135,8 +138,7 @@ mi_qpEstimator::mi_qpEstimator(const mc_rbdyn::Robot & simRobot,
 
   initializeQP_();
   std::cout << "the QP-based impulse estimator is created. " << std::endl;
-
-  }
+}
 
 mi_qpEstimator::~mi_qpEstimator()
 {
@@ -326,22 +328,22 @@ void mi_qpEstimator::updateImpactModels_()
     idx->second->update();
   }
 
-    /*
-  if(getOsd()->useBodyJacobian())
-  {
-    // The two dim model by defaults computes in the inertial frame
-    // Convert the body frame variables to the inertial frame
-    const Eigen::Matrix3d & rotation = getSimRobot().bodyPosW("r_wrist").rotation();
-    twoDimFidModelPtr_->update(rotation * getImpactModel("r_wrist")->getSurfaceNormal(),
-                               rotation * getImpactModel("r_wrist")->getEeVelocity());
-  }
-  else
-  {
-    // Inertial Frame
-    twoDimFidModelPtr_->update(getImpactModel("r_wrist")->getSurfaceNormal(),
-                               getImpactModel("r_wrist")->getEeVelocity());
-  }
-  */
+  /*
+if(getOsd()->useBodyJacobian())
+{
+  // The two dim model by defaults computes in the inertial frame
+  // Convert the body frame variables to the inertial frame
+  const Eigen::Matrix3d & rotation = getSimRobot().bodyPosW("r_wrist").rotation();
+  twoDimFidModelPtr_->update(rotation * getImpactModel("r_wrist")->getSurfaceNormal(),
+                             rotation * getImpactModel("r_wrist")->getEeVelocity());
+}
+else
+{
+  // Inertial Frame
+  twoDimFidModelPtr_->update(getImpactModel("r_wrist")->getSurfaceNormal(),
+                             getImpactModel("r_wrist")->getEeVelocity());
+}
+*/
 }
 
 void mi_qpEstimator::updateImpactModels_(const std::map<std::string, Eigen::Vector3d> & surfaceNormals)
@@ -364,9 +366,10 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
   if(surfaceNormals.size() != impactModels_.size())
   {
     RoboticsUtils::throw_runtime_error(std::string("mi_qpEstimator-update: surfaceNormals size(")
-                             + std::to_string(static_cast<int>(surfaceNormals.size()))
-                             + std::string(") does not match impact predictor impact number (")
-                             + std::to_string(impactModels_.size()) + std::string(")."), __FILE__, __LINE__);
+                                           + std::to_string(static_cast<int>(surfaceNormals.size()))
+                                           + std::string(") does not match impact predictor impact number (")
+                                           + std::to_string(impactModels_.size()) + std::string(")."),
+                                       __FILE__, __LINE__);
   }
 
   updateImpactModels_(surfaceNormals);
@@ -376,7 +379,7 @@ void mi_qpEstimator::update(const std::map<std::string, Eigen::Vector3d> & surfa
 void mi_qpEstimator::cmmQ_()
 {
 
-  //int dim = getOsd()->getJacobianDim();
+  // int dim = getOsd()->getJacobianDim();
   int dim = getOsd()->getJacobianDim();
   Eigen::MatrixXd tempA;
   tempA.resize(6, getDof() + dim * getEeNum());
@@ -392,7 +395,7 @@ void mi_qpEstimator::cmmQ_()
   {
     int eeIndex = getOsd()->nameToIndex_(ee);
     tempA.block(0, getDof() + eeIndex * dim, 6, dim).setIdentity();
-    //tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
+    // tempA.block(0, getDof() + eeIndex * dim, getDof(), dim) = getOsd()->getJacobian(ee).transpose();
   }
   // Go through the impact bodies:
   for(auto & impactModel : impactModels_)
@@ -513,8 +516,8 @@ void mi_qpEstimator::update_()
     // Range space
     C_.block(count, 0, ieq->nrIeq(), getNumVar_()) = ieq->AIeq();
 
-    // Lower bounds are set to: -inf 
-    cl_.segment(count, ieq->nrIeq()) = Eigen::VectorXd::Ones(ieq->nrIeq()) * -std::numeric_limits<double>::infinity(); 
+    // Lower bounds are set to: -inf
+    cl_.segment(count, ieq->nrIeq()) = Eigen::VectorXd::Ones(ieq->nrIeq()) * -std::numeric_limits<double>::infinity();
 
     // Upper bounds:
     cu_.segment(count, ieq->nrIeq()) = ieq->bIeq();
@@ -649,7 +652,8 @@ endEffector & mi_qpEstimator::getEndeffector_(const std::string & name)
   }
   else
   {
-    RoboticsUtils::throw_runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."), __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(std::string("getEndeffector: '") + name + std::string("' is not found."),
+                                       __FILE__, __LINE__);
   }
 }
 
@@ -662,7 +666,8 @@ const std::shared_ptr<mc_impact::mi_impactModel> mi_qpEstimator::getImpactModel(
   }
   else
   {
-    RoboticsUtils::throw_runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."), __FILE__, __LINE__);
+    RoboticsUtils::throw_runtime_error(std::string("getImpactModel: '") + eeName + std::string("' is not found."),
+                                       __FILE__, __LINE__);
   }
 }
 
@@ -795,7 +800,8 @@ void mi_qpEstimator::readEeJacobiansSolution_(const Eigen::VectorXd & solutionVa
     idx->second.estimatedImpulse = solutionVariables.segment(getDof() + location, getEstimatorParams().dim);
 
     idx->second.estimatedAverageImpulsiveForce = idx->second.estimatedImpulse * inv_dt;
-    idx->second.rssForce = inv_dt * getOsd()->getEquivalentMass(idx->first) * getOsd()->getJacobian(idx->first) * getJointVelJump();  
+    idx->second.rssForce =
+        inv_dt * getOsd()->getEquivalentMass(idx->first) * getOsd()->getJacobian(idx->first) * getJointVelJump();
     Eigen::MatrixXd tempJ;
 
     // The Jacobian may exist in two places
@@ -915,13 +921,14 @@ void mi_qpEstimator::logImpulseEstimations()
                                       [this]() { return getOsd()->getSimulatedCentroidalMomentumD(); });
 
   logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_FID_linear");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]()->Eigen::Vector3d { return getOsd()->getRobot().mass() * getFidModel()->getRobotPostImpactStates().linearVelJump; });
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() -> Eigen::Vector3d {
+    return getOsd()->getRobot().mass() * getFidModel()->getRobotPostImpactStates().linearVelJump;
+  });
 
   logEntries_.emplace_back(qpName + "_" + "CentroidalMomentumJump_FID_angular");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]()->Eigen::Vector3d { return getFidModel()->getRobotCentroidalInertia() * getFidModel()->getRobotPostImpactStates().anguleVelJump;
- });
-
-
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() -> Eigen::Vector3d {
+    return getFidModel()->getRobotCentroidalInertia() * getFidModel()->getRobotPostImpactStates().anguleVelJump;
+  });
 
   logEntries_.emplace_back(qpName + "_" + "Objective");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getObj(); });
@@ -941,10 +948,8 @@ void mi_qpEstimator::logImpulseEstimations()
 
     // Impulse
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "Impulse");
-    getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this, ee]() -> Eigen::Vector3d {
-      return getEndeffector(ee).estimatedImpulse;
-    });
-
+    getHostCtl_()->logger().addLogEntry(
+        logEntries_.back(), [this, ee]() -> Eigen::Vector3d { return getEndeffector(ee).estimatedImpulse; });
 
     // This one should be the same with 'ForceJump'
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump_debug");
@@ -954,7 +959,6 @@ void mi_qpEstimator::logImpulseEstimations()
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "ForceJump_debug_rss");
     getHostCtl_()->logger().addLogEntry(logEntries_.back(),
                                         [this, ee]() -> Eigen::Vector3d { return getEndeffector(ee).rssForce; });
-
 
     // (1.2) Ee velocity jump
     logEntries_.emplace_back(qpName + "_" + ee + "_" + "eeVelJump");

@@ -20,8 +20,8 @@
  */
 
 #pragma once
-#include "mi_equality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_equality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 
@@ -34,8 +34,8 @@ class mi_contactConstraint : public mi_equality
 {
 public:
   mi_contactConstraint(const std::shared_ptr<mi_osd> osdPtr,
-                 const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-                 const std::map<std::string, endEffector> & endEffectors);
+                       const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+                       const std::map<std::string, endEffector> & endEffectors);
   ~mi_contactConstraint() {}
 
   inline std::string nameEq() const override

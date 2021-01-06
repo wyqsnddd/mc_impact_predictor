@@ -5,8 +5,8 @@
 
 #include <RBDyn/Momentum.h>
 
-#include "mi_equality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_equality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 #include <assert.h>

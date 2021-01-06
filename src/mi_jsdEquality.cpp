@@ -37,7 +37,8 @@ mi_jsdEquality::mi_jsdEquality(const std::shared_ptr<mi_osd> osdPtr,
   */
   reset_();
 
-  std::cout << RoboticsUtils::info << "Initialized the joint space dynamics equality constraint" << RoboticsUtils::reset << std::endl;
+  std::cout << RoboticsUtils::info << "Initialized the joint space dynamics equality constraint" << RoboticsUtils::reset
+            << std::endl;
 }
 
 void mi_jsdEquality::reset_()

@@ -20,8 +20,8 @@
  */
 
 #pragma once
-#include "mi_inEquality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_inEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 
@@ -30,7 +30,7 @@ namespace mc_impact
 
 class mi_unilateralContactConstraint : public mi_inEquality
 /** \brief Specify the unilateral contact constraint: contact velocity <= 0
- *  Suppose the contact normal is n 
+ *  Suppose the contact normal is n
  *  (n^T * J * \Delta \dot{q})  <= 0
  */
 {

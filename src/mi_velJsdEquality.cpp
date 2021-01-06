@@ -25,12 +25,13 @@ namespace mc_impact
 {
 
 mi_velJsdEquality::mi_velJsdEquality(const std::shared_ptr<mi_osd> osdPtr,
-		const std::shared_ptr<mi_qpEstimator> qpEstimator
-                               ):mi_equality(osdPtr), qpEstimator_(qpEstimator) 
+                                     const std::shared_ptr<mi_qpEstimator> qpEstimator)
+: mi_equality(osdPtr), qpEstimator_(qpEstimator)
 {
   reset_();
 
-  std::cout << RoboticsUtils::alarm << "Initialized the joint space dynamics equality constraint" << RoboticsUtils::reset << std::endl;
+  std::cout << RoboticsUtils::alarm << "Initialized the joint space dynamics equality constraint"
+            << RoboticsUtils::reset << std::endl;
 }
 
 void mi_velJsdEquality::reset_()
@@ -59,7 +60,7 @@ void mi_velJsdEquality::update()
 
   for(auto idx = getOsd_()->getContactEes().begin(); idx != getOsd_()->getContactEes().end(); ++idx)
   {
-    //int eeIndex = getOsd_()->nameToIndex_(*idx);
+    // int eeIndex = getOsd_()->nameToIndex_(*idx);
     // int eeIndex = nameToIndex_(*idx);
     b_ += getOsd_()->getJacobian(*idx).transpose() * getQpEstimator()->getImpulse(*idx);
   }
@@ -70,7 +71,7 @@ void mi_velJsdEquality::update()
 
   for(auto idx = getQpEstimator()->getImpactModels().begin(); idx != getQpEstimator()->getImpactModels().end(); ++idx)
   {
-    //int eeIndex = nameToIndex_(idx->first);
+    // int eeIndex = nameToIndex_(idx->first);
     // A_.block(0, nRow + osdVarNum + eeIndex*dim, nRow, dim) = - idx->second->getJacobian().transpose();
     b_ += idx->second->getJacobian().transpose() * getQpEstimator()->getImpulse(idx->first);
   }

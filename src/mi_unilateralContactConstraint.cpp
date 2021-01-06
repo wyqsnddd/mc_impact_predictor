@@ -24,12 +24,14 @@
 namespace mc_impact
 {
 
-mi_unilateralContactConstraint::mi_unilateralContactConstraint(const std::shared_ptr<mi_osd> osdPtr) : mi_inEquality(osdPtr)
+mi_unilateralContactConstraint::mi_unilateralContactConstraint(const std::shared_ptr<mi_osd> osdPtr)
+: mi_inEquality(osdPtr)
 {
-  
+
   reset_();
 
-  std::cout << RoboticsUtils::hlight << "Initialized the unilateral contact inequality constraint" << RoboticsUtils::reset << std::endl;
+  std::cout << RoboticsUtils::hlight << "Initialized the unilateral contact inequality constraint"
+            << RoboticsUtils::reset << std::endl;
 }
 
 void mi_unilateralContactConstraint::reset_()
@@ -38,8 +40,8 @@ void mi_unilateralContactConstraint::reset_()
   int dof = getOsd_()->getDof();
   int nContact = static_cast<int>(getOsd_()->getContactEes().size());
 
-  //int jacDim = getOsd_()->getJacobianDim();
-  int constraintDim = 1; 
+  // int jacDim = getOsd_()->getJacobianDim();
+  int constraintDim = 1;
 
   A_.resize(constraintDim * nContact, dof);
   A_.setZero();
@@ -55,15 +57,17 @@ void mi_unilateralContactConstraint::update()
   int dof = getOsd_()->getDof();
   int constraintDim = 1;
 
-  // Fill the contact bodies 
+  // Fill the contact bodies
   int count = 0;
   for(auto idx = getOsd_()->getContactEes().begin(); idx != getOsd_()->getContactEes().end(); ++idx)
   {
     // We use the x-axis row of the Jacobian.
-    //A_.block(count * constraintDim, 0, constraintDim, dof) = getOsd_()->getJacobian(*idx).block(0, 0, constraintDim, dof);
-    
+    // A_.block(count * constraintDim, 0, constraintDim, dof) = getOsd_()->getJacobian(*idx).block(0, 0, constraintDim,
+    // dof);
+
     // Suppose z is the contact normal direction, otherwise: n^T * Jac
-    A_.block(count * constraintDim, 0, constraintDim, dof) = getOsd_()->getJacobian(*idx).block(2, 0, constraintDim, dof);
+    A_.block(count * constraintDim, 0, constraintDim, dof) =
+        getOsd_()->getJacobian(*idx).block(2, 0, constraintDim, dof);
     count++;
   }
 }

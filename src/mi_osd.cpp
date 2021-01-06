@@ -213,7 +213,6 @@ void mi_osd::updateCache_()
 
     cache_.osdJacobian.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobian;
     cache_.osdJacobianDot.block(ii * getJacobianDim(), 0, getJacobianDim(), getDof()) = tempFullJacobianDot;
-
   }
 
   // (2) Update the OSD Innertia matrix
@@ -239,7 +238,8 @@ void mi_osd::updateCache_()
   for(size_t ii = 0; ii < getEeNum(); ii++)
   {
     cache_.effectiveLambdaMatrices[ii] =
-        cache_.lambdaMatrix.block(static_cast<int>(ii) * getJacobianDim(), 0, getJacobianDim(), static_cast<int>(getEeNum()) * getJacobianDim())
+        cache_.lambdaMatrix.block(static_cast<int>(ii) * getJacobianDim(), 0, getJacobianDim(),
+                                  static_cast<int>(getEeNum()) * getJacobianDim())
         * cache_.osdJacobian;
 
     cache_.dcJacobianInvs[ii] = (cache_.effectiveLambdaMatrices[ii] * getInvMassMatrix()).transpose();

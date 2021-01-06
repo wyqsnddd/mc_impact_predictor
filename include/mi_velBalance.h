@@ -6,8 +6,8 @@
 #include <RBDyn/Momentum.h>
 
 #include "ImpactDynamics/ImpactDynamicsModelInterface.h"
-#include "mi_equality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_equality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
 #include <assert.h>
@@ -31,10 +31,9 @@ public:
       \param psdPtr pointer to the OSD model, where we extract the contact information
       */
   mi_velBalance(const std::shared_ptr<mi_osd> osdPtr,
-             const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-             const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
-	     const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimmodel 
-  );
+                const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+                const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
+                const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimmodel);
 
   ~mi_velBalance() {}
 
@@ -57,7 +56,6 @@ public:
   {
     return twoDimFidModelPtr_;
   }
-
 
 private:
   void reset_() override;

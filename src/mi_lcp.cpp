@@ -93,7 +93,8 @@ const Eigen::VectorXd & mi_lcp::getPredictedContactForce(const std::string & bod
   else
   {
     RoboticsUtils::throw_runtime_error(std::string("getPredictedContactForce : '") + bodyName
-                             + std::string("' is not in the container."), __FILE__, __LINE__);
+                                           + std::string("' is not in the container."),
+                                       __FILE__, __LINE__);
   }
 }
 

@@ -20,10 +20,10 @@
  */
 
 #pragma once
-#include "mi_qpEstimator.h"
-#include "mi_equality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_equality.h"
 #include "mi_osd.h"
+#include "mi_qpEstimator.h"
 #include "mi_utils.h"
 
 namespace mc_impact
@@ -34,9 +34,7 @@ class mi_velJsdEquality : public mi_equality
  */
 {
 public:
-  mi_velJsdEquality(const std::shared_ptr<mi_osd> osdPtr,
-		  const std::shared_ptr<mi_qpEstimator> qpEstimator
-                 );
+  mi_velJsdEquality(const std::shared_ptr<mi_osd> osdPtr, const std::shared_ptr<mi_qpEstimator> qpEstimator);
   ~mi_velJsdEquality() {}
 
   inline std::string nameEq() const override
@@ -53,6 +51,7 @@ public:
   {
     return qpEstimator_;
   }
+
 protected:
   void reset_() override;
   std::shared_ptr<mi_qpEstimator> qpEstimator_;

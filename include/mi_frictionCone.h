@@ -5,7 +5,6 @@
 
 #include <RBDyn/Momentum.h>
 
-
 #include "mi_inEquality.h"
 #include "mi_osd.h"
 #include "mi_utils.h"
@@ -15,9 +14,9 @@
 namespace mc_impact
 {
 
-class mi_frictionCone: public mi_inEquality 
+class mi_frictionCone : public mi_inEquality
 
-/** \brief Restrict the impulse inside the friction cone.  
+/** \brief Restrict the impulse inside the friction cone.
  */
 
 {
@@ -46,9 +45,8 @@ private:
 
   double getMiu_() const
   {
-    return miu_; 
+    return miu_;
   }
   double miu_ = 0.5; ///< The friction coefficient
-
 };
 } // namespace mc_impact

@@ -1,11 +1,10 @@
-# include "ImpactDynamics/McImpactDynamicsModelInterface.h"
+#include "ImpactDynamics/McImpactDynamicsModelInterface.h"
 
 namespace mc_impact
 {
-McTwoDimModelBridge::McTwoDimModelBridge(
-		  const std::shared_ptr<RobotInterface::Robot> robotPtr,
-                  const ImpactModelParams & params,
-		  const TwoDimModelBridgeParams & bridgeParams)
+McTwoDimModelBridge::McTwoDimModelBridge(const std::shared_ptr<RobotInterface::Robot> robotPtr,
+                                         const ImpactModelParams & params,
+                                         const TwoDimModelBridgeParams & bridgeParams)
 : TwoDimModelBridge(robotPtr, params, bridgeParams)
 {
 
@@ -34,8 +33,8 @@ void McTwoDimModelBridge::logImpulseEstimations()
     }
   }
 
-  //logEntries_.emplace_back(bridgeName + "_" + "curveFitting_comVelJump_c0");
-  //getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().c0; });
+  // logEntries_.emplace_back(bridgeName + "_" + "curveFitting_comVelJump_c0");
+  // getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().c0; });
 
   logEntries_.emplace_back(bridgeName + "_" + "curveFitting_comVelJump_c1");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getRobotPostImpactStates().c; });

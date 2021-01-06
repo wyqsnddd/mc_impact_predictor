@@ -4,14 +4,16 @@ namespace mc_impact
 {
 
 mi_velBalance::mi_velBalance(const std::shared_ptr<mi_osd> osdPtr,
-                       const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-                       const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
-		       const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimmodel) : mi_equality(osdPtr), impactModels_(impactModels), cmmPtr_(cmmPtr), twoDimFidModelPtr_(twoDimmodel) 
+                             const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+                             const std::shared_ptr<rbd::CentroidalMomentumMatrix> cmmPtr,
+                             const std::shared_ptr<mc_impact::TwoDimModelBridge> twoDimmodel)
+: mi_equality(osdPtr), impactModels_(impactModels), cmmPtr_(cmmPtr), twoDimFidModelPtr_(twoDimmodel)
 {
 
   reset_();
 
-  std::cout << RoboticsUtils::alarm << "Initialized the momentum balance constraint" << RoboticsUtils::reset << std::endl;
+  std::cout << RoboticsUtils::alarm << "Initialized the momentum balance constraint" << RoboticsUtils::reset
+            << std::endl;
 }
 
 void mi_velBalance::reset_()
@@ -34,13 +36,13 @@ void mi_velBalance::reset_()
 void mi_velBalance::update()
 {
 
-  // (0) Fill the impulse 
+  // (0) Fill the impulse
   // Linear Momentum Jump: mass * linear vel jump
-  b_.segment<3> (3) = getOsd_()->getRobot().mass() * getFidModel()->getRobotPostImpactStates().linearVelJump;
+  b_.segment<3>(3) = getOsd_()->getRobot().mass() * getFidModel()->getRobotPostImpactStates().linearVelJump;
 
   // Angular Momentum Jump: inertia * angular vel jump
-  b_.segment<3> (0) = getFidModel()->getRobotCentroidalInertia() * getFidModel()->getRobotPostImpactStates().anguleVelJump;
-
+  b_.segment<3>(0) =
+      getFidModel()->getRobotCentroidalInertia() * getFidModel()->getRobotPostImpactStates().anguleVelJump;
 
   // (0) Fill the centroidal momentum matrix
 
@@ -50,7 +52,6 @@ void mi_velBalance::update()
 
   A_ = cmmMatrix;
   // std::cout<<red<<"The CMM matrix is: "<<std::endl<< cyan<<cmmMatrix<<reset<<std::endl;
-  
 }
 
 } // namespace mc_impact

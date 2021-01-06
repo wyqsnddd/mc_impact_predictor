@@ -25,8 +25,8 @@ namespace mc_impact
 {
 
 mi_contactConstraint::mi_contactConstraint(const std::shared_ptr<mi_osd> osdPtr,
-                               const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
-                               const std::map<std::string, endEffector> & endEffectors)
+                                           const std::map<std::string, std::shared_ptr<mi_impactModel>> & impactModels,
+                                           const std::map<std::string, endEffector> & endEffectors)
 : mi_equality(osdPtr), impactModels_(impactModels), endEffectors_(endEffectors)
 {
   /*
@@ -37,7 +37,8 @@ mi_contactConstraint::mi_contactConstraint(const std::shared_ptr<mi_osd> osdPtr,
   */
   reset_();
 
-  std::cout << RoboticsUtils::hlight << "Initialized the contact equality constraint" << RoboticsUtils::reset << std::endl;
+  std::cout << RoboticsUtils::hlight << "Initialized the contact equality constraint" << RoboticsUtils::reset
+            << std::endl;
 }
 
 void mi_contactConstraint::reset_()
@@ -47,7 +48,7 @@ void mi_contactConstraint::reset_()
   // int nContactEe = static_cast<int>(getOsd_()->getEeNum());
   // int nImpactEe = static_cast<int>(impactModels_.size());
   int nEe = static_cast<int>(endEffectors_.size());
-  int nImpact  = static_cast<int>(impactModels_.size());
+  int nImpact = static_cast<int>(impactModels_.size());
   int nContact = nEe - nImpact;
 
   int dim = getOsd_()->getJacobianDim();
@@ -79,14 +80,14 @@ void mi_contactConstraint::update()
   int dof = getOsd_()->getDof();
   int dim = getOsd_()->getJacobianDim();
   // (0) Fill the mass matrix
-  //A_.block(0, 0, nRow, nRow) = getOsd_()->getMassMatrix();
+  // A_.block(0, 0, nRow, nRow) = getOsd_()->getMassMatrix();
 
   // (1) Fill the contact bodies, which are right after the joint velocity jump
 
   int count = 0;
   for(auto idx = getOsd_()->getContactEes().begin(); idx != getOsd_()->getContactEes().end(); ++idx)
   {
-    //int eeIndex = getOsd_()->nameToIndex_(*idx);
+    // int eeIndex = getOsd_()->nameToIndex_(*idx);
     // int eeIndex = nameToIndex_(*idx);
     A_.block(count * dim, 0, dim, dof) = getOsd_()->getJacobian(*idx);
     count++;

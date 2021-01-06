@@ -20,8 +20,8 @@
  */
 
 #pragma once
-#include "mi_equality.h"
 #include "ImpactDynamics/OneDimImpactModel.h"
+#include "mi_equality.h"
 
 namespace mc_impact
 {
@@ -33,8 +33,8 @@ class mi_velIniEquality : public mi_equality
 {
 public:
   mi_velIniEquality(const std::shared_ptr<mi_osd> osdPtr,
-                 const std::shared_ptr<mi_impactModel> & impactPtr,
-                 const int numEe);
+                    const std::shared_ptr<mi_impactModel> & impactPtr,
+                    const int numEe);
   ~mi_velIniEquality() {}
 
   inline std::string nameEq() const override

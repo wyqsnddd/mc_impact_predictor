@@ -24,9 +24,9 @@
 namespace mc_impact
 {
 
-mi_velInvOsdEquality::mi_velInvOsdEquality(const std::shared_ptr<mi_osd> osdPtr,  
-		const std::shared_ptr<mi_qpEstimator> qpEstimator,
-		const int & numEe)
+mi_velInvOsdEquality::mi_velInvOsdEquality(const std::shared_ptr<mi_osd> osdPtr,
+                                           const std::shared_ptr<mi_qpEstimator> qpEstimator,
+                                           const int & numEe)
 : mi_equality(osdPtr), qpEstimator_(qpEstimator), numEe_(numEe)
 {
   reset_();
@@ -52,14 +52,14 @@ void mi_velInvOsdEquality::reset_()
 void mi_velInvOsdEquality::update()
 {
   int dof = getOsd_()->getDof();
-  //int nOsdEe = static_cast<int>(getOsd_()->getEeNum());
+  // int nOsdEe = static_cast<int>(getOsd_()->getEeNum());
   int dim = getOsd_()->getJacobianDim();
   /*
     Eigen::VectorXd tempId;
     tempId.resize(dim);
     tempId.setIdentity();
   */
-  // Go through all the end-effectors and fill in the Jacobians. 
+  // Go through all the end-effectors and fill in the Jacobians.
   for(auto idx = getOsd_()->getEes().begin(); idx != getOsd_()->getEes().end(); ++idx)
   {
     int eeIndex = getOsd_()->nameToIndex_(*idx);
@@ -67,11 +67,10 @@ void mi_velInvOsdEquality::update()
     // This is the constraint:
     A_.block(location, 0, dim, dof) = getOsd_()->getJacobian(*idx);
 
-    b_.segment(location, dim) = getQpEstimator()->getImpulse(*idx); 
-
+    b_.segment(location, dim) = getQpEstimator()->getImpulse(*idx);
   }
 
-   b_ = -getOsd_()->getLambdaMatrixInv() * b_;
+  b_ = -getOsd_()->getLambdaMatrixInv() * b_;
 }
 
 } // namespace mc_impact

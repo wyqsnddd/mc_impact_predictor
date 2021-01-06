@@ -25,8 +25,8 @@ namespace mc_impact
 {
 
 mi_velIniEquality::mi_velIniEquality(const std::shared_ptr<mi_osd> osdPtr,
-                               const std::shared_ptr<mi_impactModel> & impactPtr,
-                               const int numEe)
+                                     const std::shared_ptr<mi_impactModel> & impactPtr,
+                                     const int numEe)
 : mi_equality(osdPtr), impactPtr_(impactPtr), numEe_(numEe)
 {
   reset_();
@@ -46,8 +46,8 @@ void mi_velIniEquality::reset_()
 
 void mi_velIniEquality::update()
 {
-  //int dof = getOsd_()->getDof();
-  //int dim = getOsd_()->getJacobianDim();
+  // int dof = getOsd_()->getDof();
+  // int dim = getOsd_()->getJacobianDim();
   A_ = getImpactModel()->getJacobian();
   b_ = getImpactModel()->getEeVelocityJump();
 }

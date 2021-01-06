@@ -1,20 +1,17 @@
 #pragma once
 
-#include <RoboticsUtils/utils.h>
 #include <RobotInterface/RobotInterface.h>
+#include <RoboticsUtils/utils.h>
 #include <TwoDimModel/TwoDimModel.h>
 
 // Header file for GNU Scientific Library: Least squares fit.
+#include "../mi_utils.h"
+#include "utils.h"
 #include <gsl/gsl_fit.h>
 #include <gsl/gsl_multifit.h>
 #include <gsl/gsl_randist.h>
 
-
-#include "../mi_utils.h"
-#include "utils.h"
-
-
-namespace mc_impact 
+namespace mc_impact
 {
 
 enum class TwoDimModelCase
@@ -28,12 +25,12 @@ struct fittingParams
 
   double c0 = 0.0;
   double c1 = 0.0;
-  
+
   double cov00 = 0.0;
   double cov01 = 0.0;
   double cov11 = 0.0;
 
-  double sumsq; 
+  double sumsq;
 };
 
 struct PostImpactStates
@@ -45,8 +42,8 @@ struct PostImpactStates
   Eigen::Vector3d impulse = Eigen::Vector3d::Zero();
   fittingParams gradient;
   double c = 0.0;
-  //double c0 = 0.0;
-  //double c1 = 0.0;
+  // double c0 = 0.0;
+  // double c1 = 0.0;
 };
 
 struct GradientApproximationParams
@@ -64,23 +61,22 @@ struct GradientApproximationParams
 struct TwoDimModelBridgeParams
 {
   std::string name = "TwoDimModel";
-  //bool useVirtualContact = true;
-  //bool useComVel = true;
+  // bool useVirtualContact = true;
+  // bool useComVel = true;
   bool debug = false;
   bool gradientApproximation = true;
   GradientApproximationParams gradientParams;
-  //ImpactModelParams modelParams;
+  // ImpactModelParams modelParams;
 };
-
 
 class ImpactDynamicsModel
 {
 public:
-  ImpactDynamicsModel(const std::shared_ptr<RobotInterface::Robot> robotPtr,
- const ImpactModelParams & params);
+  ImpactDynamicsModel(const std::shared_ptr<RobotInterface::Robot> robotPtr, const ImpactModelParams & params);
 
-  virtual ~ImpactDynamicsModel() {
-    std::cout<<RoboticsUtils::info<<"Destructing ImpactDynamicsModel." <<RoboticsUtils::reset<<std::endl;
+  virtual ~ImpactDynamicsModel()
+  {
+    std::cout << RoboticsUtils::info << "Destructing ImpactDynamicsModel." << RoboticsUtils::reset << std::endl;
   }
 
   virtual const PostImpactStates & getRobotPostImpactStates();
@@ -97,21 +93,21 @@ public:
   }
 
   virtual void update(const Eigen::Vector3d & impactNormal, const Eigen::Vector3d & impactLinearVel) = 0;
-  //virtual void update(const Eigen::Vector3d & impactNormal, const std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>> mcZMPAreaPtr_, StandingStabilityParams & params) = 0;
+  // virtual void update(const Eigen::Vector3d & impactNormal, const
+  // std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>> mcZMPAreaPtr_, StandingStabilityParams & params) = 0;
   // virtual void update() = 0;
-  
-  /*! \brief Set the friction coefficient. 
+
+  /*! \brief Set the friction coefficient.
    */
   virtual void setFrictionCoefficient(const double & miu) = 0;
 
-  /*! \brief Set the restitution coefficient. 
+  /*! \brief Set the restitution coefficient.
    */
   virtual void setRestitutionCoefficient(const double & e) = 0;
 
   /*! \brief Set the name of the impact body / surface
    */
   virtual void setImpactSurfaceName(const std::string & iBody) = 0;
-
 
 protected:
   std::shared_ptr<RobotInterface::Robot> robotPtr_;
@@ -126,19 +122,20 @@ class TwoDimModelBridge : public ImpactDynamicsModel
  */
 {
 public:
-  TwoDimModelBridge(
-		  const std::shared_ptr<RobotInterface::Robot> robotPtr,
-                  const ImpactModelParams & params,
-		  const TwoDimModelBridgeParams & brigeParams);
+  TwoDimModelBridge(const std::shared_ptr<RobotInterface::Robot> robotPtr,
+                    const ImpactModelParams & params,
+                    const TwoDimModelBridgeParams & brigeParams);
 
-  virtual ~TwoDimModelBridge() {
-    std::cout<<RoboticsUtils::info<<"Destructing TwoDimModelBridge." <<RoboticsUtils::reset<<std::endl;
+  virtual ~TwoDimModelBridge()
+  {
+    std::cout << RoboticsUtils::info << "Destructing TwoDimModelBridge." << RoboticsUtils::reset << std::endl;
   }
   const PostImpactStates & getObjectPostImpactStates() override;
 
   void update(const Eigen::Vector3d & impactNormal, const Eigen::Vector3d & impactLinearVel) override;
 
-  //void update(const Eigen::Vector3d & impactNormal, const std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>> mcZMPAreaPtr_, StandingStabilityParams & params) override;
+  // void update(const Eigen::Vector3d & impactNormal, const std::shared_ptr<mc_impact::McZMPArea<Eigen::Vector2d>>
+  // mcZMPAreaPtr_, StandingStabilityParams & params) override;
 
   /*
   inline const Eigen::Vector3d & getImpulse()
@@ -154,8 +151,6 @@ public:
   {
     return bridgeParams_;
   }
-   
-  
 
   const Eigen::Vector3d & getAverageLinerVel()
   {
@@ -168,37 +163,36 @@ public:
   void printPIParams();
   void printResult();
 
-
   /*! \return the moment of inertia of the entire robot in its centroidal frame.
    */
   const Eigen::Matrix3d & getRobotCentroidalInertia()
   {
-    return rCentroidalInertia_; 
+    return rCentroidalInertia_;
   }
 
   void setFrictionCoefficient(const double & miu) override
   {
-    //twoDimModelPtr_->setFrictionCoefficient(miu);
+    // twoDimModelPtr_->setFrictionCoefficient(miu);
     piParams_.miu = miu;
   }
 
-  /*! \brief Set the energetic restitution coefficient. 
+  /*! \brief Set the energetic restitution coefficient.
    */
   void setRestitutionCoefficient(const double & e) override
   {
-    //twoDimModelPtr_->setEnergeticRestitutionCoefficient(e);
+    // twoDimModelPtr_->setEnergeticRestitutionCoefficient(e);
     piParams_.e = e;
   }
 
   void setImpactSurfaceName(const std::string & iSurface) override
   {
-    params_.iSurfaceName= iSurface;
+    params_.iSurfaceName = iSurface;
   }
 
-  /*! \brief Compute the gradient of the post-impact COM velocity jump w.r.t. the contact velocity: c * comVelocity = contactVelocity
- */
+  /*! \brief Compute the gradient of the post-impact COM velocity jump w.r.t. the contact velocity: c * comVelocity =
+   * contactVelocity
+   */
   void computeGradient(const Eigen::Vector3d & impactNormal, Eigen::Vector3d & jumpDirection, double & c1);
-
 
 protected:
   TwoDimModelBridgeParams bridgeParams_;
@@ -222,7 +216,6 @@ protected:
   Eigen::Matrix3d rCentroidalInertia_; ///< Robot centroidal inertia.
   Eigen::Vector3d rAverageAngularVel_; ///< Robot average angular velocity
   Eigen::Vector3d rAverageLinearVel_; ///< Robot average angular velocity
-
 
   std::shared_ptr<FIDynamics::TwoDimModel> twoDimModelPtr_;
 
@@ -248,34 +241,21 @@ protected:
   // std::map<double, Eigen::Vector3d> velCases_;
   std::map<double, PostImpactStates> velCases_;
 
-  void gradientApproximationMulti_(
-		  const double * contactVelGrids, 
-		  const double * comVxGrids,
-		  const double * comVyGrids,
-		  const double * comVzGrids,
-		  fittingParams & params
-		  );
+  void gradientApproximationMulti_(const double * contactVelGrids,
+                                   const double * comVxGrids,
+                                   const double * comVyGrids,
+                                   const double * comVzGrids,
+                                   fittingParams & params);
 
+  void gradientApproximation_(const double * contactVelGrids,
+                              const double * comVxGrids,
+                              const double * comVyGrids,
+                              const double * comVzGrids,
+                              fittingParams & params);
 
-  void gradientApproximation_(
-		  const double * contactVelGrids, 
-		  const double * comVxGrids,
-		  const double * comVyGrids,
-		  const double * comVzGrids,
-		  fittingParams & params
-		  );
+  void gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1);
 
-  void gradientApproximationCalc_(
-		  const Eigen::Vector3d & impactNormal, 
-		  double & c1);
-
-
-  void gradientApproximation_(
-		  const double * contactVelGrids, 
-		  const double * comVGrids,
-		  fittingParams & params
-		  );
-
+  void gradientApproximation_(const double * contactVelGrids, const double * comVGrids, fittingParams & params);
 
   std::vector<double> caurseContactVelocityGrids_;
 
@@ -286,9 +266,16 @@ protected:
    */
   Eigen::Vector3d projectToGround_(const Eigen::Vector3d & direction);
 
-  void negativeCalc_(const double & c1, const double & zmpLowerBoundNorm, const double & zmpUpperBoundNorm, double & maxContactVel, double & minContactVel);
-  void positiveCalc_(const double & c1, const double & zmpLowerBoundNorm, const double & zmpUpperBoundNorm, double & maxContactVel, double & minContactVel);
-
+  void negativeCalc_(const double & c1,
+                     const double & zmpLowerBoundNorm,
+                     const double & zmpUpperBoundNorm,
+                     double & maxContactVel,
+                     double & minContactVel);
+  void positiveCalc_(const double & c1,
+                     const double & zmpLowerBoundNorm,
+                     const double & zmpUpperBoundNorm,
+                     double & maxContactVel,
+                     double & minContactVel);
 
 }; // end of the TwoDimModelBridge
 

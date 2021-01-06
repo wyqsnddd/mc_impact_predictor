@@ -31,13 +31,11 @@
 #include <RBDyn/Jacobian.h>
 #include <RBDyn/Momentum.h>
 
+#include "mi_utils.h"
+#include <RoboticsUtils/utils.h>
 #include <assert.h>
 #include <chrono>
 #include <map>
-
-#include <RoboticsUtils/utils.h>
-
-#include "mi_utils.h"
 
 namespace mc_impact
 {
@@ -106,7 +104,7 @@ public:
   void resetDataStructure();
 
   /*!
-   *  \return the operational-space inertia matrix: 
+   *  \return the operational-space inertia matrix:
      \f$ \Lambda  = (J M^{-1} J^\top)^{-1}\f$
    */
   inline const Eigen::MatrixXd & getLambdaMatrix() const
@@ -128,7 +126,7 @@ public:
     return contactEndeffectors_.size();
   }
   /*!
-   *  \return the inverse of the operational-space inertia matrix: 
+   *  \return the inverse of the operational-space inertia matrix:
    *  \f$ \Lambda^{-1} = JM^{-1}J^\top \f$
    */
   inline const Eigen::MatrixXd & getLambdaMatrixInv() const
@@ -143,8 +141,8 @@ public:
    */
   inline const Eigen::MatrixXd getEquivalentMass(const std::string & eeName) const
   {
-    return cache_.lambdaMatrix.block(nameToIndex_(eeName) * getJacobianDim(),
-                                        nameToIndex_(eeName) * getJacobianDim(), getJacobianDim(), getJacobianDim());
+    return cache_.lambdaMatrix.block(nameToIndex_(eeName) * getJacobianDim(), nameToIndex_(eeName) * getJacobianDim(),
+                                     getJacobianDim(), getJacobianDim());
   }
 
   /*!
@@ -152,7 +150,8 @@ public:
   */
   const Eigen::MatrixXd getLambdaMatrix(int rowInt, int columnInt) const
   {
-    return cache_.lambdaMatrix.block(rowInt * static_cast<int>(getEeNum()), columnInt * static_cast<int>(getEeNum()), 6, 6);
+    return cache_.lambdaMatrix.block(rowInt * static_cast<int>(getEeNum()), columnInt * static_cast<int>(getEeNum()), 6,
+                                     6);
   }
   const int & nameToIndex_(const std::string & eeName) const;
 
@@ -192,7 +191,7 @@ public:
 */
 
   /*!
-      \return  the dynamically consistent Jacobian inverse of the endeffector m: 
+      \return  the dynamically consistent Jacobian inverse of the endeffector m:
       \f$ \bar{J}_m = ( (\sum^{m}_{i=1}\Lambda_{mi}J_i )M^{-1})^\top.\f$
       */
   inline const Eigen::MatrixXd & getDcJacobianInv(const std::string eeName) const
