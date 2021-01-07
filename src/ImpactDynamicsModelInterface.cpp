@@ -181,6 +181,7 @@ void TwoDimModelBridge::update(const Eigen::Vector3d & impactNormal, StandingSta
     computeMaxContactVel_(impactNormal, params.zmpLowerDistance, params.zmpUpperDistance, params);
 }
 */
+/*
 void TwoDimModelBridge::gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1)
 {
   // params.jumpDirection.x() = cx.c1;
@@ -197,10 +198,10 @@ void TwoDimModelBridge::gradientApproximationCalc_(const Eigen::Vector3d & impac
   // std::cout<<"c1 is:: "<<params.c1<<std::endl;
   robotPostImpactStates_.c = c1;
 }
-
+*/
 void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
-                                        Eigen::Vector3d & jumpDirection,
-                                        double & c1)
+                                        Eigen::Vector3d & jumpDirection
+                                        )
 {
   // (0) Compute the whole-body inertia and average velocity
   Eigen::Matrix6d centroidalInertia;
@@ -239,12 +240,14 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
   Eigen::Vector3d contactVel(1.0, 1.0, 1.0);
 
   double contactVelGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
-  double comVelJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
-  /*
+
+  //double comVelJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
+  
   double comVxJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
   double comVyJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
-  double comVzJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
-  */
+  
+  //double comVzJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
+  
 
   size_t ii = 0;
   // (1.1) Loop over the caurse grids:
@@ -264,12 +267,11 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
 
     // Compute the projected com vel jump.
 
-    comVelJumpGrids[ii] = impactNormal.transpose() * velCases_[vel].linearVelJump;
-    /*
+    //comVelJumpGrids[ii] = impactNormal.transpose() * velCases_[vel].linearVelJump;
+    
     comVxJumpGrids[ii] = velCases_[vel].linearVelJump.x();
     comVyJumpGrids[ii] = velCases_[vel].linearVelJump.y();
-    comVzJumpGrids[ii] = velCases_[vel].linearVelJump.z();
-    */
+    //comVzJumpGrids[ii] = velCases_[vel].linearVelJump.z();
 
     ii++;
   }
@@ -280,9 +282,12 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
   // comVzJumpGrids, robotPostImpactStates_.gradient);
   // gradientApproximationCalc_(impactNormal, jumpDirection, c1);
 
-  gradientApproximation_(contactVelGrids, comVelJumpGrids, robotPostImpactStates_.gradient);
+  gradientApproximation_(contactVelGrids, comVxJumpGrids, comVyJumpGrids, bridgeParams_.gradientParams);
 
-  c1 = robotPostImpactStates_.gradient.c1;
+  //c1 = robotPostImpactStates_.gradient.c1;
+
+  //gradientCoe.x() = robotPostImpactStates_.gradient.coe.x();
+  //gradientCoe.y() = robotPostImpactStates_.gradient.coe.y();
 
   // jumpDirection = robotPostImpactStates_.gradient.coe;
   double mean = (getTwoDimModelBridgeParams().gradientParams.lowerVelBound
@@ -291,6 +296,7 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
   jumpDirection = velCases_.equal_range(mean).first->second.linearVelJump.normalized();
 }
 
+/*
 void TwoDimModelBridge::gradientApproximation_(const double * contactVelGrids,
                                                const double * comVelGrids,
                                                fittingParams & params)
@@ -308,30 +314,26 @@ void TwoDimModelBridge::gradientApproximation_(const double * contactVelGrids,
   params.c0 = c0;
   params.c1 = c1;
 }
+*/
 
 void TwoDimModelBridge::gradientApproximation_(const double * contactVelGrids,
                                                const double * comVxGrids,
                                                const double * comVyGrids,
-                                               const double * comVzGrids,
-                                               fittingParams & params)
+                                               GradientApproximationParams & params)
 {
 
-  fittingParams cx, cy, cz;
+  //fittingParams cx, cy;
 
-  gsl_fit_mul(contactVelGrids, 1, comVxGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cx.c1,
-              &cx.cov11, &cx.sumsq);
+  //gsl_fit_mul(contactVelGrids, 1, comVxGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cx.c1, &cx.cov11, &cx.sumsq);
+  gsl_fit_linear(contactVelGrids, 1, comVxGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
+  &params.gradientX.c0, &params.gradientX.c1, &params.gradientX.cov00, &params.gradientX.cov01, &params.gradientX.cov11, &params.gradientX.sumsq);
 
-  gsl_fit_mul(contactVelGrids, 1, comVyGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cy.c1,
-              &cy.cov11, &cy.sumsq);
+  //gsl_fit_mul(contactVelGrids, 1, comVyGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cy.c1, &cy.cov11, &cy.sumsq);
+  gsl_fit_linear(contactVelGrids, 1, comVyGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
+  &params.gradientY.c0, &params.gradientY.c1, &params.gradientY.cov00, &params.gradientY.cov01, &params.gradientY.cov11, &params.gradientY.sumsq);
 
-  gsl_fit_mul(contactVelGrids, 1, comVzGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cz.c1,
-              &cz.cov11, &cz.sumsq);
-
-  params.coe.x() = cx.c1;
-  params.coe.y() = cy.c1;
-  params.coe.z() = cz.c1;
 }
-
+/*
 void TwoDimModelBridge::gradientApproximationMulti_(const double * contactVelGrids,
                                                     const double * comVxGrids,
                                                     const double * comVyGrids,
@@ -341,7 +343,7 @@ void TwoDimModelBridge::gradientApproximationMulti_(const double * contactVelGri
   size_t i;
   const size_t n(getTwoDimModelBridgeParams().gradientParams.numCaurseGrid);
 
-  const size_t dim = 3; /* linear fit */
+  const size_t dim = 3; // linear fit 
   gsl_matrix *ComVelData, *cov;
 
   // contactVel(i) = vx * coe(0) + vy * coe(1) + vz * coe(2)
@@ -359,7 +361,7 @@ void TwoDimModelBridge::gradientApproximationMulti_(const double * contactVelGri
   coe = gsl_vector_alloc(dim);
   cov = gsl_matrix_alloc(dim, dim);
 
-  /* construct design matrix ComVelData for linear fit */
+  // construct design matrix ComVelData for linear fit 
   for(i = 0; i < n; ++i)
   {
     // Set the post-impact COM velocity jump
@@ -403,6 +405,7 @@ void TwoDimModelBridge::gradientApproximationMulti_(const double * contactVelGri
   params.cov(2, 1) = COV(2, 1);
   params.cov(2, 2) = COV(2, 2);
 }
+*/
 
 Eigen::Vector3d TwoDimModelBridge::projectToGround_(const Eigen::Vector3d & direction)
 {
@@ -662,6 +665,7 @@ const PostImpactStates & TwoDimModelBridge::getObjectPostImpactStates()
       RoboticsUtils::throw_runtime_error(
           "In the PushWall case, the wall is stationary. Thus there is no need to check its post-impact states.",
           __FILE__, __LINE__);
+      exit(-1);
     default:
       return objectPostImpactStates_;
   }

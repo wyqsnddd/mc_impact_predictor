@@ -20,8 +20,8 @@ enum class TwoDimModelCase
 };
 struct fittingParams
 {
-  Eigen::Vector3d coe = Eigen::Vector3d::Zero();
-  Eigen::Matrix3d cov = Eigen::Matrix3d::Zero();
+  // Eigen::Vector3d coe = Eigen::Vector3d::Zero();
+  //Eigen::Matrix3d cov = Eigen::Matrix3d::Identity();
 
   double c0 = 0.0;
   double c1 = 0.0;
@@ -40,8 +40,7 @@ struct PostImpactStates
   Eigen::Vector3d anguleVel = Eigen::Vector3d::Zero();
   Eigen::Vector3d anguleVelJump = Eigen::Vector3d::Zero();
   Eigen::Vector3d impulse = Eigen::Vector3d::Zero();
-  fittingParams gradient;
-  double c = 0.0;
+    //double c = 0.0;
   // double c0 = 0.0;
   // double c1 = 0.0;
 };
@@ -56,6 +55,10 @@ struct GradientApproximationParams
   // m = velBound/stepSize
   double velBound = 0.1; // Meter/Second
   double stepSize = 0.01; // Meter/Second
+
+  fittingParams gradientX;
+  fittingParams gradientY;
+
 };
 
 struct TwoDimModelBridgeParams
@@ -192,7 +195,7 @@ public:
   /*! \brief Compute the gradient of the post-impact COM velocity jump w.r.t. the contact velocity: c * comVelocity =
    * contactVelocity
    */
-  void computeGradient(const Eigen::Vector3d & impactNormal, Eigen::Vector3d & jumpDirection, double & c1);
+  void computeGradient(const Eigen::Vector3d & impactNormal, Eigen::Vector3d & jumpDirection);
 
 protected:
   TwoDimModelBridgeParams bridgeParams_;
@@ -241,21 +244,22 @@ protected:
   // std::map<double, Eigen::Vector3d> velCases_;
   std::map<double, PostImpactStates> velCases_;
 
+  /*
   void gradientApproximationMulti_(const double * contactVelGrids,
                                    const double * comVxGrids,
                                    const double * comVyGrids,
-                                   const double * comVzGrids,
+				   const double * comVzGrids,
                                    fittingParams & params);
+				   */
 
   void gradientApproximation_(const double * contactVelGrids,
                               const double * comVxGrids,
                               const double * comVyGrids,
-                              const double * comVzGrids,
-                              fittingParams & params);
+                              GradientApproximationParams & params);
 
-  void gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1);
+  //void gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1);
 
-  void gradientApproximation_(const double * contactVelGrids, const double * comVGrids, fittingParams & params);
+  //void gradientApproximation_(const double * contactVelGrids, const double * comVGrids, fittingParams & params);
 
   std::vector<double> caurseContactVelocityGrids_;
 
