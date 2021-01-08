@@ -239,7 +239,8 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
 
   Eigen::Vector3d contactVel(1.0, 1.0, 1.0);
 
-  double contactVelGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
+  double contactVxGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
+  double contactVyGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
 
   //double comVelJumpGrids[getTwoDimModelBridgeParams().gradientParams.numCaurseGrid];
   
@@ -255,7 +256,8 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
   {
 
     contactVel = vel * impactNormal;
-    contactVelGrids[ii] = vel;
+    contactVxGrids[ii] = contactVel.x();
+    contactVyGrids[ii] = contactVel.y();
 
     updatePiParams_(impactNormal, getParams().eePosition, contactVel);
     // Reset the x component of the impact velocity
@@ -282,7 +284,7 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal,
   // comVzJumpGrids, robotPostImpactStates_.gradient);
   // gradientApproximationCalc_(impactNormal, jumpDirection, c1);
 
-  gradientApproximation_(contactVelGrids, comVxJumpGrids, comVyJumpGrids, bridgeParams_.gradientParams);
+  gradientApproximation_(contactVxGrids, contactVyGrids, comVxJumpGrids, comVyJumpGrids, bridgeParams_.gradientParams);
 
   //c1 = robotPostImpactStates_.gradient.c1;
 
@@ -316,7 +318,8 @@ void TwoDimModelBridge::gradientApproximation_(const double * contactVelGrids,
 }
 */
 
-void TwoDimModelBridge::gradientApproximation_(const double * contactVelGrids,
+void TwoDimModelBridge::gradientApproximation_(const double * contactVxGrids,
+		                               const double * contactVyGrids,
                                                const double * comVxGrids,
                                                const double * comVyGrids,
                                                GradientApproximationParams & params)
@@ -325,11 +328,11 @@ void TwoDimModelBridge::gradientApproximation_(const double * contactVelGrids,
   //fittingParams cx, cy;
 
   //gsl_fit_mul(contactVelGrids, 1, comVxGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cx.c1, &cx.cov11, &cx.sumsq);
-  gsl_fit_linear(contactVelGrids, 1, comVxGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
+  gsl_fit_linear(contactVxGrids, 1, comVxGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
   &params.gradientX.c0, &params.gradientX.c1, &params.gradientX.cov00, &params.gradientX.cov01, &params.gradientX.cov11, &params.gradientX.sumsq);
 
   //gsl_fit_mul(contactVelGrids, 1, comVyGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cy.c1, &cy.cov11, &cy.sumsq);
-  gsl_fit_linear(contactVelGrids, 1, comVyGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
+  gsl_fit_linear(contactVyGrids, 1, comVyGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
   &params.gradientY.c0, &params.gradientY.c1, &params.gradientY.cov00, &params.gradientY.cov01, &params.gradientY.cov11, &params.gradientY.sumsq);
 
 }

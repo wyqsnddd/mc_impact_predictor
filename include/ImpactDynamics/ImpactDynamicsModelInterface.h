@@ -252,7 +252,8 @@ protected:
                                    fittingParams & params);
 				   */
 
-  void gradientApproximation_(const double * contactVelGrids,
+  void gradientApproximation_(const double * contactVxGrids,
+		              const double * contactVyGrids,
                               const double * comVxGrids,
                               const double * comVyGrids,
                               GradientApproximationParams & params);
