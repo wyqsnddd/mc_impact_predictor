@@ -4,6 +4,9 @@
 #include <RoboticsUtils/utils.h>
 #include <TwoDimModel/TwoDimModel.h>
 
+#include <yaml-cpp/yaml.h>
+#include <fstream>
+
 // Header file for GNU Scientific Library: Least squares fit.
 #include "../mi_utils.h"
 #include "utils.h"
@@ -197,7 +200,11 @@ public:
    */
   void computeGradient(const Eigen::Vector3d & impactNormal, Eigen::Vector3d & jumpDirection);
 
-protected:
+  void printFidModelGradientData();
+  
+  void saveFidModelGradientData();
+
+  protected:
   TwoDimModelBridgeParams bridgeParams_;
 
   double rotationAngle_;
@@ -209,11 +216,13 @@ protected:
    * \param in The impact normal
    * \param vc The virtual contact point
    */
-  void updatePiParams_(const Eigen::Vector3d & in, const Eigen::Vector3d vc, const Eigen::Vector3d & impactLinearVel);
+  void updatePiParams_(const Eigen::Vector3d & in, const Eigen::Vector3d & eeP, const Eigen::Matrix3d & eeR, const Eigen::Vector3d & impactLinearVel);
   FIDynamics::PIParams piParams_;
 
+  /*
   Eigen::Matrix<double, 2, 3> rotation_;
-  Eigen::Matrix<double, 3, 3> rotationFull_;
+  Eigen::Matrix3d rotationFull_;
+  */
   // Eigen::Vector3d postImpactImpulse_ = Eigen::Vector3d::Zero();
 
   Eigen::Matrix3d rCentroidalInertia_; ///< Robot centroidal inertia.
@@ -221,6 +230,11 @@ protected:
   Eigen::Vector3d rAverageLinearVel_; ///< Robot average angular velocity
 
   std::shared_ptr<FIDynamics::TwoDimModel> twoDimModelPtr_;
+  const Eigen::Vector3d & getImpactNormal_()
+  {
+    return impactNormal_; 
+  }
+  Eigen::Vector3d impactNormal_ = Eigen::Vector3d::Zero();
 
   // Convert the 2D solution to 3D
   void planarSolutionTo3D_();
@@ -257,6 +271,8 @@ protected:
                               const double * comVxGrids,
                               const double * comVyGrids,
                               GradientApproximationParams & params);
+  double * comVxJumpGrids_;
+  double * comVyJumpGrids_;
 
   //void gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1);
 
@@ -269,8 +285,9 @@ protected:
 
   /*! \brief Project the 3D impact normal on the ground plane perpendicular to [0,0,1]
    */
-  Eigen::Vector3d projectToGround_(const Eigen::Vector3d & direction);
+  //Eigen::Vector3d projectToGround_(const Eigen::Vector3d & direction);
 
+  /*
   void negativeCalc_(const double & c1,
                      const double & zmpLowerBoundNorm,
                      const double & zmpUpperBoundNorm,
@@ -281,6 +298,7 @@ protected:
                      const double & zmpUpperBoundNorm,
                      double & maxContactVel,
                      double & minContactVel);
+		     */
 
 }; // end of the TwoDimModelBridge
 

@@ -23,6 +23,7 @@ struct ImpactModelParams
   int dim = 3;
   ImpactModelType impactModel = ImpactModelType::OneDimModel;
   Eigen::Vector3d eePosition = Eigen::Vector3d::Zero(); ///< Impacting velocity
+  Eigen::Matrix3d eeRotation = Eigen::Matrix3d::Zero(); ///< Impacting velocity
 }; // End of the ImpactModelParams.
 
 } // namespace mc_impact
