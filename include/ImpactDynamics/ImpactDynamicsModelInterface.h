@@ -3,9 +3,8 @@
 #include <RobotInterface/RobotInterface.h>
 #include <RoboticsUtils/utils.h>
 #include <TwoDimModel/TwoDimModel.h>
-
-#include <yaml-cpp/yaml.h>
 #include <fstream>
+#include <yaml-cpp/yaml.h>
 
 // Header file for GNU Scientific Library: Least squares fit.
 #include "../mi_utils.h"
@@ -24,7 +23,7 @@ enum class TwoDimModelCase
 struct fittingParams
 {
   // Eigen::Vector3d coe = Eigen::Vector3d::Zero();
-  //Eigen::Matrix3d cov = Eigen::Matrix3d::Identity();
+  // Eigen::Matrix3d cov = Eigen::Matrix3d::Identity();
 
   double c0 = 0.0;
   double c1 = 0.0;
@@ -43,7 +42,7 @@ struct PostImpactStates
   Eigen::Vector3d anguleVel = Eigen::Vector3d::Zero();
   Eigen::Vector3d anguleVelJump = Eigen::Vector3d::Zero();
   Eigen::Vector3d impulse = Eigen::Vector3d::Zero();
-    //double c = 0.0;
+  // double c = 0.0;
   // double c0 = 0.0;
   // double c1 = 0.0;
 };
@@ -61,7 +60,6 @@ struct GradientApproximationParams
 
   fittingParams gradientX;
   fittingParams gradientY;
-
 };
 
 struct TwoDimModelBridgeParams
@@ -201,10 +199,10 @@ public:
   void computeGradient(const Eigen::Vector3d & impactNormal, Eigen::Vector3d & jumpDirection);
 
   void printFidModelGradientData();
-  
+
   void saveFidModelGradientData();
 
-  protected:
+protected:
   TwoDimModelBridgeParams bridgeParams_;
 
   double rotationAngle_;
@@ -216,7 +214,10 @@ public:
    * \param in The impact normal
    * \param vc The virtual contact point
    */
-  void updatePiParams_(const Eigen::Vector3d & in, const Eigen::Vector3d & eeP, const Eigen::Matrix3d & eeR, const Eigen::Vector3d & impactLinearVel);
+  void updatePiParams_(const Eigen::Vector3d & in,
+                       const Eigen::Vector3d & eeP,
+                       const Eigen::Matrix3d & eeR,
+                       const Eigen::Vector3d & impactLinearVel);
   FIDynamics::PIParams piParams_;
 
   /*
@@ -232,7 +233,7 @@ public:
   std::shared_ptr<FIDynamics::TwoDimModel> twoDimModelPtr_;
   const Eigen::Vector3d & getImpactNormal_()
   {
-    return impactNormal_; 
+    return impactNormal_;
   }
   Eigen::Vector3d impactNormal_ = Eigen::Vector3d::Zero();
 
@@ -262,21 +263,21 @@ public:
   void gradientApproximationMulti_(const double * contactVelGrids,
                                    const double * comVxGrids,
                                    const double * comVyGrids,
-				   const double * comVzGrids,
+           const double * comVzGrids,
                                    fittingParams & params);
-				   */
+           */
 
   void gradientApproximation_(const double * contactVxGrids,
-		              const double * contactVyGrids,
+                              const double * contactVyGrids,
                               const double * comVxGrids,
                               const double * comVyGrids,
                               GradientApproximationParams & params);
   double * comVxJumpGrids_;
   double * comVyJumpGrids_;
 
-  //void gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1);
+  // void gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1);
 
-  //void gradientApproximation_(const double * contactVelGrids, const double * comVGrids, fittingParams & params);
+  // void gradientApproximation_(const double * contactVelGrids, const double * comVGrids, fittingParams & params);
 
   std::vector<double> caurseContactVelocityGrids_;
 
@@ -285,7 +286,7 @@ public:
 
   /*! \brief Project the 3D impact normal on the ground plane perpendicular to [0,0,1]
    */
-  //Eigen::Vector3d projectToGround_(const Eigen::Vector3d & direction);
+  // Eigen::Vector3d projectToGround_(const Eigen::Vector3d & direction);
 
   /*
   void negativeCalc_(const double & c1,
@@ -298,7 +299,7 @@ public:
                      const double & zmpUpperBoundNorm,
                      double & maxContactVel,
                      double & minContactVel);
-		     */
+         */
 
 }; // end of the TwoDimModelBridge
 

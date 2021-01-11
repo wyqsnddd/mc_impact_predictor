@@ -34,16 +34,20 @@ void McTwoDimModelBridge::logImpulseEstimations()
   }
 
   logEntries_.emplace_back(bridgeName + "_" + "curveFitting_comVelxJump_c0");
-   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientX.c0; });
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                      [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientX.c0; });
 
   logEntries_.emplace_back(bridgeName + "_" + "curveFitting_comVelxJump_c1");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientX.c1; });
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                      [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientX.c1; });
 
   logEntries_.emplace_back(bridgeName + "_" + "curveFitting_comVelyJump_c0");
-   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientY.c0; });
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                      [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientY.c0; });
 
   logEntries_.emplace_back(bridgeName + "_" + "curveFitting_comVelyJump_c1");
-  getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientY.c1; });
+  getHostCtl_()->logger().addLogEntry(logEntries_.back(),
+                                      [this]() { return getTwoDimModelBridgeParams().gradientParams.gradientY.c1; });
 
   logEntries_.emplace_back(bridgeName + "_" + "computationTime");
   getHostCtl_()->logger().addLogEntry(logEntries_.back(), [this]() { return twoDimModelPtr_->computationTime(); });
