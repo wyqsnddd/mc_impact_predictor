@@ -259,6 +259,10 @@ protected:
   // std::map<double, Eigen::Vector3d> velCases_;
   std::map<double, PostImpactStates> velCases_;
 
+  void gradientApproximationRobust_(const std::vector<double> & contactVelGrids,
+                                   const std::vector<double> & comVelGrids,
+                                   fittingParams & params);
+
   /*
   void gradientApproximationMulti_(const double * contactVelGrids,
                                    const double * comVxGrids,
@@ -267,13 +271,42 @@ protected:
                                    fittingParams & params);
            */
 
+  struct gradientData {
+  double * data;
+  std::vector<size_t> posIdx_;
+  std::vector<size_t> negIdx_;
+  void reset(size_t size)
+  {
+    posIdx_.clear(); 
+    negIdx_.clear(); 
+    if (data!=NULL)
+    {
+      data = new double[size];
+    }
+  }
+  void write(const size_t & idx, const double & input)
+  {
+    data[idx] = input;
+    if(RoboticsUtils::sgn(input)>0)
+    {
+      posIdx_.push_back(idx);
+    }else
+    {
+      negIdx_.push_back(idx);
+    }
+  }
+  } comVxJumpGrids_, comVyJumpGrids_;
+
+  void metaFit_(fittingParams & params, const std::vector<size_t> & idxVec, const double * contactVel, const double * comVel);
+    
+
+	  
   void gradientApproximation_(const double * contactVxGrids,
                               const double * contactVyGrids,
-                              const double * comVxGrids,
-                              const double * comVyGrids,
+                              const gradientData & comVxGrids,
+                              const gradientData & comVyGrids,
                               GradientApproximationParams & params);
-  double * comVxJumpGrids_;
-  double * comVyJumpGrids_;
+			      
 
   // void gradientApproximationCalc_(const Eigen::Vector3d & impactNormal, double & c1);
 
