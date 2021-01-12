@@ -281,7 +281,7 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal, Ei
 
     comVxJumpGrids_.write(ii, velCases_[vel].linearVelJump.x());
     comVyJumpGrids_.write(ii, velCases_[vel].linearVelJump.y());
-    
+
     // comVzJumpGrids[ii] = velCases_[vel].linearVelJump.z();
 
     ii++;
@@ -293,18 +293,17 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal, Ei
   // comVzJumpGrids, robotPostImpactStates_.gradient);
   // gradientApproximationCalc_(impactNormal, jumpDirection, c1);
 
-  // Line one: positive values:  
-  //metaFit_(bridgeParams_.gradientParams.gradientX, comVxJumpGrids_.posIdx_, contactVxGrids, comVxJumpGrids_.data);
+  // Line one: positive values:
+  // metaFit_(bridgeParams_.gradientParams.gradientX, comVxJumpGrids_.posIdx_, contactVxGrids, comVxJumpGrids_.data);
 
-  // Line one: negative values:  
-  //metaFit_(bridgeParams_.gradientParams.gradientX, comVxJumpGrids_.negIdx_, contactVxGrids, comVxJumpGrids_.data);
+  // Line one: negative values:
+  // metaFit_(bridgeParams_.gradientParams.gradientX, comVxJumpGrids_.negIdx_, contactVxGrids, comVxJumpGrids_.data);
 
-  // Line two: positive values: 
-  //metaFit_(bridgeParams_.gradientParams.gradientY, comVyJumpGrids_.posIdx_, contactVyGrids, comVyJumpGrids_.data);
+  // Line two: positive values:
+  // metaFit_(bridgeParams_.gradientParams.gradientY, comVyJumpGrids_.posIdx_, contactVyGrids, comVyJumpGrids_.data);
 
-  // Line two: negative values: 
-  //metaFit_(bridgeParams_.gradientParams.gradientY, comVyJumpGrids_.negIdx_, contactVyGrids, comVyJumpGrids_.data);
-  
+  // Line two: negative values:
+  // metaFit_(bridgeParams_.gradientParams.gradientY, comVyJumpGrids_.negIdx_, contactVyGrids, comVyJumpGrids_.data);
 
   gradientApproximation_(contactVxGrids, contactVyGrids, comVxJumpGrids_, comVyJumpGrids_,
                          bridgeParams_.gradientParams);
@@ -323,13 +322,16 @@ void TwoDimModelBridge::computeGradient(const Eigen::Vector3d & impactNormal, Ei
                 / 2.0;
   jumpDirection = velCases_.equal_range(mean).first->second.linearVelJump.normalized();
 }
-void TwoDimModelBridge::metaFit_(fittingParams & params, const std::vector<size_t> & idxVec, const double * contactVel, const double * comVel)
+void TwoDimModelBridge::metaFit_(fittingParams & params,
+                                 const std::vector<size_t> & idxVec,
+                                 const double * contactVel,
+                                 const double * comVel)
 {
-  std::vector<double> x, y; 
-  for (size_t idx:idxVec)
+  std::vector<double> x, y;
+  for(size_t idx : idxVec)
   {
-     x.push_back(contactVel[idx]);
-     y.push_back(comVel[idx]);
+    x.push_back(contactVel[idx]);
+    y.push_back(comVel[idx]);
   }
   gradientApproximationRobust_(x, y, params);
 }
@@ -354,8 +356,6 @@ void TwoDimModelBridge::gradientApproximation_(const double * contactVelGrids,
 }
 */
 
-
-
 void TwoDimModelBridge::gradientApproximation_(const double * contactVxGrids,
                                                const double * contactVyGrids,
                                                const gradientData & comVxGrids,
@@ -367,7 +367,6 @@ void TwoDimModelBridge::gradientApproximation_(const double * contactVxGrids,
 
   // gsl_fit_mul(contactVelGrids, 1, comVxGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cx.c1,
   // &cx.cov11, &cx.sumsq);
-  
 
   gsl_fit_linear(contactVxGrids, 1, comVxGrids.data, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
                  &params.gradientX.c0, &params.gradientX.c1, &params.gradientX.cov00, &params.gradientX.cov01,
@@ -386,11 +385,10 @@ void TwoDimModelBridge::gradientApproximation_(const double * contactVxGrids,
 
   // gsl_fit_mul(contactVelGrids, 1, comVyGrids, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid, &cy.c1,
   // &cy.cov11, &cy.sumsq);
-  
+
   gsl_fit_linear(contactVyGrids, 1, comVyGrids.data, 1, getTwoDimModelBridgeParams().gradientParams.numCaurseGrid,
                  &params.gradientY.c0, &params.gradientY.c1, &params.gradientY.cov00, &params.gradientY.cov01,
                  &params.gradientY.cov11, &params.gradientY.sumsq);
-		 
 
   /*
   std::cout<<RoboticsUtils::info<<"COMVel_y gradient are approximated as: "<<RoboticsUtils::reset<<std::endl;
@@ -405,8 +403,8 @@ void TwoDimModelBridge::gradientApproximation_(const double * contactVxGrids,
 }
 
 void TwoDimModelBridge::gradientApproximationRobust_(const std::vector<double> & contactVelGrids,
-                                                    const std::vector<double> & comVelGrids,
-                                                    fittingParams & params)
+                                                     const std::vector<double> & comVelGrids,
+                                                     fittingParams & params)
 {
   const size_t n(getTwoDimModelBridgeParams().gradientParams.numCaurseGrid);
 
@@ -450,7 +448,7 @@ void TwoDimModelBridge::gradientApproximationRobust_(const std::vector<double> &
 
   // std::cout<<"the fitted params are: "<<COE(0)<<", "<<COE(1)<<", "<<COE(2)<<std::endl;
   params.c1 = COE(0);
-  params.c0 = 0.0; 
+  params.c0 = 0.0;
 
   // std::cout<<"the gradient is: "<<params.coe.transpose()<<std::endl;
 
@@ -716,7 +714,7 @@ void TwoDimModelBridge::planarSolutionTo3DPushWall_(PostImpactStates & input)
 
   // Fix the angle: if the impulse has a different sign than the impact normal, we flip it.
   double innerP = -twoDimModelPtr_->getSolution().I_r.transpose() * getPlanarImpactParams().nu;
-  if(innerP < 0) 
+  if(innerP < 0)
   {
     input.impulse = -input.impulse;
   }
@@ -843,45 +841,55 @@ const PostImpactStates & ImpactDynamicsModel::getObjectPostImpactStates()
 {
   return objectPostImpactStates_;
 }
-template<typename T >
+template<typename T>
 void writeEntry_(std::ofstream & myfile, const std::string & name, const size_t & size, const T & input)
 {
 
   std::stringstream buffer;
-  buffer<< name<< ":  [";
+  buffer << name << ":  [";
   for(size_t ii = 0; ii < size; ii++)
   {
-    buffer << input[ii]<< ", ";
+    buffer << input[ii] << ", ";
   }
   std::string content = buffer.str();
-  if(size>0)
+  if(size > 0)
   {
-   content.pop_back();
-   content.pop_back();
+    content.pop_back();
+    content.pop_back();
   }
-  //buffer.str("");
+  // buffer.str("");
   myfile << content + "]\n";
 }
-template void writeEntry_<std::vector<size_t>>(std::ofstream &, const std::string &, const size_t &, const std::vector<size_t> &);
-template void writeEntry_<std::vector<double>>(std::ofstream &, const std::string &, const size_t &, const std::vector<double> &);
+template void writeEntry_<std::vector<size_t>>(std::ofstream &,
+                                               const std::string &,
+                                               const size_t &,
+                                               const std::vector<size_t> &);
+template void writeEntry_<std::vector<double>>(std::ofstream &,
+                                               const std::string &,
+                                               const size_t &,
+                                               const std::vector<double> &);
 
-void writeEntry_(std::ofstream & myfile, const std::string & name, const size_t & size, const std::vector<double> & input, const double & mul)
+void writeEntry_(std::ofstream & myfile,
+                 const std::string & name,
+                 const size_t & size,
+                 const std::vector<double> & input,
+                 const double & mul)
 {
 
   std::stringstream buffer;
-  buffer<< name<< ":  [";
+  buffer << name << ":  [";
   for(size_t ii = 0; ii < size; ii++)
   {
     buffer << input[ii] * mul << ", ";
   }
   std::string content = buffer.str();
 
-  if(size>0)
+  if(size > 0)
   {
-   content.pop_back();
-   content.pop_back();
+    content.pop_back();
+    content.pop_back();
   }
-   //buffer.str("");
+  // buffer.str("");
   myfile << content + "]\n";
 }
 
@@ -889,7 +897,7 @@ void writeEntry_(std::ofstream & myfile, const std::string & name, const size_t 
 {
 
   std::stringstream buffer;
-  buffer<< name<< ":  [";
+  buffer << name << ":  [";
   for(size_t ii = 0; ii < size; ii++)
   {
     buffer << input[ii] << ", ";
@@ -897,7 +905,7 @@ void writeEntry_(std::ofstream & myfile, const std::string & name, const size_t 
   std::string content = buffer.str();
   content.pop_back();
   content.pop_back();
-  //buffer.str("");
+  // buffer.str("");
   myfile << content + "]\n";
 }
 void TwoDimModelBridge::saveFidModelGradientData()
@@ -922,7 +930,7 @@ void TwoDimModelBridge::saveFidModelGradientData()
   writeEntry_(myfile, "  x", caurseContactVelocityGrids_.size(), caurseContactVelocityGrids_, getImpactNormal_().x());
   writeEntry_(myfile, "  y", caurseContactVelocityGrids_.size(), caurseContactVelocityGrids_, getImpactNormal_().y());
   writeEntry_(myfile, "  z", caurseContactVelocityGrids_.size(), caurseContactVelocityGrids_, getImpactNormal_().z());
-  
+
   myfile << "PostImpactComVel:\n";
 
   writeEntry_(myfile, "  x", caurseContactVelocityGrids_.size(), comVxJumpGrids_.data);
@@ -931,7 +939,6 @@ void TwoDimModelBridge::saveFidModelGradientData()
   writeEntry_(myfile, "  y", caurseContactVelocityGrids_.size(), comVyJumpGrids_.data);
   writeEntry_(myfile, "  y-PosIdx", comVyJumpGrids_.posIdx_.size(), comVyJumpGrids_.posIdx_);
   writeEntry_(myfile, "  y-NegIdx", comVyJumpGrids_.negIdx_.size(), comVyJumpGrids_.negIdx_);
-
 
   std::cout << RoboticsUtils::hlight << "Wrote to file: " << name << RoboticsUtils::reset << std::endl;
   myfile.close();
