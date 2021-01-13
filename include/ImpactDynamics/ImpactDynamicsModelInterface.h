@@ -200,7 +200,7 @@ public:
 
   void printFidModelGradientData();
 
-  void saveFidModelGradientData();
+  std::string saveFidModelGradientData();
 
 protected:
   TwoDimModelBridgeParams bridgeParams_;

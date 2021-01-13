@@ -908,7 +908,7 @@ void writeEntry_(std::ofstream & myfile, const std::string & name, const size_t 
   // buffer.str("");
   myfile << content + "]\n";
 }
-void TwoDimModelBridge::saveFidModelGradientData()
+std::string TwoDimModelBridge::saveFidModelGradientData()
 {
   std::ofstream myfile;
 
@@ -942,6 +942,7 @@ void TwoDimModelBridge::saveFidModelGradientData()
 
   std::cout << RoboticsUtils::hlight << "Wrote to file: " << name << RoboticsUtils::reset << std::endl;
   myfile.close();
+  return name;
 }
 
 void TwoDimModelBridge::printFidModelGradientData()
