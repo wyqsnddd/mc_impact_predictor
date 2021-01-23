@@ -18,9 +18,9 @@ TwoDimModelBridge::TwoDimModelBridge(const std::shared_ptr<RobotInterface::Robot
 
   // Initialize the two-dim-model
   // Energetic coefficient of restitution
-  piParams_.e = 0.2;
+  piParams_.e = params.coeR;
   // Coefficient of friction
-  piParams_.miu = 0.3;
+  piParams_.miu = params.coeF;
   // rotation_.setZero();
   // rotationFull_.setIdentity();
 
