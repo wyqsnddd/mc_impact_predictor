@@ -282,7 +282,6 @@ protected:
       negIdx_.clear();
       dataVec_.clear();
       dataVec_.resize(size);
-      
     }
     void write(const size_t & idx, const double & input)
     {
