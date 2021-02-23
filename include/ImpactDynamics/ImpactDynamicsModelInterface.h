@@ -273,21 +273,21 @@ protected:
 
   struct gradientData
   {
-    double * data;
+    std::vector<double> dataVec_;
     std::vector<size_t> posIdx_;
     std::vector<size_t> negIdx_;
-    void reset(size_t size)
+    void reset(const size_t & size)
     {
       posIdx_.clear();
       negIdx_.clear();
-      if(data != NULL)
-      {
-        data = new double[size];
-      }
+      dataVec_.clear();
+      dataVec_.resize(size);
+      
     }
     void write(const size_t & idx, const double & input)
     {
-      data[idx] = input;
+      dataVec_[idx] = input;
+
       if(RoboticsUtils::sgn(input) > 0)
       {
         posIdx_.push_back(idx);
